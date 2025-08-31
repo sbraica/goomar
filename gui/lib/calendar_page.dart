@@ -16,6 +16,7 @@ class _CalendarPageState extends State<CalendarPage> {
   DateTime? _selectedDate;
   late List<Appointment> _appointments;
   late _SampleDataSource _dataSource;
+  late CalendarController _calendarController;
 
   // Form state
   final _formKey = GlobalKey<FormState>();
@@ -29,6 +30,8 @@ class _CalendarPageState extends State<CalendarPage> {
     super.initState();
     _appointments = _getSampleAppointments();
     _dataSource = _SampleDataSource(_appointments);
+    _calendarController = CalendarController();
+    _calendarController.view = CalendarView.workWeek;
 
     void listener() {
       final nowValid = _formKey.currentState?.validate() ?? false;
@@ -52,16 +55,39 @@ class _CalendarPageState extends State<CalendarPage> {
     super.dispose();
   }
 
+  void _jumpMonths(int months) {
+    final base = _calendarController.displayDate ?? DateTime.now();
+    // Move to the first day of target month, then clamp original day into valid range
+    final DateTime firstOfTarget = DateTime(base.year, base.month + months, 1, base.hour, base.minute, base.second);
+    final int targetMonthDays = DateTime(firstOfTarget.year, firstOfTarget.month + 1, 0).day;
+    final int clampedDay = base.day.clamp(1, targetMonthDays);
+    final DateTime target = DateTime(firstOfTarget.year, firstOfTarget.month, clampedDay, base.hour, base.minute, base.second);
+    setState(() {
+      _calendarController.displayDate = target;
+    });
+  }
+
+  void _jumpToday() {
+    setState(() {
+      _calendarController.displayDate = DateTime.now();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('30 Min Timeslot Calendar'),
+        title: const Text("Barron's Timeslot Calendar"),
       ),
-      body: Column(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1000),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
             child: Form(
               key: _formKey,
               autovalidateMode: AutovalidateMode.always,
@@ -73,16 +99,18 @@ class _CalendarPageState extends State<CalendarPage> {
                     decoration: const InputDecoration(
                       labelText: 'User name',
                       border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                     textInputAction: TextInputAction.next,
                     validator: (v) => (v == null || v.trim().isEmpty) ? 'Name is required' : null,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
                   TextFormField(
                     controller: _emailController,
                     decoration: const InputDecoration(
                       labelText: 'User email',
                       border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
@@ -94,17 +122,18 @@ class _CalendarPageState extends State<CalendarPage> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
                   TextFormField(
                     controller: _vehicleController,
                     decoration: const InputDecoration(
                       labelText: 'Vehicle registration',
                       border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                     textInputAction: TextInputAction.done,
                     validator: (v) => (v == null || v.trim().isEmpty) ? 'Vehicle registration is required' : null,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
                   Row(
                     children: [
                       Icon(_formValid ? Icons.check_circle : Icons.info, color: _formValid ? Colors.green : Colors.orange),
@@ -115,6 +144,22 @@ class _CalendarPageState extends State<CalendarPage> {
                               ? 'Form complete. You can select a time slot.'
                               : 'Fill all fields to enable timeslot selection.',
                         ),
+                      ),
+                      const SizedBox(width: 12),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            tooltip: 'Previous month',
+                            icon: const Icon(Icons.keyboard_double_arrow_left),
+                            onPressed: () => _jumpMonths(-1),
+                          ),
+                          IconButton(
+                            tooltip: 'Next month',
+                            icon: const Icon(Icons.keyboard_double_arrow_right),
+                            onPressed: () => _jumpMonths(1),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -127,11 +172,14 @@ class _CalendarPageState extends State<CalendarPage> {
             child: Stack(
               children: [
                 SfCalendar(
-                  view: CalendarView.week,
-                  allowedViews: const [CalendarView.day, CalendarView.week, CalendarView.month, CalendarView.schedule],
+                  controller: _calendarController,
+                  view: CalendarView.workWeek,
                   timeSlotViewSettings: const TimeSlotViewSettings(
+                    startHour: 8,
+                    endHour: 16,
                     timeInterval: Duration(minutes: 30),
                     timeFormat: 'HH:mm',
+                    nonWorkingDays: <int>[DateTime.saturday, DateTime.sunday],
                   ),
                   appointmentBuilder: (context, details) {
                     final Appointment appt = details.appointments.first as Appointment;
@@ -191,6 +239,10 @@ class _CalendarPageState extends State<CalendarPage> {
                         details.targetElement == CalendarElement.allDayPanel ||
                         details.targetElement == CalendarElement.viewHeader) {
                       final DateTime start = DateTime(tapped.year, tapped.month, tapped.day, tapped.hour, tapped.minute);
+                      // Enforce working hours: 08:00 <= start < 16:00
+                      if (start.hour < 8 || start.hour >= 16) {
+                        return;
+                      }
                       final DateTime end = start.add(const Duration(minutes: 30));
 
                       // Prevent exact duplicate for the same slot and subject
@@ -222,7 +274,7 @@ class _CalendarPageState extends State<CalendarPage> {
                   Positioned.fill(
                     child: IgnorePointer(
                       child: Container(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         alignment: Alignment.center,
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -240,7 +292,10 @@ class _CalendarPageState extends State<CalendarPage> {
             ),
           ),
         ],
-      ),
+                ),
+              ),
+            ),
+          ),
       bottomNavigationBar: _selectedDate != null
           ? Padding(
               padding: const EdgeInsets.all(12.0),
