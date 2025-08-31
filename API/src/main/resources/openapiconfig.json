@@ -1,0 +1,17 @@
+{
+  "useTags": "true",
+  "java8": "true",
+  "interfaceOnly": "true",
+  "reactive": "false",
+  "dateLibrary": "java8-localdatetime",
+  "library": "spring-boot",
+  "useBeanValidation": "true",
+  "performBeanValidation": "true",
+  "useOptional": "false",
+  "serviceInterface": "false",
+  "defaultInterfaces": "false",
+  "useDocumentationAnnotations": "false",
+  "skipDefaultInterface": "true",
+  "serviceImplementation": "false",
+  "useSpringBoot3": "true"
+}
