@@ -103,13 +103,28 @@ class _BookingPageState extends State<BookingPage> {
             focusedDay: _focusedDay,
             firstDay: DateTime.now(),
             lastDay: DateTime.utc(2030, 12, 31),
+            startingDayOfWeek: StartingDayOfWeek.monday,
+            enabledDayPredicate: (day) => day.weekday != DateTime.saturday && day.weekday != DateTime.sunday,
             selectedDayPredicate: (day) => isSameDay(day, _selectedDay),
             eventLoader: (day) {
               final key = _dayKey(day);
               return _bookings[key] ?? const [];
             },
             calendarBuilders: CalendarBuilders(
+              disabledBuilder: (context, day, focusedDay) {
+                final isWeekend = day.weekday == DateTime.saturday || day.weekday == DateTime.sunday;
+                if (!isWeekend) return null;
+                // Greyed-out weekend cell
+                return Center(
+                  child: Text(
+                    '${day.day}',
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                );
+              },
               markerBuilder: (context, date, events) {
+                // Do not show markers on weekends; also ensure weekends are disabled
+                if (date.weekday == DateTime.saturday || date.weekday == DateTime.sunday) return null;
                 if (events.isEmpty) return null;
                 final summary = _hoursSummaryForDay(date);
                 if (summary.isEmpty) return null;
@@ -139,6 +154,10 @@ class _BookingPageState extends State<BookingPage> {
               },
             ),
             onDaySelected: (selectedDay, focusedDay) {
+              // Safety guard: ignore weekend taps even if TableCalendar changes
+              if (selectedDay.weekday == DateTime.saturday || selectedDay.weekday == DateTime.sunday) {
+                return;
+              }
               setState(() {
                 _selectedDay = selectedDay;
                 _focusedDay = focusedDay;
@@ -196,18 +215,15 @@ class _BookingPageState extends State<BookingPage> {
                                                 });
                                               },
                                             )
-                                          : TextButton.icon(
-                                              icon: const Icon(Icons.add_circle_outline),
-                                              label: const Text('Dodaj'),
+                                          : IconButton(
+                                              icon: const Icon(Icons.check_circle, color: Colors.green),
+                                              tooltip: 'Odaberi termin',
                                               onPressed: () {
                                                 setState(() {
                                                   // Enforce single-slot per day: replace any existing with this slot
                                                   _bookings[dayKey] = <String>[slot];
                                                   _selectedSlot = null;
                                                 });
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  SnackBar(content: Text('Odabran termin: $slot')),
-                                                );
                                               },
                                             ),
                                       onTap: isBooked
