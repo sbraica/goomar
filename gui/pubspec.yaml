@@ -39,9 +39,9 @@ dependencies:
   flutter_bloc: ^8.1.2
   table_calendar: ^3.0.9
   http: ^1.1.0
+  # Keep datepicker if still used elsewhere; removing calendar/core as we migrate off SfCalendar
   syncfusion_flutter_datepicker: ^30.2.7
-  syncfusion_flutter_calendar: ^30.2.7
-  syncfusion_flutter_core: ^30.2.7
+  calendar_view: ^1.0.8
 
 dev_dependencies:
   flutter_test:
