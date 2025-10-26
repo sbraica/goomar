@@ -227,44 +227,31 @@ class _BookingScreenState extends State<BookingScreen> {
                                               });
                                             })
                                       ]))
-                                    ])
-                                  ]))),
-                          const SizedBox(height: 16),
-                          // Combined Date & Time selection
-                          Card(
-                              elevation: 4,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                              child: Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                    ]),
+
+                                    const SizedBox(height: 24),
+                                    const Divider(height: 1),
+                                    const SizedBox(height: 16),
+
                                     const Text('Select Date & Time', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                                     const SizedBox(height: 16),
                                     LayoutBuilder(builder: (context, constraints) {
                                       final isWide = constraints.maxWidth >= 700;
                                       final calendarWidget = WeekdayTwoWeekCalendar(
-                                        firstDay: DateTime.now(),
-                                        lastDay: DateTime.now().add(const Duration(days: 90)),
-                                        focusedDay: _focusedDay,
-                                        selectedDay: _selectedDay,
-                                        onDaySelected: (selectedDay) {
-                                          setState(() {
-                                            _selectedDay = selectedDay;
-                                            _focusedDay = selectedDay;
-                                            _selectedTime = null; // reset time when date changes
-                                          });
-                                        },
-                                        onPrevPage: () {
-                                          setState(() {
-                                            _focusedDay = DateTime(_focusedDay.year, _focusedDay.month - 1, 1);
-                                          });
-                                        },
-                                        onNextPage: () {
-                                          setState(() {
-                                            _focusedDay = DateTime(_focusedDay.year, _focusedDay.month + 1, 1);
-                                          });
-                                        },
-                                        dayButtonScale: 1.0,
-                                      );
+                                          firstDay: DateTime.now(),
+                                          lastDay: DateTime.now().add(const Duration(days: 90)),
+                                          focusedDay: _focusedDay,
+                                          selectedDay: _selectedDay,
+                                          onDaySelected: (selectedDay) {
+                                            setState(() {
+                                              _selectedDay = selectedDay;
+                                              _focusedDay = selectedDay;
+                                              _selectedTime = null; // reset time when date changes
+                                            });
+                                          },
+                                          onPrevPage: () => setState(() => _focusedDay = DateTime(_focusedDay.year, _focusedDay.month - 1, 1)),
+                                          onNextPage: () => setState(() => _focusedDay = DateTime(_focusedDay.year, _focusedDay.month + 1, 1)),
+                                          dayButtonScale: 1.0);
 
                                       final timeWidget = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                         const Text('Time', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
