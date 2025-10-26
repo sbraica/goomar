@@ -1,48 +1,44 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'screens/home_screen.dart';
-import 'screens/admin_dashboard.dart';
-import 'widgets/booking_wizard/booking_wizard.dart';
+import 'package:provider/provider.dart';
+import 'providers/reservation_provider.dart';
+import 'providers/auth_provider.dart';
+import 'screens/public/booking_screen.dart';
 
 void main() {
-  runApp(const ProviderScope(child: BookingApp()));
+  runApp(const MyApp());
 }
 
-class BookingApp extends StatelessWidget {
-  const BookingApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'BookingPress Flutter',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple,
-          brightness: Brightness.light,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ReservationProvider()),
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+      ],
+      child: MaterialApp(
+        title: 'Tyre Change Reservation',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+          primaryColor: const Color(0xFF2196F3),
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF2196F3),
+            primary: const Color(0xFF2196F3),
+          ),
+          useMaterial3: true,
+          inputDecorationTheme: InputDecorationTheme(
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              filled: true,
+              fillColor: Colors.grey.shade100,
+          ),
         ),
-        textTheme: GoogleFonts.poppinsTextTheme(),
-        useMaterial3: true,
+        home: const BookingScreen(),
       ),
-      routerConfig: _router,
     );
   }
 }
-
-final _router = GoRouter(
-  routes: [
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const HomeScreen(),
-    ),
-    GoRoute(
-      path: '/book',
-      builder: (context, state) => const BookingWizard(),
-    ),
-    GoRoute(
-      path: '/admin',
-      builder: (context, state) => const AdminDashboard(),
-    ),
-  ],
-);
