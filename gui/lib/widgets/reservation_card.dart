@@ -105,7 +105,7 @@ class ReservationCard extends StatelessWidget {
             _buildInfoRow(
               Icons.access_time,
               'Submitted',
-              DateFormat('MMM dd, yyyy - HH:mm').format(reservation.createdAt),
+              DateFormat('d. MMM y. - HH:mm', 'hr').format(reservation.createdAt),
             ),
             if (!isApproved && (onApprove != null || onReject != null)) ...[
               const Divider(height: 24),
@@ -157,9 +157,9 @@ class ReservationCard extends StatelessWidget {
   String _formatAppointment(Reservation r) {
     final start = r.reservationDate;
     final end = start.add(Duration(minutes: r.durationMinutes));
-    final dateStr = DateFormat('MMMM dd, yyyy').format(start);
-    final startStr = DateFormat('HH:mm').format(start);
-    final endStr = DateFormat('HH:mm').format(end);
+    final dateStr = DateFormat('d. MMMM y.', 'hr').format(start);
+    final startStr = DateFormat('HH:mm', 'hr').format(start);
+    final endStr = DateFormat('HH:mm', 'hr').format(end);
     return '$dateStr — $startStr–$endStr';
   }
 

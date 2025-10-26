@@ -4,16 +4,10 @@ import 'package:intl/intl.dart';
 import '../../providers/reservation_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/reservation_card.dart';
+import '../../providers/approval_ui_provider.dart';
 
-class ApprovalScreen extends StatefulWidget {
+class ApprovalScreen extends StatelessWidget {
   const ApprovalScreen({Key? key}) : super(key: key);
-
-  @override
-  State<ApprovalScreen> createState() => _ApprovalScreenState();
-}
-
-class _ApprovalScreenState extends State<ApprovalScreen> {
-  int _selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -62,6 +56,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
               children: [
                 Expanded(
                   child: _buildTabButton(
+                    context,
                     'Pending',
                     0,
                     reservationProvider.pendingReservations.length,
@@ -69,6 +64,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                 ),
                 Expanded(
                   child: _buildTabButton(
+                    context,
                     'Approved',
                     1,
                     reservationProvider.approvedReservations.length,
@@ -78,7 +74,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
             ),
           ),
           Expanded(
-            child: _selectedIndex == 0
+            child: Provider.of<ApprovalUiProvider>(context).selectedIndex == 0
                 ? _buildPendingList(reservationProvider)
                 : _buildApprovedList(reservationProvider),
           ),
@@ -87,14 +83,11 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
     );
   }
 
-  Widget _buildTabButton(String title, int index, int count) {
-    final isSelected = _selectedIndex == index;
+  Widget _buildTabButton(BuildContext context, String title, int index, int count) {
+    final ui = Provider.of<ApprovalUiProvider>(context);
+    final isSelected = ui.selectedIndex == index;
     return InkWell(
-      onTap: () {
-        setState(() {
-          _selectedIndex = index;
-        });
-      },
+      onTap: () => ui.selectTab(index),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
@@ -110,37 +103,37 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-          Text(
-          title,
-          style: TextStyle(
-              fontSize: 16,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              color: isSelected
-                  ? Theme.of(context).primaryColor
-                  : Colors.grey,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          decoration: BoxDecoration(
-              color: isSelected
-                  ? Theme.of(context).primaryColor
-                  : Colors.grey,
-              borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          count.toString(),
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-          ),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                color: isSelected
+                    ? Theme.of(context).primaryColor
+                    : Colors.grey,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? Theme.of(context).primaryColor
+                    : Colors.grey,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                count.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
-      ],
-    ),
-    ),
     );
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/login_ui_provider.dart';
 import 'approval_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -14,8 +15,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _isLoading = false;
-  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -26,26 +25,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
-
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final success = await authProvider.login(
+      final ui = Provider.of<LoginUiProvider>(context, listen: false);
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final success = await ui.login(
         _usernameController.text,
         _passwordController.text,
+        auth,
       );
-
-      setState(() {
-        _isLoading = false;
-      });
-
       if (success) {
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const ApprovalScreen()),
         );
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Invalid credentials. Try: operator/password'),
@@ -124,21 +118,19 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _passwordController,
-                          obscureText: _obscurePassword,
+                          obscureText: Provider.of<LoginUiProvider>(context).obscurePassword,
                           decoration: InputDecoration(
                             labelText: 'Password',
                             prefixIcon: const Icon(Icons.lock),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility
-                                    : Icons.visibility_off,
+                            suffixIcon: Consumer<LoginUiProvider>(
+                              builder: (context, ui, _) => IconButton(
+                                icon: Icon(
+                                  ui.obscurePassword
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                ),
+                                onPressed: ui.toggleObscure,
                               ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
-                              },
                             ),
                           ),
                           validator: (value) {
@@ -151,29 +143,31 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 32),
                         SizedBox(
                           width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _login,
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                          child: Consumer<LoginUiProvider>(
+                            builder: (context, ui, _) => ElevatedButton(
+                              onPressed: ui.isLoading ? null : _login,
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                               ),
-                            ),
-                            child: _isLoading
-                                ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                                : const Text(
-                              'Login',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              child: ui.isLoading
+                                  ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Login',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                             ),
                           ),
                         ),

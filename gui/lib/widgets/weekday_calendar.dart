@@ -78,7 +78,7 @@ class WeekdayTwoWeekCalendar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final monthStart = DateTime(focusedDay.year, focusedDay.month, 1);
-    final title = DateFormat('MMMM yyyy').format(monthStart);
+    final title = DateFormat('LLLL y.', 'hr').format(monthStart);
 
     final days = _buildMonthGridDays();
 
@@ -105,7 +105,7 @@ class WeekdayTwoWeekCalendar extends StatelessWidget {
         // Day-of-week header (Mon..Fri)
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: const [_DowLabel('Mon'), _DowLabel('Tue'), _DowLabel('Wed'), _DowLabel('Thu'), _DowLabel('Fri')],
+          children: const [_DowLabel('Pon'), _DowLabel('Uto'), _DowLabel('Sri'), _DowLabel('Čet'), _DowLabel('Pet')],
         ),
         const SizedBox(height: 8),
         // 4–6 rows x 5 columns grid
