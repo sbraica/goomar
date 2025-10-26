@@ -35,6 +35,15 @@ class BookingFormProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  // Reset all selections to initial defaults
+  void reset() {
+    focusedDay = DateTime.now();
+    selectedDay = null;
+    selectedTime = null;
+    selectedService = ServiceType.small;
+    notifyListeners();
+  }
+
   // Helpers
   String formatTimeOfDay(TimeOfDay t) {
     final dt = DateTime(0, 1, 1, t.hour, t.minute);

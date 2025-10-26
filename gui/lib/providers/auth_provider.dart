@@ -15,11 +15,7 @@ class AuthProvider with ChangeNotifier {
 
     // Mock validation
     if (username == 'operator' && password == 'password') {
-      _currentUser = User(
-        id: '1',
-        username: username,
-        role: 'operator',
-      );
+      _currentUser = User(id: '1', username: username, role: 'operator');
       notifyListeners();
       return true;
     }

@@ -31,24 +31,17 @@ class _BookingScreenState extends State<BookingScreen> {
   void _submitBooking() {
     final form = Provider.of<BookingFormProvider>(context, listen: false);
     if (_formKey.currentState!.validate() && form.selectedDay != null && form.selectedTime != null) {
-      final start = DateTime(
-        form.selectedDay!.year,
-        form.selectedDay!.month,
-        form.selectedDay!.day,
-        form.selectedTime!.hour,
-        form.selectedTime!.minute,
-      );
+      final start = DateTime(form.selectedDay!.year, form.selectedDay!.month, form.selectedDay!.day, form.selectedTime!.hour, form.selectedTime!.minute);
 
       final reservation = Reservation(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: _nameController.text,
-        email: _emailController.text,
-        phoneNumber: _phoneController.text,
-        serviceType: form.selectedService,
-        reservationDate: start,
-        durationMinutes: form.durationMinutes,
-        createdAt: DateTime.now(),
-      );
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          name: _nameController.text,
+          email: _emailController.text,
+          phoneNumber: _phoneController.text,
+          serviceType: form.selectedService,
+          reservationDate: start,
+          durationMinutes: form.durationMinutes,
+          createdAt: DateTime.now());
 
       Provider.of<ReservationProvider>(context, listen: false).addReservation(reservation);
 
@@ -56,26 +49,25 @@ class _BookingScreenState extends State<BookingScreen> {
           context: context,
           builder: (ctx) => AlertDialog(
                   title: const Text('Success!'),
-                  content: const Text(
-                    'Your reservation has been submitted successfully. '
-                    'You will receive a confirmation once approved.',
-                  ),
+                  content: const Text('Your reservation has been submitted successfully. You will receive a confirmation once approved.'),
                   actions: [
                     TextButton(
-                        onPressed: () {
-                          Navigator.of(ctx).pop();
-                          Navigator.of(context).pop();
-                        },
-                        child: const Text('OK'))
+                      onPressed: () {
+                        // Close the dialog and clear the form & provider state
+                        Navigator.of(ctx).pop();
+                        _formKey.currentState?.reset();
+                        _nameController.clear();
+                        _emailController.clear();
+                        _phoneController.clear();
+                        Provider.of<BookingFormProvider>(context, listen: false).reset();
+                      },
+                      child: const Text('OK'),
+                    )
                   ]));
     } else if (form.selectedDay == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a date')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a date')));
     } else if (form.selectedTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a time slot')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a time slot')));
     }
   }
 
@@ -93,9 +85,7 @@ class _BookingScreenState extends State<BookingScreen> {
                         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                           Card(
                               elevation: 4,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                               child: Padding(
                                   padding: const EdgeInsets.all(16.0),
                                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -126,16 +116,15 @@ class _BookingScreenState extends State<BookingScreen> {
                                         }),
                                     const SizedBox(height: 16),
                                     TextFormField(
-                                      controller: _phoneController,
-                                      decoration: const InputDecoration(labelText: 'Phone Number', prefixIcon: Icon(Icons.phone)),
-                                      keyboardType: TextInputType.phone,
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Please enter your phone number';
-                                        }
-                                        return null;
-                                      },
-                                    ),
+                                        controller: _phoneController,
+                                        decoration: const InputDecoration(labelText: 'Phone Number', prefixIcon: Icon(Icons.phone)),
+                                        keyboardType: TextInputType.phone,
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'Please enter your phone number';
+                                          }
+                                          return null;
+                                        }),
                                     const SizedBox(height: 16),
                                     TextFormField(
                                         controller: _phoneController,
@@ -157,7 +146,8 @@ class _BookingScreenState extends State<BookingScreen> {
                                       Expanded(
                                           child: Wrap(spacing: 8, runSpacing: 8, children: [
                                         ChoiceChip(
-                                            label: Text('Small', style: TextStyle(color: form.selectedService == ServiceType.small ? Colors.white : null, fontWeight: FontWeight.w600)),
+                                            label: Text('Small',
+                                                style: TextStyle(color: form.selectedService == ServiceType.small ? Colors.white : null, fontWeight: FontWeight.w600)),
                                             selected: form.selectedService == ServiceType.small,
                                             showCheckmark: false,
                                             selectedColor: Theme.of(context).primaryColor,
@@ -203,10 +193,8 @@ class _BookingScreenState extends State<BookingScreen> {
                                             return Wrap(spacing: 8, runSpacing: 8, children: [
                                               for (final t in slots)
                                                 ChoiceChip(
-                                                    label: Text(
-                                                      form.formatTimeOfDay(t),
-                                                      style: TextStyle(color: form.selectedTime == t ? Colors.white : null, fontWeight: FontWeight.w600),
-                                                    ),
+                                                    label: Text(form.formatTimeOfDay(t),
+                                                        style: TextStyle(color: form.selectedTime == t ? Colors.white : null, fontWeight: FontWeight.w600)),
                                                     selected: form.selectedTime == t,
                                                     showCheckmark: false,
                                                     selectedColor: Theme.of(context).primaryColor,
@@ -227,14 +215,8 @@ class _BookingScreenState extends State<BookingScreen> {
                                       } else {
                                         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [calendarWidget, const SizedBox(height: 16), timeWidget]);
                                       }
-                                    }),
-                                    if (form.selectedDay != null)
-                                      Padding(
-                                          padding: const EdgeInsets.only(top: 16.0),
-                                          child: Text('Selected: ${DateFormat('d. MMMM y.', 'hr').format(form.selectedDay!)}',
-                                              style: TextStyle(fontSize: 16, color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)))
+                                    })
                                   ]))),
-
                           const SizedBox(height: 24),
                           ElevatedButton(
                               onPressed: _submitBooking,

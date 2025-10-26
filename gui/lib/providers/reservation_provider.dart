@@ -34,12 +34,6 @@ class ReservationProvider with ChangeNotifier {
   }
 
   List<DateTime> getBookedDates() {
-    return _reservations
-        .map((r) => DateTime(
-      r.reservationDate.year,
-      r.reservationDate.month,
-      r.reservationDate.day,
-    ))
-        .toList();
+    return _reservations.map((r) => DateTime(r.reservationDate.year, r.reservationDate.month, r.reservationDate.day)).toList();
   }
 }
