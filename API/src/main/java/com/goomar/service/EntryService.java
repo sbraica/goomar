@@ -18,8 +18,8 @@ public class EntryService implements IEntryService {
     public int insertReservation(ReservationRest rr) {
         log.info(">>cuVehicle({})", rr);
         if (rr.getId() == 0) {
-            return ctx.insertInto(ENTRIES, ENTRIES.DATE_TIME, ENTRIES.USERNAME, ENTRIES.PHONE, ENTRIES.EMAIL, ENTRIES.LONG_SERVICE, ENTRIES.LONG_SERVICE)
-                    .values(rr.getDate(), rr.getUsername(), rr.getPhone(), rr.getEmail(), rr.getLongService(), false).returningResult(ENTRIES.ID).fetchOne().value1();
+            return ctx.insertInto(ENTRIES, ENTRIES.DATE_TIME, ENTRIES.USERNAME, ENTRIES.PHONE, ENTRIES.EMAIL, ENTRIES.REGISTRATION, ENTRIES.LONG_SERVICE, ENTRIES.CONFIRMED)
+                    .values(rr.getDate(), rr.getUsername(), rr.getPhone(), rr.getEmail(), rr.getRegistration(), rr.getLongService(), false).returningResult(ENTRIES.ID).fetchOne().value1();
         } else {
             ctx.update(ENTRIES).set(ENTRIES.CONFIRMED, true).where(ENTRIES.ID.eq(rr.getId())).execute();
             return rr.getId();
