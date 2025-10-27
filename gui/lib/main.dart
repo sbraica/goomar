@@ -8,6 +8,7 @@ import 'providers/auth_provider.dart';
 import 'providers/booking_form_provider.dart';
 import 'providers/login_ui_provider.dart';
 import 'providers/approval_ui_provider.dart';
+import 'providers/booking_ui_provider.dart';
 import 'screens/public/booking_screen.dart';
 
 Future<void> main() async {
@@ -27,6 +28,7 @@ class MyApp extends StatelessWidget {
           ChangeNotifierProvider(create: (_) => ReservationProvider()),
           ChangeNotifierProvider(create: (_) => AuthProvider()),
           ChangeNotifierProvider(create: (_) => BookingFormProvider()),
+          ChangeNotifierProvider(create: (_) => BookingUiProvider()),
           ChangeNotifierProvider(create: (_) => LoginUiProvider()),
           ChangeNotifierProvider(create: (_) => ApprovalUiProvider()),
         ],

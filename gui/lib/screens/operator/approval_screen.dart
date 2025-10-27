@@ -85,13 +85,13 @@ class ApprovalScreen extends StatelessWidget {
               onApprove: () {
                 _showConfirmDialog(context, 'Approve Reservation', 'Are you sure you want to approve this reservation?', () {
                   provider.approveReservation(reservation.id);
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Reservation for ${reservation.name} approved'), backgroundColor: Colors.green));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Reservation for ${reservation.username} approved'), backgroundColor: Colors.green));
                 });
               },
               onReject: () {
                 _showConfirmDialog(context, 'Reject Reservation', 'Are you sure you want to reject this reservation?', () {
                   provider.rejectReservation(reservation.id);
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Reservation for ${reservation.name} rejected'), backgroundColor: Colors.red));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Reservation for ${reservation.username} rejected'), backgroundColor: Colors.red));
                 });
               });
         });

@@ -7,11 +7,11 @@ class ReservationProvider with ChangeNotifier {
   List<Reservation> get reservations => [..._reservations];
 
   List<Reservation> get pendingReservations {
-    return _reservations.where((r) => r.isPending).toList();
+    return _reservations.where((r) => r.pending).toList();
   }
 
   List<Reservation> get approvedReservations {
-    return _reservations.where((r) => r.isApproved).toList();
+    return _reservations.where((r) => r.approved).toList();
   }
 
   void addReservation(Reservation reservation) {
@@ -19,21 +19,21 @@ class ReservationProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void approveReservation(String id) {
+  void approveReservation(int id) {
     final index = _reservations.indexWhere((r) => r.id == id);
     if (index != -1) {
-      _reservations[index].isApproved = true;
-      _reservations[index].isPending = false;
+      _reservations[index].approved = true;
+      _reservations[index].pending = false;
       notifyListeners();
     }
   }
 
-  void rejectReservation(String id) {
+  void rejectReservation(int id) {
     _reservations.removeWhere((r) => r.id == id);
     notifyListeners();
   }
 
   List<DateTime> getBookedDates() {
-    return _reservations.map((r) => DateTime(r.reservationDate.year, r.reservationDate.month, r.reservationDate.day)).toList();
+    return _reservations.map((r) => DateTime(r.dateTime.year, r.dateTime.month, r.dateTime.day)).toList();
   }
 }

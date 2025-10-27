@@ -7,7 +7,7 @@ class BookingFormProvider with ChangeNotifier {
   DateTime focusedDay = DateTime.now();
   DateTime? selectedDay;
   TimeOfDay? selectedTime;
-  ServiceType selectedService = ServiceType.small;
+  bool selectedService = false;
 
   // Actions
   void setFocusedMonth(DateTime monthStart) {
@@ -23,7 +23,7 @@ class BookingFormProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void selectService(ServiceType serviceType) {
+  void selectService(bool serviceType) {
     selectedService = serviceType;
     // reset time when service changes
     selectedTime = null;
@@ -40,7 +40,7 @@ class BookingFormProvider with ChangeNotifier {
     focusedDay = DateTime.now();
     selectedDay = null;
     selectedTime = null;
-    selectedService = ServiceType.small;
+    selectedService = false;
     notifyListeners();
   }
 
@@ -53,7 +53,7 @@ class BookingFormProvider with ChangeNotifier {
   List<TimeOfDay> generateTimeSlots() {
     if (selectedDay == null) return [];
     final List<TimeOfDay> slots = [];
-    final int step = selectedService == ServiceType.small ? 15 : 30;
+    final int step = selectedService ? 30 : 15;
 
     // Working hours
     TimeOfDay start = const TimeOfDay(hour: 8, minute: 0);
@@ -83,6 +83,4 @@ class BookingFormProvider with ChangeNotifier {
     }
     return slots;
   }
-
-  int get durationMinutes => selectedService == ServiceType.small ? 15 : 30;
 }

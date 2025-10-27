@@ -4,39 +4,67 @@ info:
   version: 1.0.0
   description: API for creating date/time/type entries in Goomar application
 
+security:
+  - bearerAuth: [ ]
+servers:
+  - url: http://localhost:9999
 paths:
-  /entries:
+  /V1/reservation:
     post:
       tags:
-        - Entries
-      summary: Create a new entry
-      description: Creates a new record with a date, time, type, and email.
+        - Reservation
+      summary: Post reservation from public page
+      operationId: createReservation
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-                - date
-                - time
-                - type
-                - email
-              properties:
-                date:
-                  type: string
-                  format: date
-                  example: "2025-09-01"
-                time:
-                  type: string
-                  format: time
-                  example: "14:30:00"
-                type:
-                  type: integer
-                  example: 1
-                email:
-                  type: string
-                  example: "user@example.com"
+              $ref: '#/components/schemas/ReservationRest'
       responses:
-        "201":
-          description: Entry created successfully (no content returned)
+        '201':
+          description: create/update reservation
+          content:
+            application/json:
+              schema:
+                type: integer
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT  # optional, for documentation purposes only
+  schemas:
+    ReservationRest:
+      required:
+        - id
+        - username
+        - email
+        - phone
+        - registration
+        - longService
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+          minLength: 5
+          maxLength: 128
+        date:
+          type: string
+          format: date-time
+        email:
+          type: string
+          minLength: 5
+          maxLength: 80
+        phone:
+          type: string
+          minLength: 5
+          maxLength: 80
+        registration:
+          type: string
+          minLength: 5
+          maxLength: 80
+        longService:
+          type: boolean

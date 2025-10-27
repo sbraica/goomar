@@ -2,13 +2,9 @@ package com.goomar.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.openapitools.model.EntriesPostRequest;
-import org.springframework.stereotype.Service;
 import org.jooq.DSLContext;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import org.openapitools.model.ReservationRest;
+import org.springframework.stereotype.Service;
 
 import static org.jooq.generated.tables.Entries.ENTRIES;
 
@@ -19,11 +15,14 @@ public class EntryService implements IEntryService {
     final DSLContext ctx;
 
     @Override
-    public void entriesPost(EntriesPostRequest er) {
-        log.info(">>cuUser({})", er);
-        LocalDate date = er.getDate();
-        LocalTime time = LocalTime.parse(er.getTime());
-        LocalDateTime timestamp = LocalDateTime.of(date, time);
-        ctx.insertInto(ENTRIES, ENTRIES.STAMP).values(timestamp).execute();
+    public int insertReservation(ReservationRest rr) {
+        log.info(">>cuVehicle({})", rr);
+        if (rr.getId() == 0) {
+            return ctx.insertInto(ENTRIES, ENTRIES.DATE_TIME, ENTRIES.USERNAME, ENTRIES.PHONE, ENTRIES.EMAIL, ENTRIES.LONG_SERVICE, ENTRIES.LONG_SERVICE)
+                    .values(rr.getDate(), rr.getUsername(), rr.getPhone(), rr.getEmail(), rr.getLongService(), false).returningResult(ENTRIES.ID).fetchOne().value1();
+        } else {
+            ctx.update(ENTRIES).set(ENTRIES.CONFIRMED, true).where(ENTRIES.ID.eq(rr.getId())).execute();
+            return rr.getId();
+        }
     }
 }

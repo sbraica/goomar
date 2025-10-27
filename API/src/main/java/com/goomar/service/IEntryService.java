@@ -1,7 +1,7 @@
 package com.goomar.service;
 
-import org.openapitools.model.EntriesPostRequest;
+import org.openapitools.model.ReservationRest;
 
 public interface IEntryService {
-    void entriesPost(EntriesPostRequest entriesPostRequest);
+    int insertReservation(ReservationRest reservationRest);
 }
