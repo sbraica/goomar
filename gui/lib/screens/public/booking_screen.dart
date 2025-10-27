@@ -255,6 +255,18 @@ class _BookingScreenState extends State<BookingScreen> {
                                   ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                                   : const Text('Submit Reservation', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
                           const SizedBox(height: 16),
+                          Center(
+                            child: TextButton.icon(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                                );
+                              },
+                              icon: const Icon(Icons.lock_open),
+                              label: const Text('Operator login'),
+                            ),
+                          ),
                         ]))))));
   }
 }
