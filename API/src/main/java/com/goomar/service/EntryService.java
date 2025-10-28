@@ -6,6 +6,8 @@ import org.jooq.DSLContext;
 import org.openapitools.model.ReservationRest;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 import static org.jooq.generated.tables.Entries.ENTRIES;
 
 @Service
@@ -16,13 +18,32 @@ public class EntryService implements IEntryService {
 
     @Override
     public int insertReservation(ReservationRest rr) {
-        log.info(">>cuVehicle({})", rr);
+        log.info(">>insertReservation({})", rr);
         if (rr.getId() == 0) {
             return ctx.insertInto(ENTRIES, ENTRIES.DATE_TIME, ENTRIES.USERNAME, ENTRIES.PHONE, ENTRIES.EMAIL, ENTRIES.REGISTRATION, ENTRIES.LONG_SERVICE, ENTRIES.CONFIRMED)
-                    .values(rr.getDate(), rr.getUsername(), rr.getPhone(), rr.getEmail(), rr.getRegistration(), rr.getLongService(), false).returningResult(ENTRIES.ID).fetchOne().value1();
+                    .values(rr.getDateTime(), rr.getUsername(), rr.getPhone(), rr.getEmail(), rr.getRegistration(), rr.getLongService(), false).returningResult(ENTRIES.ID).fetchOne().value1();
         } else {
             ctx.update(ENTRIES).set(ENTRIES.CONFIRMED, true).where(ENTRIES.ID.eq(rr.getId())).execute();
             return rr.getId();
         }
+    }
+
+    @Override
+    public List<ReservationRest> getReservations(String authorization) {
+        log.info(">>getReservations()");
+        return ctx.select(ENTRIES.ID, ENTRIES.USERNAME, ENTRIES.DATE_TIME, ENTRIES.EMAIL, ENTRIES.PHONE, ENTRIES.REGISTRATION, ENTRIES.LONG_SERVICE, ENTRIES.EMAIL, ENTRIES.CONFIRMED).from(ENTRIES).fetchInto(ReservationRest.class);
+    }
+
+    //TODO: duplicate?
+    @Override
+    public void createAppointment(int appId) {
+        log.info(">>createAppointment({})", appId);
+        ctx.update(ENTRIES).set(ENTRIES.CONFIRMED, true).where(ENTRIES.ID.eq(appId)).execute();
+    }
+
+    @Override
+    public List<ReservationRest> getAppointments(String authorization) {
+        log.info(">>getAppointments()");
+        return ctx.select(ENTRIES.ID, ENTRIES.USERNAME, ENTRIES.DATE_TIME, ENTRIES.EMAIL, ENTRIES.PHONE, ENTRIES.REGISTRATION, ENTRIES.LONG_SERVICE, ENTRIES.EMAIL, ENTRIES.CONFIRMED).from(ENTRIES).fetchInto(ReservationRest.class);
     }
 }

@@ -17,6 +17,28 @@ class ApiClient {
 
   Uri _uri(String path) => Uri.parse('$baseUrl$path');
 
+  /// Fetch all reservations.
+  /// Throws [ApiException] on non-2xx or network errors.
+  Future<List<Reservation>> getReservations() async {
+    final url = _uri('/V1/reservation');
+    try {
+      final resp = await http.get(url).timeout(const Duration(seconds: 10));
+      if (resp.statusCode < 200 || resp.statusCode >= 300) {
+        throw ApiException('Failed to fetch reservations: HTTP ${resp.statusCode}', resp.body);
+      }
+      final decoded = jsonDecode(resp.body);
+      if (decoded is List) {
+        return decoded.map<Reservation>((e) => Reservation.fromJson(e as Map<String, dynamic>)).toList();
+      } else {
+        throw ApiException('Unexpected response format when fetching reservations', resp.body);
+      }
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      throw ApiException('Network error while fetching reservations', e.toString());
+    }
+  }
+
   /// Posts a reservation to the backend as JSON body.
   /// Throws [ApiException] on non-2xx or network errors.
   Future<void> postReservation(Reservation reservation) async {

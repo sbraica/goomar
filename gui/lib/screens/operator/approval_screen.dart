@@ -4,18 +4,94 @@ import 'package:intl/intl.dart';
 import '../../providers/reservation_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/reservation_card.dart';
-import '../../providers/approval_ui_provider.dart';
+import '../../widgets/week_time_grid.dart';
 
-class ApprovalScreen extends StatelessWidget {
+class ApprovalScreen extends StatefulWidget {
   const ApprovalScreen({Key? key}) : super(key: key);
+
+  @override
+  State<ApprovalScreen> createState() => _ApprovalScreenState();
+}
+
+class _ApprovalScreenState extends State<ApprovalScreen> {
+  // Local state for operator scheduler view
+  DateTime focusedDay = DateTime.now();
+  DateTime? selectedDay;
+  TimeOfDay? selectedTime;
+  final int slotMinutes = 15; // fixed 15-minute slots
+
+  DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  DateTime _mondayOf(DateTime d) => _dateOnly(d).subtract(Duration(days: d.weekday - DateTime.monday));
+
+  @override
+  void initState() {
+    super.initState();
+    // Load reservations when screen opens
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        await Provider.of<ReservationProvider>(context, listen: false).loadReservations();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to load reservations from server'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final reservationProvider = Provider.of<ReservationProvider>(context);
 
+    // Week bounds
+    final weekStart = _mondayOf(focusedDay);
+    final weekEnd = weekStart.add(const Duration(days: 7));
+
+    // Build occupied set using current slotMinutes.
+    final occupied = <DateTime>{};
+    for (final r in reservationProvider.reservations) {
+      final dt = r.dateTime;
+      if (dt.isBefore(weekStart) || !dt.isBefore(weekEnd)) continue;
+      // Determine reservation duration by type: longService = 30 min, else 15 min
+      final int duration = r.longService ? 30 : 15;
+      // Number of grid slots to block under current granularity
+      final int blocks = (duration + slotMinutes - 1) ~/ slotMinutes; // ceil div
+      DateTime cur = DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute);
+      for (int i = 0; i < blocks; i++) {
+        occupied.add(cur);
+        cur = cur.add(Duration(minutes: slotMinutes));
+      }
+    }
+
+    void onSelectSlot(DateTime slot) {
+      setState(() {
+        selectedDay = slot;
+        selectedTime = TimeOfDay(hour: slot.hour, minute: slot.minute);
+      });
+    }
+
+    final firstDay = DateTime.now();
+    final lastDay = DateTime.now().add(const Duration(days: 90));
+
     return Scaffold(
         appBar: AppBar(title: const Text('Reservation Management'), actions: [
+          IconButton(
+              onPressed: () async {
+                try {
+                  await reservationProvider.loadReservations();
+                } catch (_) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Failed to refresh reservations'), backgroundColor: Colors.red),
+                    );
+                  }
+                }
+              },
+              tooltip: 'Refresh',
+              icon: const Icon(Icons.refresh)),
           Padding(
               padding: const EdgeInsets.only(right: 8.0),
               child: Center(
@@ -34,89 +110,44 @@ class ApprovalScreen extends StatelessWidget {
               })
         ]),
         body: Column(children: [
-          Container(
-              color: Theme.of(context).primaryColor.withOpacity(0.1),
-              child: Row(children: [
-                Expanded(child: _buildTabButton(context, 'Pending', 0, reservationProvider.pendingReservations.length)),
-                Expanded(child: _buildTabButton(context, 'Approved', 1, reservationProvider.approvedReservations.length))
-              ])),
-          Expanded(child: Provider.of<ApprovalUiProvider>(context).selectedIndex == 0 ? _buildPendingList(reservationProvider) : _buildApprovedList(reservationProvider))
+          if (reservationProvider.isLoading) const LinearProgressIndicator(minHeight: 2),
+          // Operator week scheduler (fixed 15-minute slots)
+          Expanded(
+            child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  // The grid below will expand to fill the remaining space
+                  Expanded(
+                    child: WeekTimeGrid(
+                        weekStart: weekStart,
+                        onPrevWeek: () {
+                          final prev = weekStart.subtract(const Duration(days: 7));
+                          setState(() => focusedDay = DateTime(prev.year, prev.month, prev.day));
+                        },
+                        onNextWeek: () {
+                          final next = weekStart.add(const Duration(days: 7));
+                          setState(() => focusedDay = DateTime(next.year, next.month, next.day));
+                        },
+                        selectedDay: selectedDay,
+                        selectedTime: selectedTime,
+                        onSelectSlot: onSelectSlot,
+                        dayStart: const TimeOfDay(hour: 8, minute: 0),
+                        dayEnd: const TimeOfDay(hour: 16, minute: 0),
+                        slotMinutes: slotMinutes,
+                        lunchStart: const TimeOfDay(hour: 12, minute: 0),
+                        lunchEnd: const TimeOfDay(hour: 13, minute: 0),
+                        occupied: occupied,
+                        firstDay: firstDay,
+                        lastDay: lastDay),
+                  ),
+                  if (selectedDay != null && selectedTime != null)
+                    Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text('Selected: ${DateFormat('EEE d.MM.').format(selectedDay!)} ${selectedTime!.format(context)}', style: TextStyle(color: Colors.grey[700])))
+                ])),
+          )
+          // Lists (no tabs): Pending section then Approved section
         ]));
-  }
-
-  Widget _buildTabButton(BuildContext context, String title, int index, int count) {
-    final ui = Provider.of<ApprovalUiProvider>(context);
-    final isSelected = ui.selectedIndex == index;
-    return InkWell(
-        onTap: () => ui.selectTab(index),
-        child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            decoration: BoxDecoration(border: Border(bottom: BorderSide(color: isSelected ? Theme.of(context).primaryColor : Colors.transparent, width: 3))),
-            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Text(title,
-                  style: TextStyle(fontSize: 16, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? Theme.of(context).primaryColor : Colors.grey)),
-              const SizedBox(width: 8),
-              Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(color: isSelected ? Theme.of(context).primaryColor : Colors.grey, borderRadius: BorderRadius.circular(12)),
-                  child: Text(count.toString(), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)))
-            ])));
-  }
-
-  Widget _buildPendingList(ReservationProvider provider) {
-    final pending = provider.pendingReservations;
-
-    if (pending.isEmpty) {
-      return Center(
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(Icons.inbox, size: 80, color: Colors.grey),
-        const SizedBox(height: 16),
-        Text('No pending reservations', style: TextStyle(fontSize: 18, color: Colors.grey))
-      ]));
-    }
-
-    return ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: pending.length,
-        itemBuilder: (context, index) {
-          final reservation = pending[index];
-          return ReservationCard(
-              reservation: reservation,
-              onApprove: () {
-                _showConfirmDialog(context, 'Approve Reservation', 'Are you sure you want to approve this reservation?', () {
-                  provider.approveReservation(reservation.id);
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Reservation for ${reservation.username} approved'), backgroundColor: Colors.green));
-                });
-              },
-              onReject: () {
-                _showConfirmDialog(context, 'Reject Reservation', 'Are you sure you want to reject this reservation?', () {
-                  provider.rejectReservation(reservation.id);
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Reservation for ${reservation.username} rejected'), backgroundColor: Colors.red));
-                });
-              });
-        });
-  }
-
-  Widget _buildApprovedList(ReservationProvider provider) {
-    final approved = provider.approvedReservations;
-
-    if (approved.isEmpty) {
-      return Center(
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(Icons.check_circle_outline, size: 80, color: Colors.grey),
-        const SizedBox(height: 16),
-        Text('No approved reservations yet', style: TextStyle(fontSize: 18, color: Colors.grey))
-      ]));
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: approved.length,
-      itemBuilder: (context, index) {
-        final reservation = approved[index];
-        return ReservationCard(reservation: reservation, isApproved: true);
-      },
-    );
   }
 
   void _showConfirmDialog(BuildContext context, String title, String message, VoidCallback onConfirm) {

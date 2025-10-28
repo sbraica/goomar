@@ -9,7 +9,6 @@ import 'providers/reservation_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/booking_form_provider.dart';
 import 'providers/login_ui_provider.dart';
-import 'providers/approval_ui_provider.dart';
 import 'providers/booking_ui_provider.dart';
 import 'screens/public/booking_screen.dart';
 import 'screens/operator/login_screen.dart';
@@ -37,7 +36,6 @@ class MyApp extends StatelessWidget {
           ChangeNotifierProvider(create: (_) => BookingFormProvider()),
           ChangeNotifierProvider(create: (_) => BookingUiProvider()),
           ChangeNotifierProvider(create: (_) => LoginUiProvider()),
-          ChangeNotifierProvider(create: (_) => ApprovalUiProvider()),
         ],
         child: MaterialApp(
           title: 'Tyre Change Reservation',

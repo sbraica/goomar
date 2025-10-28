@@ -2,6 +2,7 @@ package com.goomar.controller;
 
 import com.goomar.service.IEntryService;
 import lombok.RequiredArgsConstructor;
+import org.openapitools.api.AppointmentsApi;
 import org.openapitools.api.ReservationApi;
 import org.openapitools.model.ReservationRest;
 import org.springframework.http.HttpStatus;
@@ -12,16 +13,17 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
-public class ReservationController implements ReservationApi {
+public class AppointmentController implements AppointmentsApi {
     private final IEntryService entryService;
 
     @Override
-    public ResponseEntity<Integer> createReservation(ReservationRest reservationRest) {
-        return new ResponseEntity(entryService.insertReservation(reservationRest), HttpStatus.OK);
+    public ResponseEntity<Void> createAppointment(Integer appId, String authorization) {
+        entryService.createAppointment(appId);
+        return new ResponseEntity(HttpStatus.OK);
     }
 
     @Override
-    public ResponseEntity<List<ReservationRest>> getUsers(String authorization) {
-        return new ResponseEntity(entryService.getReservations(authorization), HttpStatus.OK);
+    public ResponseEntity<List<ReservationRest>> getAppointments(String authorization)  {
+        return new ResponseEntity(entryService.getAppointments(authorization), HttpStatus.OK);
     }
 }

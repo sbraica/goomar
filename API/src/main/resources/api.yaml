@@ -9,7 +9,93 @@ security:
 servers:
   - url: http://localhost:9999
 paths:
+  /V1/token:
+    post:
+      tags:
+        - Tokens
+      summary: Generate bearer token
+      operationId: getToken
+      requestBody:
+        required: true
+        content:
+          application/json; charset=utf-8:
+            schema:
+              $ref: '#/components/schemas/GetTokenReq'
+      responses:
+        '200':
+          description: Token response
+          content:
+            application/json; charset=utf-8:
+              schema:
+                $ref: '#/components/schemas/TokenRsp'
+
+  /V1/appointments:
+    get:
+      tags:
+        - Appointments
+      summary: Get all application users
+      operationId: getAppointments
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: List of application users
+          content:
+            application/json; charset=utf-8:
+              schema:
+                type: array
+                default: [ ]
+                items:
+                  $ref: "#/components/schemas/ReservationRest"
+
+  /V1/appointments/{appId}:
+    patch:
+      tags:
+        - Appointments
+      summary: Delete user by Id
+      operationId: createAppointment
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+      responses:
+        '201':
+          description: Single user deleted
+
   /V1/reservation:
+    get:
+      tags:
+        - Reservation
+      summary: Get all application users
+      operationId: getUsers
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: List of application users
+          content:
+            application/json; charset=utf-8:
+              schema:
+                type: array
+                default: [ ]
+                items:
+                  $ref: "#/components/schemas/ReservationRest"
+
     post:
       tags:
         - Reservation
@@ -18,7 +104,7 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          application/json; charset=utf-8:
             schema:
               type: object
               $ref: '#/components/schemas/ReservationRest'
@@ -36,12 +122,30 @@ components:
       scheme: bearer
       bearerFormat: JWT  # optional, for documentation purposes only
   schemas:
+    GetTokenReq:
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          minLength: 5
+          maxLength: 30
+        password:
+          type: string
+          minLength: 5
+          maxLength: 80
+    TokenRsp:
+      properties:
+        token:
+          type: string
     ReservationRest:
       required:
         - id
         - username
         - email
         - phone
+        - date_time
         - registration
         - longService
       properties:
@@ -51,7 +155,7 @@ components:
           type: string
           minLength: 5
           maxLength: 128
-        date:
+        date_time:
           type: string
           format: date-time
         email:

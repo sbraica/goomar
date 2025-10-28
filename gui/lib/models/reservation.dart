@@ -9,16 +9,41 @@ class Reservation {
   bool approved;
   final DateTime dateTime;
 
-  Reservation(
-      {required this.id,
-      required this.username,
-      required this.email,
-      required this.phone,
-      required this.registration,
-      required this.longService,
-      required this.pending,
-      required this.approved,
-      required this.dateTime});
+  Reservation({
+    required this.id,
+    required this.username,
+    required this.email,
+    required this.phone,
+    required this.registration,
+    required this.longService,
+    required this.pending,
+    required this.approved,
+    required this.dateTime,
+  });
+
+  /// Backend-to-app converter. Accepts both `date` and `dateTime` ISO strings.
+  factory Reservation.fromJson(Map<String, dynamic> json) {
+    DateTime parseDate(dynamic v) {
+      if (v is String) return DateTime.parse(v);
+      throw const FormatException('Invalid date format');
+    }
+
+    // Some backends may omit pending/approved; default to pending=true unless explicitly approved.
+    final bool approved = json['approved'] == true;
+    final bool pending = json.containsKey('pending') ? (json['pending'] == true) : !approved;
+
+    return Reservation(
+      id: (json['id'] ?? 0) is int ? json['id'] as int : int.tryParse('${json['id'] ?? '0'}') ?? 0,
+      username: (json['username'] ?? json['name'] ?? '') as String,
+      email: (json['email'] ?? '') as String,
+      phone: (json['phone'] ?? '') as String,
+      registration: (json['registration'] ?? json['plate'] ?? '') as String,
+      longService: json['longService'] == true,
+      pending: pending,
+      approved: approved,
+      dateTime: json['date'] != null ? parseDate(json['date']) : parseDate(json['dateTime']),
+    );
+  }
 
   Map<String, dynamic> toJson() {
     return {
@@ -28,6 +53,7 @@ class Reservation {
       'phone': phone,
       'registration': registration,
       'longService': longService,
+      // Backend expects `date` per current integration
       'date': dateTime.toIso8601String(),
     };
   }

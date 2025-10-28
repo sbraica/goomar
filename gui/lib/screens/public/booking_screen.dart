@@ -26,7 +26,6 @@ class _BookingScreenState extends State<BookingScreen> {
     final ui = Provider.of<BookingUiProvider>(context, listen: false);
     if (_formKey.currentState!.validate() && form.selectedDay != null && form.selectedTime != null) {
       final start = DateTime(form.selectedDay!.year, form.selectedDay!.month, form.selectedDay!.day, form.selectedTime!.hour, form.selectedTime!.minute);
-      final random = Random();
       final reservation = Reservation(
           id: 0,
           pending: true,
