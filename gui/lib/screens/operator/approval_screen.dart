@@ -43,7 +43,6 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
     });
   }
 
-
   @override
   void dispose() {
     super.dispose();
@@ -96,12 +95,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
 
       // Visual span uses exact start (can be off-grid) and duration from service type
       final int duration = r.longService ? 30 : 15;
-      spans.add(ReservationSpan(
-          id: r.id,
-          start: DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute),
-          durationMinutes: duration,
-          label: r.username,
-          approved: r.approved));
+      spans.add(ReservationSpan(id: r.id, start: DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute), durationMinutes: duration, label: r.username, approved: r.approved));
 
       // Disable taps on any 15-min grid cell that overlaps with the reservation interval
       final DateTime resStart = DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute);
@@ -163,67 +157,59 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
           if (reservationProvider.isLoading) const LinearProgressIndicator(minHeight: 2),
           // Operator week scheduler (fixed 15-minute slots)
           Expanded(
-            child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                  // The grid below will expand to fill the remaining space
-                  Expanded(
-                    child: WeekTimeGrid(
-                        weekStart: weekStart,
-                        onPrevWeek: () async {
-                          if (reservationProvider.isLoading) return;
-                          final prev = weekStart.subtract(const Duration(days: 7));
-                          setState(() => focusedDay = DateTime(prev.year, prev.month, prev.day));
-                          try {
-                            await reservationProvider.loadReservations(weekStart: prev);
-                          } catch (_) {
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Failed to load reservations for previous week'), backgroundColor: Colors.red),
-                              );
-                            }
-                          }
-                        },
-                        onNextWeek: () async {
-                          if (reservationProvider.isLoading) return;
-                          final next = weekStart.add(const Duration(days: 7));
-                          setState(() => focusedDay = DateTime(next.year, next.month, next.day));
-                          try {
-                            await reservationProvider.loadReservations(weekStart: next);
-                          } catch (_) {
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Failed to load reservations for next week'), backgroundColor: Colors.red),
-                              );
-                            }
-                          }
-                        },
-                        selectedDay: selectedDay,
-                        selectedTime: selectedTime,
-                        onSelectSlot: onSelectSlot,
-                        onSpanIconPressed: (span) {
-                          if (span.id == null) return;
-                          final makeApproved = !span.approved;
-                          Provider.of<ReservationProvider>(context, listen: false).setApproved(span.id!, makeApproved);
-                          final msg = makeApproved ? 'Marked as confirmed' : 'Marked as unconfirmed';
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-                        },
-                        dayStart: const TimeOfDay(hour: 8, minute: 0),
-                        dayEnd: const TimeOfDay(hour: 16, minute: 0),
-                        slotMinutes: slotMinutes,
-                        lunchStart: const TimeOfDay(hour: 12, minute: 0),
-                        lunchEnd: const TimeOfDay(hour: 13, minute: 0),
-                        occupied: occupied,
-                        firstDay: firstDay,
-                        lastDay: lastDay,
-                        spans: spans),
-                  ),
-                  if (selectedDay != null && selectedTime != null)
-                    Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Text('Selected: ${DateFormat('EEE d.MM.').format(selectedDay!)} ${selectedTime!.format(context)}', style: TextStyle(color: Colors.grey[700])))
-                ])),
-          )
+              child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    // The grid below will expand to fill the remaining space
+                    Expanded(
+                        child: WeekTimeGrid(
+                            weekStart: weekStart,
+                            onPrevWeek: () async {
+                              if (reservationProvider.isLoading) return;
+                              final prev = weekStart.subtract(const Duration(days: 7));
+                              setState(() => focusedDay = DateTime(prev.year, prev.month, prev.day));
+                              try {
+                                await reservationProvider.loadReservations(weekStart: prev);
+                              } catch (_) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(const SnackBar(content: Text('Failed to load reservations for previous week'), backgroundColor: Colors.red));
+                                }
+                              }
+                            },
+                            onNextWeek: () async {
+                              if (reservationProvider.isLoading) return;
+                              final next = weekStart.add(const Duration(days: 7));
+                              setState(() => focusedDay = DateTime(next.year, next.month, next.day));
+                              try {
+                                await reservationProvider.loadReservations(weekStart: next);
+                              } catch (_) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(const SnackBar(content: Text('Failed to load reservations for next week'), backgroundColor: Colors.red));
+                                }
+                              }
+                            },
+                            selectedDay: selectedDay,
+                            selectedTime: selectedTime,
+                            onSelectSlot: onSelectSlot,
+                            onSpanIconPressed: (span) {
+                              if (span.id == null) return;
+                              final makeApproved = !span.approved;
+                              Provider.of<ReservationProvider>(context, listen: false).setApproved(span.id!, makeApproved);
+                              final msg = makeApproved ? 'Marked as confirmed' : 'Marked as unconfirmed';
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+                            },
+                            dayStart: const TimeOfDay(hour: 8, minute: 0),
+                            dayEnd: const TimeOfDay(hour: 16, minute: 0),
+                            slotMinutes: slotMinutes,
+                            lunchStart: const TimeOfDay(hour: 12, minute: 0),
+                            lunchEnd: const TimeOfDay(hour: 13, minute: 0),
+                            occupied: occupied,
+                            firstDay: firstDay,
+                            lastDay: lastDay,
+                            spans: spans))
+                  ])))
           // Lists (no tabs): Pending section then Approved section
         ]));
   }
