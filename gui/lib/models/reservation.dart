@@ -53,8 +53,7 @@ class Reservation {
       'phone': phone,
       'registration': registration,
       'longService': longService,
-      // Backend expects `date` per current integration
-      'date': date_time.toIso8601String(),
+      'date_time': date_time.toIso8601String(),
     };
   }
 }

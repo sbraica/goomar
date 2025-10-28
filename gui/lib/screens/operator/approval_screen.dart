@@ -43,6 +43,12 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
     });
   }
 
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
@@ -61,7 +67,13 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
       // Duration: longService = 30 min, short = 15 min (grid is 15-min slots)
       final int duration = r.longService ? 30 : 15;
       // Add a visual span so long services render as a single double-height block
-      spans.add(ReservationSpan(start: DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute), durationMinutes: duration, label: 'Reserved'));
+      spans.add(ReservationSpan(
+        id: r.id,
+        start: DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute),
+        durationMinutes: duration,
+        label: r.username,
+        approved: r.approved
+      ));
 
       // Disable taps on the occupied slots underneath
       final int blocks = (duration + slotMinutes - 1) ~/ slotMinutes; // ceil div
@@ -158,6 +170,13 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                         selectedDay: selectedDay,
                         selectedTime: selectedTime,
                         onSelectSlot: onSelectSlot,
+                        onSpanIconPressed: (span) {
+                          if (span.id == null) return;
+                          final makeApproved = !span.approved;
+                          Provider.of<ReservationProvider>(context, listen: false).setApproved(span.id!, makeApproved);
+                          final msg = makeApproved ? 'Marked as confirmed' : 'Marked as unconfirmed';
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+                        },
                         dayStart: const TimeOfDay(hour: 8, minute: 0),
                         dayEnd: const TimeOfDay(hour: 16, minute: 0),
                         slotMinutes: slotMinutes,

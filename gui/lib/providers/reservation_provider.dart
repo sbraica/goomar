@@ -51,6 +51,16 @@ class ReservationProvider with ChangeNotifier {
     }
   }
 
+  void setApproved(int id, bool value) {
+    final index = _reservations.indexWhere((r) => r.id == id);
+    if (index != -1) {
+      _reservations[index].approved = value;
+      // if approved => not pending; if unapproved => pending
+      _reservations[index].pending = !value;
+      notifyListeners();
+    }
+  }
+
   void rejectReservation(int id) {
     _reservations.removeWhere((r) => r.id == id);
     notifyListeners();

@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class ReservationSpan {
+  final int? id; // optional reservation id to map actions
   final DateTime start;
   final int durationMinutes;
   final String? label;
-  const ReservationSpan({required this.start, required this.durationMinutes, this.label});
+  final bool approved;
+  const ReservationSpan({this.id, required this.start, required this.durationMinutes, this.label, this.approved = false});
 }
 
 class WeekTimeGrid extends StatelessWidget {
@@ -16,6 +18,9 @@ class WeekTimeGrid extends StatelessWidget {
   final DateTime? selectedDay;
   final TimeOfDay? selectedTime;
   final ValueChanged<DateTime> onSelectSlot; // returns exact DateTime for the slot
+
+  // New: simple icon action on each reservation span (no popup/menu).
+  final void Function(ReservationSpan span)? onSpanIconPressed;
 
   // Working hours
   final TimeOfDay dayStart;
@@ -43,6 +48,7 @@ class WeekTimeGrid extends StatelessWidget {
     required this.selectedDay,
     required this.selectedTime,
     required this.onSelectSlot,
+    this.onSpanIconPressed,
     required this.dayStart,
     required this.dayEnd,
     required this.slotMinutes,
@@ -290,20 +296,55 @@ class WeekTimeGrid extends StatelessWidget {
                     left: left,
                     width: width,
                     height: height,
-                    child: AbsorbPointer(
-                      absorbing: true, // prevent taps on cells under the block
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade300.withOpacity(0.8),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: Colors.red.shade600, width: 1),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          span.label ?? 'Reserved',
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
-                          textAlign: TextAlign.center,
-                        ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: (span.approved ? Colors.green.shade400 : Colors.red.shade300).withOpacity(0.85),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: span.approved ? Colors.green.shade700 : Colors.red.shade600, width: 1),
+                      ),
+                      child: Stack(
+                        children: [
+                          // Centered username label
+                          if (span.label != null && span.label!.isNotEmpty)
+                            Center(
+                              child: Padding(
+                                // leave space so it doesn't collide with the top-right icon
+                                padding: const EdgeInsets.only(right: 28.0, left: 6.0),
+                                child: Text(
+                                  span.label!,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  softWrap: false,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12,
+                                    shadows: [
+                                      Shadow(offset: Offset(0, 1), blurRadius: 2, color: Colors.black26),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          // Icon-only action in the top-right corner
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            child: IconButton(
+                              padding: const EdgeInsets.all(2),
+                              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                              iconSize: 18,
+                              onPressed: onSpanIconPressed == null || span.id == null
+                                  ? null
+                                  : () => onSpanIconPressed!(span),
+                              icon: Icon(
+                                span.approved ? Icons.undo : Icons.check,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ));

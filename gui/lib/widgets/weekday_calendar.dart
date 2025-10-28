@@ -92,7 +92,6 @@ class WeekdayTwoWeekCalendar extends StatelessWidget {
 
     final weeks = (days.length / 5).ceil();
 
-    // Month view without keyboard navigation
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
