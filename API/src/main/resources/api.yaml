@@ -29,7 +29,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/TokenRsp'
 
-  /V1/appointments:
+  /V1/appointments/{year}/{month}/{day}:
     get:
       tags:
         - Appointments
@@ -41,6 +41,21 @@ paths:
           schema:
             type: string
           required: true
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: month
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: day
+          in: path
+          required: true
+          schema:
+            type: integer
       responses:
         '200':
           description: List of application users
@@ -74,28 +89,6 @@ paths:
           description: Single user deleted
 
   /V1/reservation:
-    get:
-      tags:
-        - Reservation
-      summary: Get all application users
-      operationId: getUsers
-      parameters:
-        - in: header
-          name: Authorization
-          schema:
-            type: string
-          required: true
-      responses:
-        '200':
-          description: List of application users
-          content:
-            application/json; charset=utf-8:
-              schema:
-                type: array
-                default: [ ]
-                items:
-                  $ref: "#/components/schemas/ReservationRest"
-
     post:
       tags:
         - Reservation

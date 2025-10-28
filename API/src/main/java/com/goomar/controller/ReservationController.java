@@ -20,8 +20,10 @@ public class ReservationController implements ReservationApi {
         return new ResponseEntity(entryService.insertReservation(reservationRest), HttpStatus.OK);
     }
 
+/*
     @Override
     public ResponseEntity<List<ReservationRest>> getUsers(String authorization) {
         return new ResponseEntity(entryService.getReservations(authorization), HttpStatus.OK);
     }
+*/
 }

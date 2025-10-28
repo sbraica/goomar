@@ -31,7 +31,8 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
     // Load reservations when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       try {
-        await Provider.of<ReservationProvider>(context, listen: false).loadReservations();
+        final monday = _mondayOf(DateTime.now());
+        await Provider.of<ReservationProvider>(context, listen: false).loadReservations(weekStart: monday);
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -51,14 +52,18 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
     final weekStart = _mondayOf(focusedDay);
     final weekEnd = weekStart.add(const Duration(days: 7));
 
-    // Build occupied set using current slotMinutes.
+    // Build occupied set and visual spans for reservations in the visible week.
     final occupied = <DateTime>{};
+    final spans = <ReservationSpan>[];
     for (final r in reservationProvider.reservations) {
       final dt = r.date_time;
       if (dt.isBefore(weekStart) || !dt.isBefore(weekEnd)) continue;
-      // Determine reservation duration by type: longService = 30 min, else 15 min
+      // Duration: longService = 30 min, short = 15 min (grid is 15-min slots)
       final int duration = r.longService ? 30 : 15;
-      // Number of grid slots to block under current granularity
+      // Add a visual span so long services render as a single double-height block
+      spans.add(ReservationSpan(start: DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute), durationMinutes: duration, label: 'Reserved'));
+
+      // Disable taps on the occupied slots underneath
       final int blocks = (duration + slotMinutes - 1) ~/ slotMinutes; // ceil div
       DateTime cur = DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute);
       for (int i = 0; i < blocks; i++) {
@@ -82,7 +87,8 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
           IconButton(
               onPressed: () async {
                 try {
-                  await reservationProvider.loadReservations();
+                  final currentMonday = _mondayOf(focusedDay);
+                  await reservationProvider.loadReservations(weekStart: currentMonday);
                 } catch (_) {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -126,7 +132,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                           final prev = weekStart.subtract(const Duration(days: 7));
                           setState(() => focusedDay = DateTime(prev.year, prev.month, prev.day));
                           try {
-                            await reservationProvider.loadReservations();
+                            await reservationProvider.loadReservations(weekStart: prev);
                           } catch (_) {
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -140,7 +146,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                           final next = weekStart.add(const Duration(days: 7));
                           setState(() => focusedDay = DateTime(next.year, next.month, next.day));
                           try {
-                            await reservationProvider.loadReservations();
+                            await reservationProvider.loadReservations(weekStart: next);
                           } catch (_) {
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -159,7 +165,8 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                         lunchEnd: const TimeOfDay(hour: 13, minute: 0),
                         occupied: occupied,
                         firstDay: firstDay,
-                        lastDay: lastDay),
+                        lastDay: lastDay,
+                        spans: spans),
                   ),
                   if (selectedDay != null && selectedTime != null)
                     Padding(

@@ -75,10 +75,15 @@ class ApiClient {
     }
   }
 
-  /// Fetch all reservations.
+  /// Fetch reservations for a specific week.
+  /// Backend expects path: /V1/appointments/{year}/{month}/{day} where the day
+  /// is the Monday (start of week). All path parts are integers (no leading zeros).
   /// Throws [ApiException] on non-2xx or network errors.
-  Future<List<Reservation>> getReservations() async {
-    final url = _uri('/V1/appointments');
+  Future<List<Reservation>> getReservations(DateTime weekStart) async {
+    final y = weekStart.year;
+    final m = weekStart.month; // integers in path
+    final d = weekStart.day;   // start-of-week (Monday)
+    final url = _uri('/V1/appointments/$y/$m/$d');
     try {
       final resp = await http.get(url, headers: _headers()).timeout(const Duration(seconds: 10));
       if (resp.statusCode < 200 || resp.statusCode >= 300) {

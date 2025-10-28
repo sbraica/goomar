@@ -60,11 +60,11 @@ class ReservationProvider with ChangeNotifier {
     return _reservations.map((r) => DateTime(r.date_time.year, r.date_time.month, r.date_time.day)).toList();
   }
 
-  Future<void> loadReservations() async {
+  Future<void> loadReservations({required DateTime weekStart}) async {
     _setError(null);
     _setLoading(true);
     try {
-      final list = await ApiClient.instance.getReservations();
+      final list = await ApiClient.instance.getReservations(weekStart);
       setReservations(list);
     } catch (e) {
       _setError(e.toString());

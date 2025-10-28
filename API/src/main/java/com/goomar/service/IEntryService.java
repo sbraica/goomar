@@ -6,10 +6,10 @@ import java.util.List;
 
 public interface IEntryService {
     int insertReservation(ReservationRest reservationRest);
-    List<ReservationRest> getReservations(String authorization);
+    //List<ReservationRest> getReservations(String authorization);
 
     void createAppointment(int appId);
 
     //TODO duplicate?
-    List<ReservationRest> getAppointments(String authorization);
+    List<ReservationRest> getAppointments(String authorization, int year, int month, int day);
 }

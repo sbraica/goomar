@@ -23,7 +23,8 @@ public class AppointmentController implements AppointmentsApi {
     }
 
     @Override
-    public ResponseEntity<List<ReservationRest>> getAppointments(String authorization)  {
-        return new ResponseEntity(entryService.getAppointments(authorization), HttpStatus.OK);
+    public ResponseEntity<List<ReservationRest>> getAppointments(String authorization, Integer year, Integer month, Integer day) {
+        return new ResponseEntity(entryService.getAppointments(authorization, year, month, day), HttpStatus.OK);
     }
+
 }

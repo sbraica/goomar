@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+class ReservationSpan {
+  final DateTime start;
+  final int durationMinutes;
+  final String? label;
+  const ReservationSpan({required this.start, required this.durationMinutes, this.label});
+}
+
 class WeekTimeGrid extends StatelessWidget {
   final DateTime weekStart; // Monday of the shown week (date-only)
   final VoidCallback? onPrevWeek;
@@ -26,6 +33,8 @@ class WeekTimeGrid extends StatelessWidget {
   final DateTime firstDay;
   final DateTime lastDay;
 
+  final List<ReservationSpan> spans;
+
   const WeekTimeGrid({
     Key? key,
     required this.weekStart,
@@ -42,6 +51,7 @@ class WeekTimeGrid extends StatelessWidget {
     required this.occupied,
     required this.firstDay,
     required this.lastDay,
+    this.spans = const [],
   }) : super(key: key);
 
   DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
@@ -227,11 +237,9 @@ class WeekTimeGrid extends StatelessWidget {
                                     ),
                                     child: Center(
                                       child: Text(
-                                        occupiedKey
-                                            ? 'Reserved'
-                                            : selected
-                                                ? 'Selected'
-                                                : '',
+                                        selected
+                                            ? 'Selected'
+                                            : '',
                                         style: TextStyle(color: fg, fontWeight: FontWeight.w600, fontSize: 12),
                                       ),
                                     ),
@@ -246,22 +254,86 @@ class WeekTimeGrid extends StatelessWidget {
                 );
               }
 
-              if (totalHeight > availableHeight) {
-                // Rows don't fit: scroll internally using all available height
-                return ListView.builder(
-                  padding: EdgeInsets.zero,
-                  itemExtent: rowHeight,
-                  itemCount: times.length,
-                  itemBuilder: (context, index) => buildRow(times[index]),
-                );
+              // Compute overlay positions for reservation spans
+              int timeIndexOf(TimeOfDay t) {
+                for (int i = 0; i < times.length; i++) {
+                  if (times[i].hour == t.hour && times[i].minute == t.minute) return i;
+                }
+                return -1;
               }
 
-              // When it fits, render as a simple Column (no inner scroll)
-              return Column(
+              // Layout metrics for overlay
+              const double timeColWidth = 72.0;
+              final double gridWidth = constraints.maxWidth - timeColWidth;
+              final double dayWidth = gridWidth / 5.0;
+
+              List<Widget> buildOverlayBlocks() {
+                final List<Widget> blocks = [];
+                for (final span in spans) {
+                  // Only render spans that fall within the visible Mon–Fri range
+                  final d = DateTime(span.start.year, span.start.month, span.start.day);
+                  final dayIndex = d.difference(weekStart).inDays;
+                  if (dayIndex < 0 || dayIndex > 4) continue;
+
+                  final startTod = TimeOfDay(hour: span.start.hour, minute: span.start.minute);
+                  final startIndex = timeIndexOf(startTod);
+                  if (startIndex == -1) continue; // not aligned to visible grid (e.g., during lunch)
+
+                  final rows = (span.durationMinutes / slotMinutes).round().clamp(1, 100);
+                  final top = startIndex * rowHeight + 2.0;
+                  final left = timeColWidth + dayIndex * dayWidth + 2.0;
+                  final height = rows * rowHeight - 4.0;
+                  final width = dayWidth - 4.0;
+
+                  blocks.add(Positioned(
+                    top: top,
+                    left: left,
+                    width: width,
+                    height: height,
+                    child: AbsorbPointer(
+                      absorbing: true, // prevent taps on cells under the block
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade300.withOpacity(0.8),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: Colors.red.shade600, width: 1),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          span.label ?? 'Reserved',
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ));
+                }
+                return blocks;
+              }
+
+              Widget background = Column(
                 children: [
                   for (final t in times) buildRow(t),
                 ],
               );
+
+              final overlay = Stack(children: [
+                // Background grid
+                Positioned.fill(child: background),
+                // Reservation blocks overlay
+                ...buildOverlayBlocks(),
+              ]);
+
+              if (totalHeight > availableHeight) {
+                // Scrollable stack to keep overlay aligned with rows while scrolling
+                return SingleChildScrollView(
+                  padding: EdgeInsets.zero,
+                  child: SizedBox(height: totalHeight, width: constraints.maxWidth, child: overlay),
+                );
+              }
+
+              // Fits: no scroll necessary
+              return SizedBox(height: totalHeight, width: constraints.maxWidth, child: overlay);
             },
           ),
         ),
