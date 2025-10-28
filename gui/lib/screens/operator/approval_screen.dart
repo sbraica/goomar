@@ -61,26 +61,57 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
     // Build occupied set and visual spans for reservations in the visible week.
     final occupied = <DateTime>{};
     final spans = <ReservationSpan>[];
+
+    // Helpers to compute 15-min slots for a given day, skipping lunch
+    List<TimeOfDay> _daySlots() {
+      final List<TimeOfDay> slots = [];
+      TimeOfDay t = const TimeOfDay(hour: 8, minute: 0);
+      int toMin(TimeOfDay x) => x.hour * 60 + x.minute;
+      TimeOfDay fromMin(int m) => TimeOfDay(hour: m ~/ 60, minute: m % 60);
+      const int step = 15;
+      final int endM = toMin(const TimeOfDay(hour: 16, minute: 0));
+      const lunchS = TimeOfDay(hour: 12, minute: 0);
+      const lunchE = TimeOfDay(hour: 13, minute: 0);
+      final int lunchStartMin = toMin(lunchS);
+      final int lunchEndMin = toMin(lunchE);
+      while (toMin(t) <= endM - step) {
+        final int s = toMin(t);
+        final int e = s + step;
+        final overlapsLunch = s < lunchEndMin && e > lunchStartMin;
+        if (!overlapsLunch) slots.add(t);
+        t = fromMin(e);
+      }
+      return slots;
+    }
+
+    bool _intervalsOverlap(DateTime aStart, DateTime aEnd, DateTime bStart, DateTime bEnd) {
+      return aStart.isBefore(bEnd) && aEnd.isAfter(bStart);
+    }
+
+    final daySlots = _daySlots();
+
     for (final r in reservationProvider.reservations) {
       final dt = r.date_time;
       if (dt.isBefore(weekStart) || !dt.isBefore(weekEnd)) continue;
-      // Duration: longService = 30 min, short = 15 min (grid is 15-min slots)
-      final int duration = r.longService ? 30 : 15;
-      // Add a visual span so long services render as a single double-height block
-      spans.add(ReservationSpan(
-        id: r.id,
-        start: DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute),
-        durationMinutes: duration,
-        label: r.username,
-        approved: r.approved
-      ));
 
-      // Disable taps on the occupied slots underneath
-      final int blocks = (duration + slotMinutes - 1) ~/ slotMinutes; // ceil div
-      DateTime cur = DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute);
-      for (int i = 0; i < blocks; i++) {
-        occupied.add(cur);
-        cur = cur.add(Duration(minutes: slotMinutes));
+      // Visual span uses exact start (can be off-grid) and duration from service type
+      final int duration = r.longService ? 30 : 15;
+      spans.add(ReservationSpan(
+          id: r.id,
+          start: DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute),
+          durationMinutes: duration,
+          label: r.username,
+          approved: r.approved));
+
+      // Disable taps on any 15-min grid cell that overlaps with the reservation interval
+      final DateTime resStart = DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute);
+      final DateTime resEnd = resStart.add(Duration(minutes: duration));
+      for (final tod in daySlots) {
+        final slotStart = DateTime(dt.year, dt.month, dt.day, tod.hour, tod.minute);
+        final slotEnd = slotStart.add(Duration(minutes: slotMinutes));
+        if (_intervalsOverlap(resStart, resEnd, slotStart, slotEnd)) {
+          occupied.add(slotStart);
+        }
       }
     }
 

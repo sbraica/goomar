@@ -1,6 +1,60 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+class _WeekGridPainter extends CustomPainter {
+  final int rows;
+  final double rowHeight;
+  final double timeColWidth;
+  final double totalWidth;
+  final int dayCount;
+  final double dayWidth;
+
+  _WeekGridPainter({
+    required this.rows,
+    required this.rowHeight,
+    required this.timeColWidth,
+    required this.totalWidth,
+    required this.dayCount,
+    required this.dayWidth,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint line = Paint()
+      ..color = Colors.grey.shade300
+      ..strokeWidth = 1.0;
+
+    final double left = timeColWidth;
+    final double right = timeColWidth + dayCount * dayWidth;
+    final double height = rows * rowHeight;
+
+    // Vertical divider for time column
+    canvas.drawLine(Offset(left, 0), Offset(left, height), line);
+
+    // Vertical day dividers
+    for (int i = 0; i <= dayCount; i++) {
+      final double x = left + i * dayWidth;
+      canvas.drawLine(Offset(x, 0), Offset(x, height), line);
+    }
+
+    // Horizontal row dividers
+    for (int r = 0; r <= rows; r++) {
+      final double y = r * rowHeight;
+      canvas.drawLine(Offset(left, y), Offset(right, y), line);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _WeekGridPainter old) {
+    return rows != old.rows ||
+        rowHeight != old.rowHeight ||
+        timeColWidth != old.timeColWidth ||
+        totalWidth != old.totalWidth ||
+        dayCount != old.dayCount ||
+        dayWidth != old.dayWidth;
+  }
+}
+
 class ReservationSpan {
   final int? id; // optional reservation id to map actions
   final DateTime start;
@@ -217,18 +271,23 @@ class WeekTimeGrid extends StatelessWidget {
 
                               Color bg;
                               Color fg = Colors.black;
+                              Color borderColor = Colors.transparent;
                               if (selected) {
                                 bg = Theme.of(context).colorScheme.primary;
                                 fg = Colors.white;
+                                borderColor = Theme.of(context).colorScheme.primary;
                               } else if (disabled) {
                                 bg = Colors.grey.shade200;
                                 fg = Colors.grey.shade500;
+                                borderColor = Colors.transparent; // grid painter will show lines
                               } else if (occupiedKey) {
-                                bg = Colors.red.shade100;
-                                fg = Colors.red.shade700;
+                                // Occupied cells are transparent; overlay spans indicate reservations.
+                                bg = Colors.transparent;
+                                fg = Colors.grey.shade800;
                               } else {
-                                bg = Colors.green.shade50;
-                                fg = Colors.green.shade800;
+                                // Available cells transparent; the grid is painted underneath.
+                                bg = Colors.transparent;
+                                fg = Colors.grey.shade800;
                               }
 
                               return Padding(
@@ -239,13 +298,11 @@ class WeekTimeGrid extends StatelessWidget {
                                     decoration: BoxDecoration(
                                       color: bg,
                                       borderRadius: BorderRadius.circular(6),
-                                      border: Border.all(color: Colors.grey.shade300),
+                                      border: Border.all(color: borderColor),
                                     ),
                                     child: Center(
                                       child: Text(
-                                        selected
-                                            ? 'Selected'
-                                            : '',
+                                        selected ? 'Selected' : '',
                                         style: TextStyle(color: fg, fontWeight: FontWeight.w600, fontSize: 12),
                                       ),
                                     ),
@@ -260,12 +317,57 @@ class WeekTimeGrid extends StatelessWidget {
                 );
               }
 
-              // Compute overlay positions for reservation spans
-              int timeIndexOf(TimeOfDay t) {
-                for (int i = 0; i < times.length; i++) {
-                  if (times[i].hour == t.hour && times[i].minute == t.minute) return i;
+              // Compute overlay positions for reservation spans (support off-grid start times)
+              int toMinutes(TimeOfDay t) => t.hour * 60 + t.minute;
+              int dayStartMin = toMinutes(dayStart);
+              int dayEndMin = toMinutes(dayEnd);
+              final int? lunchS = lunchStart != null ? toMinutes(lunchStart!) : null;
+              final int? lunchE = lunchEnd != null ? toMinutes(lunchEnd!) : null;
+
+              // Map a DateTime within the working day (excluding lunch) to a fractional row index
+              double? fractionalRowIndex(DateTime dt) {
+                int m = dt.hour * 60 + dt.minute;
+                // Clip to working hours
+                if (m >= dayEndMin) return null;
+                if (m < dayStartMin) m = dayStartMin;
+                // If inside lunch, move to lunch end
+                if (lunchS != null && lunchE != null && m >= lunchS && m < lunchE) {
+                  m = lunchE;
+                  if (m >= dayEndMin) return null;
                 }
-                return -1;
+                // Minutes from day start
+                int minutesFromStart = m - dayStartMin;
+                // Subtract lunch minutes that occur before m
+                int lunchBefore = 0;
+                if (lunchS != null && lunchE != null) {
+                  final int overlapStart = lunchS.clamp(dayStartMin, m);
+                  final int overlapEnd = lunchE.clamp(dayStartMin, m);
+                  final int delta = overlapEnd - overlapStart;
+                  if (delta > 0) lunchBefore = delta;
+                }
+                final int effective = minutesFromStart - lunchBefore;
+                return effective / slotMinutes;
+              }
+
+              // Compute how many rows a span should cover after clipping to working hours and removing lunch
+              double spanRows(DateTime start, int durationMin) {
+                int s = start.hour * 60 + start.minute;
+                int e = s + durationMin;
+                // Clip to working hours
+                if (e <= dayStartMin) return 0;
+                if (s < dayStartMin) s = dayStartMin;
+                if (e > dayEndMin) e = dayEndMin;
+                if (s >= e) return 0;
+                // Remove lunch overlap from [s, e)
+                int visible = e - s;
+                if (lunchS != null && lunchE != null) {
+                  final int os = s.clamp(lunchS, lunchE);
+                  final int oe = e.clamp(lunchS, lunchE);
+                  final int lunchOverlap = (oe - os).clamp(0, visible);
+                  visible -= lunchOverlap;
+                }
+                if (visible <= 0) return 0;
+                return visible / slotMinutes;
               }
 
               // Layout metrics for overlay
@@ -281,12 +383,13 @@ class WeekTimeGrid extends StatelessWidget {
                   final dayIndex = d.difference(weekStart).inDays;
                   if (dayIndex < 0 || dayIndex > 4) continue;
 
-                  final startTod = TimeOfDay(hour: span.start.hour, minute: span.start.minute);
-                  final startIndex = timeIndexOf(startTod);
-                  if (startIndex == -1) continue; // not aligned to visible grid (e.g., during lunch)
+                  final idx = fractionalRowIndex(span.start);
+                  if (idx == null) continue; // outside visible working hours (or fully in lunch at end)
 
-                  final rows = (span.durationMinutes / slotMinutes).round().clamp(1, 100);
-                  final top = startIndex * rowHeight + 2.0;
+                  final rows = spanRows(span.start, span.durationMinutes);
+                  if (rows <= 0) continue;
+
+                  final top = idx * rowHeight + 2.0;
                   final left = timeColWidth + dayIndex * dayWidth + 2.0;
                   final height = rows * rowHeight - 4.0;
                   final width = dayWidth - 4.0;
@@ -352,15 +455,34 @@ class WeekTimeGrid extends StatelessWidget {
                 return blocks;
               }
 
-              Widget background = Column(
-                children: [
-                  for (final t in times) buildRow(t),
-                ],
+              // Background grid painter (draw lines under cells/spans)
+              final Widget gridPaint = SizedBox(
+                height: totalHeight,
+                width: constraints.maxWidth,
+                child: CustomPaint(
+                  painter: _WeekGridPainter(
+                    rows: times.length,
+                    rowHeight: rowHeight,
+                    timeColWidth: timeColWidth,
+                    totalWidth: constraints.maxWidth,
+                    dayCount: 5,
+                    dayWidth: dayWidth,
+                  ),
+                ),
               );
 
+              // Foreground interactive cells + overlays stacked above the painted grid
               final overlay = Stack(children: [
-                // Background grid
-                Positioned.fill(child: background),
+                // Painted grid in the background
+                Positioned.fill(child: gridPaint),
+                // Transparent interactive cells (selection/disabled visuals handled per cell)
+                Positioned.fill(
+                  child: Column(
+                    children: [
+                      for (final t in times) buildRow(t),
+                    ],
+                  ),
+                ),
                 // Reservation blocks overlay
                 ...buildOverlayBlocks(),
               ]);
@@ -384,8 +506,8 @@ class WeekTimeGrid extends StatelessWidget {
           spacing: 16,
           runSpacing: 8,
           children: [
-            _legendSwatch(context, Colors.green.shade50, Colors.green.shade800, 'Available'),
-            _legendSwatch(context, Colors.red.shade100, Colors.red.shade700, 'Reserved'),
+            _legendSwatch(context, Colors.transparent, Colors.grey.shade800, 'Available'),
+            _legendSwatch(context, Colors.red.shade400, Colors.white, 'Reserved'),
             _legendSwatch(context, Theme.of(context).colorScheme.primary, Colors.white, 'Selected'),
             _legendSwatch(context, Colors.grey.shade200, Colors.grey.shade500, 'Unavailable'),
           ],
