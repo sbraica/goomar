@@ -57,7 +57,7 @@ class ReservationProvider with ChangeNotifier {
   }
 
   List<DateTime> getBookedDates() {
-    return _reservations.map((r) => DateTime(r.dateTime.year, r.dateTime.month, r.dateTime.day)).toList();
+    return _reservations.map((r) => DateTime(r.date_time.year, r.date_time.month, r.date_time.day)).toList();
   }
 
   Future<void> loadReservations() async {

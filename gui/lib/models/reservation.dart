@@ -7,7 +7,7 @@ class Reservation {
   final bool longService;
   bool pending;
   bool approved;
-  final DateTime dateTime;
+  final DateTime date_time;
 
   Reservation({
     required this.id,
@@ -18,7 +18,7 @@ class Reservation {
     required this.longService,
     required this.pending,
     required this.approved,
-    required this.dateTime,
+    required this.date_time,
   });
 
   /// Backend-to-app converter. Accepts both `date` and `dateTime` ISO strings.
@@ -41,7 +41,7 @@ class Reservation {
       longService: json['longService'] == true,
       pending: pending,
       approved: approved,
-      dateTime: json['date'] != null ? parseDate(json['date']) : parseDate(json['dateTime']),
+      date_time: parseDate(json['date_time']),
     );
   }
 
@@ -54,7 +54,7 @@ class Reservation {
       'registration': registration,
       'longService': longService,
       // Backend expects `date` per current integration
-      'date': dateTime.toIso8601String(),
+      'date': date_time.toIso8601String(),
     };
   }
 }

@@ -35,7 +35,7 @@ class _BookingScreenState extends State<BookingScreen> {
           phone: ui.phone,
           registration: ui.registration,
           longService: form.selectedService,
-          dateTime: start);
+          date_time: start);
 
       ui.isSubmitting = true;
       try {

@@ -33,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const ApprovalScreen()));
       } else {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid credentials. Try: operator/password'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Login failed. Please check your username and password.'), backgroundColor: Colors.red));
       }
     }
   }

@@ -5,6 +5,7 @@ import '../../providers/reservation_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/reservation_card.dart';
 import '../../widgets/week_time_grid.dart';
+import '../../models/reservation.dart';
 
 class ApprovalScreen extends StatefulWidget {
   const ApprovalScreen({Key? key}) : super(key: key);
@@ -53,7 +54,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
     // Build occupied set using current slotMinutes.
     final occupied = <DateTime>{};
     for (final r in reservationProvider.reservations) {
-      final dt = r.dateTime;
+      final dt = r.date_time;
       if (dt.isBefore(weekStart) || !dt.isBefore(weekEnd)) continue;
       // Determine reservation duration by type: longService = 30 min, else 15 min
       final int duration = r.longService ? 30 : 15;
@@ -120,13 +121,33 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                   Expanded(
                     child: WeekTimeGrid(
                         weekStart: weekStart,
-                        onPrevWeek: () {
+                        onPrevWeek: () async {
+                          if (reservationProvider.isLoading) return;
                           final prev = weekStart.subtract(const Duration(days: 7));
                           setState(() => focusedDay = DateTime(prev.year, prev.month, prev.day));
+                          try {
+                            await reservationProvider.loadReservations();
+                          } catch (_) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Failed to load reservations for previous week'), backgroundColor: Colors.red),
+                              );
+                            }
+                          }
                         },
-                        onNextWeek: () {
+                        onNextWeek: () async {
+                          if (reservationProvider.isLoading) return;
                           final next = weekStart.add(const Duration(days: 7));
                           setState(() => focusedDay = DateTime(next.year, next.month, next.day));
+                          try {
+                            await reservationProvider.loadReservations();
+                          } catch (_) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Failed to load reservations for next week'), backgroundColor: Colors.red),
+                              );
+                            }
+                          }
                         },
                         selectedDay: selectedDay,
                         selectedTime: selectedTime,

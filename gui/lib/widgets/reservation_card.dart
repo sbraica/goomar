@@ -41,12 +41,12 @@ class ReservationCard extends StatelessWidget {
               const SizedBox(height: 8),
               _buildInfoRow(Icons.phone, 'Phone', reservation.phone),
               const SizedBox(height: 8),
-              _buildInfoRow(Icons.calendar_today, 'Appointment', '${DateFormat('d. MMMM y.', 'hr').format(reservation.dateTime)}'),
+              _buildInfoRow(Icons.calendar_today, 'Appointment', '${DateFormat('d. MMMM y.', 'hr').format(reservation.date_time)}'),
               const SizedBox(height: 8),
               _buildInfoRow(
                 Icons.access_time,
                 'Submitted',
-                DateFormat('d. MMM y. - HH:mm', 'hr').format(reservation.dateTime),
+                DateFormat('d. MMM y. - HH:mm', 'hr').format(reservation.date_time),
               ),
               if (!isApproved && (onApprove != null || onReject != null)) ...[
                 const Divider(height: 24),
