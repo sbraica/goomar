@@ -8,6 +8,20 @@ class _WeekGridPainter extends CustomPainter {
   final double totalWidth;
   final int dayCount;
   final double dayWidth;
+  // Visual enhancements
+  final int slotMinutes;
+  final int? todayIndex; // 0..dayCount-1 for Mon..Fri, or null if not in view
+  final Color bandColorOdd; // subtle horizontal striping
+  final Color bandColorEven;
+  final Color todayTint; // soft background tint for today's column
+  final Color hourLineColor;
+  final Color minorLineColor;
+  final double hourLineWidth;
+  final double minorLineWidth;
+  // Lunch split visual
+  final double? lunchSplitRowIndex; // draw a red line between morning and afternoon, if provided
+  final Color lunchLineColor;
+  final double lunchLineWidth;
 
   _WeekGridPainter({
     required this.rows,
@@ -16,31 +30,76 @@ class _WeekGridPainter extends CustomPainter {
     required this.totalWidth,
     required this.dayCount,
     required this.dayWidth,
+    required this.slotMinutes,
+    required this.todayIndex,
+    required this.bandColorOdd,
+    required this.bandColorEven,
+    required this.todayTint,
+    required this.hourLineColor,
+    required this.minorLineColor,
+    required this.hourLineWidth,
+    required this.minorLineWidth,
+    this.lunchSplitRowIndex,
+    this.lunchLineColor = const Color(0xFFD32F2F),
+    this.lunchLineWidth = 2.0,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final Paint line = Paint()
-      ..color = Colors.grey.shade300
-      ..strokeWidth = 1.0;
-
     final double left = timeColWidth;
     final double right = timeColWidth + dayCount * dayWidth;
     final double height = rows * rowHeight;
 
+    // Today column background tint (under everything in the grid area)
+    if (todayIndex != null && todayIndex! >= 0 && todayIndex! < dayCount) {
+      final double x0 = left + todayIndex! * dayWidth;
+      final Rect todayRect = Rect.fromLTWH(x0, 0, dayWidth, height);
+      final Paint todayPaint = Paint()..color = todayTint;
+      canvas.drawRect(todayRect, todayPaint);
+    }
+
+    // Alternating row bands for readability (skip the time column)
+    for (int r = 0; r < rows; r++) {
+      final double y = r * rowHeight;
+      final Rect bandRect = Rect.fromLTWH(left, y, right - left, rowHeight);
+      final bool isOdd = r % 2 == 1;
+      final Color c = isOdd ? bandColorOdd : bandColorEven;
+      if (c.opacity > 0) {
+        canvas.drawRect(bandRect, Paint()..color = c);
+      }
+    }
+
     // Vertical divider for time column
-    canvas.drawLine(Offset(left, 0), Offset(left, height), line);
+    final Paint minorLine = Paint()
+      ..color = minorLineColor
+      ..strokeWidth = minorLineWidth;
+    final Paint hourLine = Paint()
+      ..color = hourLineColor
+      ..strokeWidth = hourLineWidth;
+
+    canvas.drawLine(Offset(left, 0), Offset(left, height), minorLine);
 
     // Vertical day dividers
     for (int i = 0; i <= dayCount; i++) {
       final double x = left + i * dayWidth;
-      canvas.drawLine(Offset(x, 0), Offset(x, height), line);
+      canvas.drawLine(Offset(x, 0), Offset(x, height), minorLine);
     }
 
-    // Horizontal row dividers
+    // Horizontal row dividers with stronger hour lines (every 60/slotMinutes rows)
+    final int rowsPerHour = (60 ~/ slotMinutes);
     for (int r = 0; r <= rows; r++) {
       final double y = r * rowHeight;
-      canvas.drawLine(Offset(left, y), Offset(right, y), line);
+      final bool isHour = r % rowsPerHour == 0;
+      canvas.drawLine(Offset(left, y), Offset(right, y), isHour ? hourLine : minorLine);
+    }
+
+    // Extra red line to mark lunch split, if provided
+    if (lunchSplitRowIndex != null) {
+      final double y = lunchSplitRowIndex!.clamp(0, rows.toDouble()) * rowHeight;
+      final Paint lunchPaint = Paint()
+        ..color = lunchLineColor
+        ..strokeWidth = lunchLineWidth;
+      canvas.drawLine(Offset(left, y), Offset(right, y), lunchPaint);
     }
   }
 
@@ -51,7 +110,19 @@ class _WeekGridPainter extends CustomPainter {
         timeColWidth != old.timeColWidth ||
         totalWidth != old.totalWidth ||
         dayCount != old.dayCount ||
-        dayWidth != old.dayWidth;
+        dayWidth != old.dayWidth ||
+        slotMinutes != old.slotMinutes ||
+        todayIndex != old.todayIndex ||
+        bandColorOdd != old.bandColorOdd ||
+        bandColorEven != old.bandColorEven ||
+        todayTint != old.todayTint ||
+        hourLineColor != old.hourLineColor ||
+        minorLineColor != old.minorLineColor ||
+        hourLineWidth != old.hourLineWidth ||
+        minorLineWidth != old.minorLineWidth ||
+        lunchSplitRowIndex != old.lunchSplitRowIndex ||
+        lunchLineColor != old.lunchLineColor ||
+        lunchLineWidth != old.lunchLineWidth;
   }
 }
 
@@ -277,16 +348,17 @@ class WeekTimeGrid extends StatelessWidget {
                                 fg = Colors.white;
                                 borderColor = Theme.of(context).colorScheme.primary;
                               } else if (disabled) {
+                                // Unavailable cells slightly darker gray
                                 bg = Colors.grey.shade200;
                                 fg = Colors.grey.shade500;
                                 borderColor = Colors.transparent; // grid painter will show lines
                               } else if (occupiedKey) {
-                                // Occupied cells are transparent; overlay spans indicate reservations.
-                                bg = Colors.transparent;
+                                // Occupied cells use the same uniform background; overlay spans indicate reservations.
+                                bg = Colors.grey.shade100;
                                 fg = Colors.grey.shade800;
                               } else {
-                                // Available cells transparent; the grid is painted underneath.
-                                bg = Colors.transparent;
+                                // Available cells also use the same uniform background (light gray)
+                                bg = Colors.grey.shade100;
                                 fg = Colors.grey.shade800;
                               }
 
@@ -456,6 +528,27 @@ class WeekTimeGrid extends StatelessWidget {
               }
 
               // Background grid painter (draw lines under cells/spans)
+              final DateTime now = DateTime.now();
+              final DateTime todayOnly = DateTime(now.year, now.month, now.day);
+              final int? todayIndex = (() {
+                final int idx = todayOnly.difference(weekStart).inDays;
+                return (idx >= 0 && idx < 5) ? idx : null;
+              })();
+
+              final theme = Theme.of(context);
+              final bool isDark = theme.brightness == Brightness.dark;
+              // Use no background tinting/striping: all cells will have the same light gray fill.
+              final Color bandOdd = Colors.transparent;
+              final Color bandEven = Colors.transparent;
+              final Color todayTint = Colors.transparent;
+              final Color hourLineColor = isDark ? Colors.white.withOpacity(0.28) : Colors.black.withOpacity(0.28);
+              final Color minorLineColor = isDark ? Colors.white.withOpacity(0.14) : Colors.black.withOpacity(0.14);
+
+              // Compute lunch split row index (position where lunch starts), if lunch is defined
+              final double? lunchSplitRowIndex = (lunchS != null)
+                  ? ((lunchS! - dayStartMin) / slotMinutes)
+                  : null;
+
               final Widget gridPaint = SizedBox(
                 height: totalHeight,
                 width: constraints.maxWidth,
@@ -467,6 +560,18 @@ class WeekTimeGrid extends StatelessWidget {
                     totalWidth: constraints.maxWidth,
                     dayCount: 5,
                     dayWidth: dayWidth,
+                    slotMinutes: slotMinutes,
+                    todayIndex: todayIndex,
+                    bandColorOdd: bandOdd,
+                    bandColorEven: bandEven,
+                    todayTint: todayTint,
+                    hourLineColor: hourLineColor,
+                    minorLineColor: minorLineColor,
+                    hourLineWidth: 1.2,
+                    minorLineWidth: 0.8,
+                    lunchSplitRowIndex: lunchSplitRowIndex,
+                    lunchLineColor: Colors.red,
+                    lunchLineWidth: 2.0,
                   ),
                 ),
               );
@@ -506,7 +611,7 @@ class WeekTimeGrid extends StatelessWidget {
           spacing: 16,
           runSpacing: 8,
           children: [
-            _legendSwatch(context, Colors.transparent, Colors.grey.shade800, 'Available'),
+            _legendSwatch(context, Colors.grey.shade100, Colors.grey.shade800, 'Available'),
             _legendSwatch(context, Colors.red.shade400, Colors.white, 'Reserved'),
             _legendSwatch(context, Theme.of(context).colorScheme.primary, Colors.white, 'Selected'),
             _legendSwatch(context, Colors.grey.shade200, Colors.grey.shade500, 'Unavailable'),
