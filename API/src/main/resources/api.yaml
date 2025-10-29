@@ -66,6 +66,43 @@ paths:
                 default: [ ]
                 items:
                   $ref: "#/components/schemas/ReservationRest"
+  /V1/freeslots/{year}/{month}/{day}:
+    get:
+      tags:
+        - Reservations
+      summary: Get all application users
+      operationId: getFreeSlots
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: month
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: day
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: long
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of application users
+          content:
+            application/json; charset=utf-8:
+              schema:
+                type: array
+                default: [ ]
+                items:
+                  $ref: "#/components/schemas/FreeSlotRest"
 
   /V1/appointments/{appId}:
     patch:
@@ -91,7 +128,7 @@ paths:
   /V1/reservation:
     post:
       tags:
-        - Reservation
+        - Reservations
       summary: Post reservation from public page
       operationId: createReservation
       requestBody:
@@ -165,3 +202,14 @@ components:
           maxLength: 80
         longService:
           type: boolean
+    FreeSlotRest:
+      required:
+        - start
+        - end
+      properties:
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
