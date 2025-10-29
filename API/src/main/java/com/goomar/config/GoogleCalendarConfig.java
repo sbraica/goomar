@@ -22,36 +22,11 @@ public class GoogleCalendarConfig {
 
     @Bean
     public Calendar googleCalendarService() throws Exception {
-        // Load OAuth client credentials
-        GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(
-                JacksonFactory.getDefaultInstance(),
-                new InputStreamReader(new ClassPathResource("credentials.json").getInputStream())
-        );
-
-        // Set up the authorization flow
-        GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
-                GoogleNetHttpTransport.newTrustedTransport(),
-                JacksonFactory.getDefaultInstance(),
-                clientSecrets,
-                Collections.singleton(CalendarScopes.CALENDAR_READONLY)
-        )
-                .setDataStoreFactory(new FileDataStoreFactory(new java.io.File("tokens")))
-                .setAccessType("offline")
-                .build();
-
-        // Start a local receiver to handle the OAuth redirect (port 8080)
+        GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JacksonFactory.getDefaultInstance(),new InputStreamReader(new ClassPathResource("credentials.json").getInputStream()));
+        GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(GoogleNetHttpTransport.newTrustedTransport(),JacksonFactory.getDefaultInstance(),clientSecrets,Collections
+                .singleton(CalendarScopes.CALENDAR)).setDataStoreFactory(new FileDataStoreFactory(new java.io.File("tokens"))).setAccessType("offline").build();
         LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8080).build();
-
-        // Authorize user and get credentials
         Credential credential = new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
-
-        // Build the Calendar API client
-        return new Calendar.Builder(
-                GoogleNetHttpTransport.newTrustedTransport(),
-                JacksonFactory.getDefaultInstance(),
-                credential
-        )
-                .setApplicationName("My Spring Calendar App")
-                .build();
+        return new Calendar.Builder(GoogleNetHttpTransport.newTrustedTransport(),JacksonFactory.getDefaultInstance(),credential).setApplicationName("My Spring Calendar App").build();
     }
 }

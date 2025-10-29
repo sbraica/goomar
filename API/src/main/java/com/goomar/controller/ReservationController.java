@@ -22,6 +22,7 @@ public class ReservationController implements ReservationsApi {
 
     @Override
     public ResponseEntity<Integer> createReservation(ReservationRest reservationRest) {
+        calendarService.insertReservation(reservationRest);
         return new ResponseEntity(entryService.insertReservation(reservationRest), HttpStatus.OK);
     }
 

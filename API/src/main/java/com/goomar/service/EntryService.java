@@ -30,12 +30,6 @@ public class EntryService implements IEntryService {
         }
     }
 
-/*    @Override
-    public List<ReservationRest> getReservations(String authorization) {
-        log.info(">>getReservations()");
-        return ctx.select(ENTRIES.ID, ENTRIES.USERNAME, ENTRIES.DATE_TIME, ENTRIES.EMAIL, ENTRIES.PHONE, ENTRIES.REGISTRATION, ENTRIES.LONG_SERVICE, ENTRIES.EMAIL, ENTRIES.CONFIRMED).from(ENTRIES).fetchInto(ReservationRest.class);
-    }*/
-
     //TODO: duplicate?
     @Override
     public void createAppointment(int appId) {

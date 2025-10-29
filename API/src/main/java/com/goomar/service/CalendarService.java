@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.openapitools.model.FreeSlotRest;
+import org.openapitools.model.ReservationRest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -34,6 +35,23 @@ public class CalendarService implements ICalendarService {
 
 
         return calendar.events().list(calendarId).setTimeMin(timeMin).setTimeMax(timeMax).setOrderBy("startTime").setShowDeleted(false).setSingleEvents(true).execute().getItems();
+    }
+
+    @SneakyThrows
+    @Override
+    public int insertReservation(ReservationRest rr) {
+        ZoneId zone = ZoneId.of("Europe/Zagreb");
+
+        ZonedDateTime startZoned = rr.getDateTime().atZone(zone);
+        ZonedDateTime endZoned = startZoned.plusMinutes(rr.getLongService() ? 30 : 15);
+
+        Event event = new Event().setSummary(rr.getUsername()).setDescription(rr.getPhone()).setDescription("GOOMAR APP").setStart(new EventDateTime().setDateTime(new DateTime(startZoned.toInstant().toEpochMilli()))
+                .setTimeZone(zone.getId())).setEnd(new EventDateTime().setDateTime(new DateTime(endZoned.toInstant().toEpochMilli())).setTimeZone(zone.getId()));
+
+        Event created = calendar.events().insert(calendarId, event).execute();
+
+        log.info("✅ Event created: %s (%s)%n",created.getSummary(), created.getHtmlLink());
+        return 0;
     }
 
     @SneakyThrows
