@@ -10,11 +10,9 @@ class BookingFormProvider with ChangeNotifier {
   TimeOfDay? selectedTime;
   bool selectedService = false; // false = Small, true = Big (long)
 
-  // Slots cache and loading state
-  final Map<String, List<TimeOfDay>> _slotsCache = {};
+  // Slots state and loading flag (no caching)
+  final List<TimeOfDay> _slots = [];
   bool isLoadingSlots = false;
-
-  String _cacheKey(DateTime day, bool isLong) => '${day.year}-${day.month}-${day.day}-L$isLong';
 
   // Actions
   void setFocusedMonth(DateTime monthStart) {
@@ -27,8 +25,9 @@ class BookingFormProvider with ChangeNotifier {
     focusedDay = DateTime(day.year, day.month, day.day);
     // reset time when date changes
     selectedTime = null;
-    // trigger fetching slots for this day/service
-    _ensureSlots();
+    // always fetch fresh slots for this day/service
+    _slots.clear();
+    _fetchSlots(day, selectedService);
     notifyListeners();
   }
 
@@ -36,8 +35,12 @@ class BookingFormProvider with ChangeNotifier {
     selectedService = serviceType;
     // reset time when service changes
     selectedTime = null;
-    // trigger fetching slots for current date/service
-    _ensureSlots();
+    // always fetch fresh slots for current date/service
+    final day = selectedDay;
+    _slots.clear();
+    if (day != null) {
+      _fetchSlots(day, selectedService);
+    }
     notifyListeners();
   }
 
@@ -52,7 +55,7 @@ class BookingFormProvider with ChangeNotifier {
     selectedDay = null;
     selectedTime = null;
     selectedService = false;
-    _slotsCache.clear();
+    _slots.clear();
     isLoadingSlots = false;
     notifyListeners();
   }
@@ -63,25 +66,10 @@ class BookingFormProvider with ChangeNotifier {
     return DateFormat('HH:mm').format(dt);
   }
 
-  // Public API for UI: returns cached slots if available, otherwise triggers fetch
-  // and returns an empty list until data arrives.
+  // Public API for UI: returns current slots (no caching)
   List<TimeOfDay> generateTimeSlots() {
     if (selectedDay == null) return [];
-    final key = _cacheKey(selectedDay!, selectedService);
-    final cached = _slotsCache[key];
-    if (cached != null) return cached;
-
-    // If we don't have data, start fetching in background
-    _ensureSlots();
-    return [];
-  }
-
-  void _ensureSlots() {
-    final day = selectedDay;
-    if (day == null) return;
-    final key = _cacheKey(day, selectedService);
-    if (_slotsCache.containsKey(key) || isLoadingSlots) return;
-    _fetchSlots(day, selectedService);
+    return List.unmodifiable(_slots);
   }
 
   Future<void> _fetchSlots(DateTime day, bool isLong) async {
@@ -89,9 +77,19 @@ class BookingFormProvider with ChangeNotifier {
     notifyListeners();
     try {
       final slots = await ApiClient.instance.getFreeSlots(day, isLong: isLong);
-      _slotsCache[_cacheKey(day, isLong)] = slots;
+      // Only apply if still on the same selection to avoid race conditions
+      if (selectedDay != null &&
+          selectedDay!.year == day.year &&
+          selectedDay!.month == day.month &&
+          selectedDay!.day == day.day &&
+          selectedService == isLong) {
+        _slots
+          ..clear()
+          ..addAll(slots);
+      }
     } catch (_) {
-      // On error, keep empty (no cache entry), UI will show a message
+      // On error, keep slots empty; UI will show a message
+      _slots.clear();
     } finally {
       isLoadingSlots = false;
       notifyListeners();
