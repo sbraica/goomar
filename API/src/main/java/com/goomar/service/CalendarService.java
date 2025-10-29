@@ -78,14 +78,14 @@ public class CalendarService implements ICalendarService {
             ZonedDateTime busyEnd = Instant.ofEpochMilli(busy.getEnd().getValue()).atZone(ZoneId.systemDefault());
 
             while (cursor.plus(slotLength).isBefore(busyStart)) {
-                freeSlots.add(new FreeSlotRest().start(cursor.toLocalDateTime()).end(cursor.plus(slotLength).toLocalDateTime()));
+                freeSlots.add(new FreeSlotRest().start(cursor.toLocalTime().toString()).end(cursor.plus(slotLength).toLocalTime().toString()));
                 cursor = cursor.plus(slotLength);
             }
             if (cursor.isBefore(busyEnd)) cursor = busyEnd;
         }
 
         while (cursor.plus(slotLength).isBefore(endOfDay)) {
-            freeSlots.add(new FreeSlotRest().start(cursor.toLocalDateTime()).end(cursor.plus(slotLength).toLocalDateTime()));
+            freeSlots.add(new FreeSlotRest().start(cursor.toLocalTime().toString()).end(cursor.plus(slotLength).toLocalTime().toString()));
             cursor = cursor.plus(slotLength);
         }
 
