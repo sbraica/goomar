@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/reservation.dart';
+import '../services/api_client.dart';
 
 class BookingFormProvider with ChangeNotifier {
   // Booking selections
   DateTime focusedDay = DateTime.now();
   DateTime? selectedDay;
   TimeOfDay? selectedTime;
-  bool selectedService = false;
+  bool selectedService = false; // false = Small, true = Big (long)
+
+  // Slots cache and loading state
+  final Map<String, List<TimeOfDay>> _slotsCache = {};
+  bool isLoadingSlots = false;
+
+  String _cacheKey(DateTime day, bool isLong) => '${day.year}-${day.month}-${day.day}-L$isLong';
 
   // Actions
   void setFocusedMonth(DateTime monthStart) {
@@ -20,6 +27,8 @@ class BookingFormProvider with ChangeNotifier {
     focusedDay = DateTime(day.year, day.month, day.day);
     // reset time when date changes
     selectedTime = null;
+    // trigger fetching slots for this day/service
+    _ensureSlots();
     notifyListeners();
   }
 
@@ -27,6 +36,8 @@ class BookingFormProvider with ChangeNotifier {
     selectedService = serviceType;
     // reset time when service changes
     selectedTime = null;
+    // trigger fetching slots for current date/service
+    _ensureSlots();
     notifyListeners();
   }
 
@@ -41,6 +52,8 @@ class BookingFormProvider with ChangeNotifier {
     selectedDay = null;
     selectedTime = null;
     selectedService = false;
+    _slotsCache.clear();
+    isLoadingSlots = false;
     notifyListeners();
   }
 
@@ -50,37 +63,38 @@ class BookingFormProvider with ChangeNotifier {
     return DateFormat('HH:mm').format(dt);
   }
 
+  // Public API for UI: returns cached slots if available, otherwise triggers fetch
+  // and returns an empty list until data arrives.
   List<TimeOfDay> generateTimeSlots() {
     if (selectedDay == null) return [];
-    final List<TimeOfDay> slots = [];
-    final int step = selectedService ? 30 : 15;
+    final key = _cacheKey(selectedDay!, selectedService);
+    final cached = _slotsCache[key];
+    if (cached != null) return cached;
 
-    // Working hours
-    TimeOfDay start = const TimeOfDay(hour: 8, minute: 0);
-    final TimeOfDay end = const TimeOfDay(hour: 16, minute: 0);
+    // If we don't have data, start fetching in background
+    _ensureSlots();
+    return [];
+  }
 
-    // Lunch break [12:00, 13:00)
-    const TimeOfDay lunchStart = TimeOfDay(hour: 12, minute: 0);
-    const TimeOfDay lunchEnd = TimeOfDay(hour: 13, minute: 0);
+  void _ensureSlots() {
+    final day = selectedDay;
+    if (day == null) return;
+    final key = _cacheKey(day, selectedService);
+    if (_slotsCache.containsKey(key) || isLoadingSlots) return;
+    _fetchSlots(day, selectedService);
+  }
 
-    final bool isToday = DateUtils.isSameDay(selectedDay, DateTime.now());
-    final TimeOfDay now = TimeOfDay.fromDateTime(DateTime.now());
-
-    int toMinutes(TimeOfDay t) => t.hour * 60 + t.minute;
-
-    final int lunchStartMin = toMinutes(lunchStart);
-    final int lunchEndMin = toMinutes(lunchEnd);
-
-    while (toMinutes(start) <= toMinutes(end) - step) {
-      final int s = toMinutes(start);
-      final int e = s + step;
-      final bool overlapsLunch = s < lunchEndMin && e > lunchStartMin;
-      if (!overlapsLunch && (!isToday || s > toMinutes(now))) {
-        slots.add(start);
-      }
-      final int total = s + step;
-      start = TimeOfDay(hour: total ~/ 60, minute: total % 60);
+  Future<void> _fetchSlots(DateTime day, bool isLong) async {
+    isLoadingSlots = true;
+    notifyListeners();
+    try {
+      final slots = await ApiClient.instance.getFreeSlots(day, isLong: isLong);
+      _slotsCache[_cacheKey(day, isLong)] = slots;
+    } catch (_) {
+      // On error, keep empty (no cache entry), UI will show a message
+    } finally {
+      isLoadingSlots = false;
+      notifyListeners();
     }
-    return slots;
   }
 }

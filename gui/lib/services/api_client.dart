@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter/material.dart';
 import '../models/reservation.dart';
 
 /// Simple API client wrapping HTTP calls to the backend.
@@ -100,6 +101,80 @@ class ApiClient {
     } catch (e) {
       throw ApiException('Network error while fetching reservations', e.toString());
     }
+  }
+
+  /// Fetch free slots (start-end pairs) for a given day and service length.
+  /// Endpoint: /V1/freeslots/{year}/{month}/{day}?long=true|false
+  /// Returns a list of TimeOfDay representing the START times of available slots.
+  Future<List<TimeOfDay>> getFreeSlots(DateTime day, {required bool isLong}) async {
+    final y = day.year;
+    final m = day.month;
+    final d = day.day;
+    final query = isLong ? 'true' : 'false';
+    final url = _uri('/V1/freeslots/$y/$m/$d?long=$query');
+    try {
+      final resp = await http.get(url, headers: _headers()).timeout(const Duration(seconds: 10));
+      if (resp.statusCode < 200 || resp.statusCode >= 300) {
+        throw ApiException('Failed to fetch free slots: HTTP ${resp.statusCode}', resp.body);
+      }
+      final decoded = jsonDecode(resp.body);
+      return _parseFreeSlots(decoded);
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      throw ApiException('Network error while fetching free slots', e.toString());
+    }
+  }
+
+  List<TimeOfDay> _parseFreeSlots(dynamic decoded) {
+    final List<TimeOfDay> starts = [];
+
+    TimeOfDay? parseTime(dynamic v) {
+      if (v == null) return null;
+      if (v is String) {
+        final s = v.trim();
+        // Try HH:mm first
+        final hhmm = RegExp(r'^\d{1,2}:\d{2}$');
+        if (hhmm.hasMatch(s)) {
+          final parts = s.split(':');
+          final h = int.tryParse(parts[0]) ?? 0;
+          final m = int.tryParse(parts[1]) ?? 0;
+          return TimeOfDay(hour: h, minute: m);
+        }
+        // Try to parse an ISO date string and extract time
+        DateTime? dt;
+        try { dt = DateTime.parse(s); } catch (_) {}
+        if (dt != null) {
+          return TimeOfDay(hour: dt.hour, minute: dt.minute);
+        }
+      } else if (v is num) {
+        // minutes since midnight
+        final minutes = v.toInt();
+        final h = (minutes ~/ 60) % 24;
+        final m = minutes % 60;
+        return TimeOfDay(hour: h, minute: m);
+      }
+      return null;
+    }
+
+    if (decoded is List) {
+      for (final item in decoded) {
+        if (item is List && item.length >= 1) {
+          final t = parseTime(item[0]);
+          if (t != null) starts.add(t);
+        } else if (item is Map) {
+          final t = parseTime(item['start'] ?? item['from'] ?? item['s']);
+          if (t != null) starts.add(t);
+        } else {
+          final t = parseTime(item);
+          if (t != null) starts.add(t);
+        }
+      }
+    }
+
+    // Sort ascending
+    starts.sort((a, b) => (a.hour*60+a.minute).compareTo(b.hour*60+b.minute));
+    return starts;
   }
 
   /// Posts a reservation to the backend as JSON body.

@@ -214,6 +214,13 @@ class _BookingScreenState extends State<BookingScreen> {
                                           else ...[
                                             Builder(builder: (context) {
                                               final slots = form.generateTimeSlots();
+                                              if (form.isLoadingSlots) {
+                                                return Row(children: [
+                                                  const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                                                  const SizedBox(width: 8),
+                                                  Text('Loading available time slots...', style: TextStyle(color: Colors.grey[700]))
+                                                ]);
+                                              }
                                               if (slots.isEmpty) {
                                                 return Text('No available time slots for the selected day.', style: TextStyle(color: Colors.red[700]));
                                               }

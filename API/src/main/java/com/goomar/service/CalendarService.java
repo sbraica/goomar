@@ -7,10 +7,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.openapitools.model.FreeSlotRest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.*;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -18,6 +20,8 @@ import java.util.List;
 @Slf4j
 public class CalendarService implements ICalendarService {
     private final Calendar calendar;
+    @Value("${goomar.calendarId}")
+    private String calendarId;
 
     @Override
     @SneakyThrows
@@ -29,8 +33,9 @@ public class CalendarService implements ICalendarService {
         DateTime timeMax = new DateTime(endOfDay.toInstant().toEpochMilli());
 
 
-        return calendar.events().list("bosnic.hr_40bdhhqhdsohai2kj57amf1k2s@group.calendar.google.com").setTimeMin(timeMin).setTimeMax(timeMax).setOrderBy("startTime").setShowDeleted(false).setSingleEvents(true).execute().getItems();
+        return calendar.events().list(calendarId).setTimeMin(timeMin).setTimeMax(timeMax).setOrderBy("startTime").setShowDeleted(false).setSingleEvents(true).execute().getItems();
     }
+
     @SneakyThrows
     @Override
     public List<FreeSlotRest> getFreeSlots(LocalDate date, boolean longService) {
@@ -41,7 +46,7 @@ public class CalendarService implements ICalendarService {
         DateTime timeMax = new DateTime(endOfDay.toInstant().toEpochMilli());
 
         List<Event> allEvents = calendar.events()
-                .list("bosnic.hr_40bdhhqhdsohai2kj57amf1k2s@group.calendar.google.com")
+                .list(calendarId)
                 .setTimeMin(timeMin)
                 .setTimeMax(timeMax)
                 .setOrderBy("startTime")
@@ -68,6 +73,15 @@ public class CalendarService implements ICalendarService {
                     .setStart(event.getStart().getDateTime())
                     .setEnd(event.getEnd().getDateTime()));
         }
+
+        ZonedDateTime lunchStart = date.atTime(LocalTime.of(12, 0)).atZone(ZoneId.systemDefault());
+        ZonedDateTime lunchEnd = date.atTime(LocalTime.of(13, 0)).atZone(ZoneId.systemDefault());
+        busyPeriods.add(new TimePeriod()
+                .setStart(new DateTime(lunchStart.toInstant().toEpochMilli()))
+                .setEnd(new DateTime(lunchEnd.toInstant().toEpochMilli())));
+
+        // Ensure busy periods are processed in chronological order
+        busyPeriods.sort(Comparator.comparingLong(tp -> tp.getStart().getValue()));
 
         List<FreeSlotRest> freeSlots = new ArrayList<>();
         Duration slotLength = Duration.ofMinutes(longService ? 30 : 15);
