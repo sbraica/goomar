@@ -1,7 +1,7 @@
 package com.goomar.controller;
 
 import com.goomar.service.ICalendarService;
-import com.goomar.service.IEmailService;
+import com.goomar.service.IGmailService;
 import com.goomar.service.IEntryService;
 import lombok.RequiredArgsConstructor;
 import org.openapitools.api.ReservationsApi;
@@ -12,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,14 +20,14 @@ import java.util.UUID;
 public class ReservationController implements ReservationsApi {
     private final IEntryService entryService;
     private final ICalendarService calendarService;
-    private final IEmailService emailService;
+    private final IGmailService emailService;
 
     @Override
     public ResponseEntity<Integer> createReservation(ReservationRest rr) {
         UUID uuid = UUID.randomUUID();
-        calendarService.insertReservation(rr);
+        String calendarId = calendarService.insertReservation(rr);
         emailService.send(rr, uuid);
-        return new ResponseEntity(entryService.insertReservation(rr, uuid), HttpStatus.OK);
+        return new ResponseEntity(entryService.insertReservation(rr, uuid, calendarId), HttpStatus.OK);
     }
 
     @Override

@@ -149,6 +149,7 @@ class WeekTimeGrid extends StatelessWidget {
 
   // New: simple icon action on each reservation span (no popup/menu).
   final void Function(ReservationSpan span)? onSpanIconPressed;
+  final void Function(ReservationSpan span)? onDeleteIconPressed;
 
   // Working hours
   final TimeOfDay dayStart;
@@ -177,6 +178,7 @@ class WeekTimeGrid extends StatelessWidget {
       required this.selectedTime,
       required this.onSelectSlot,
       this.onSpanIconPressed,
+      this.onDeleteIconPressed,
       required this.dayStart,
       required this.dayEnd,
       required this.slotMinutes,
@@ -445,12 +447,22 @@ class WeekTimeGrid extends StatelessWidget {
                       Positioned(
                           top: 0,
                           right: 0,
-                          child: IconButton(
-                              padding: const EdgeInsets.all(2),
-                              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                              iconSize: 18,
-                              onPressed: onSpanIconPressed == null || span.id == null ? null : () => onSpanIconPressed!(span),
-                              icon: Icon(span.approved ? Icons.undo : Icons.check, color: Colors.white)))
+                          child: Row(
+                            children: [
+                              IconButton(
+                                  padding: const EdgeInsets.all(2),
+                                  constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                                  iconSize: 18,
+                                  onPressed: onSpanIconPressed == null || span.id == null ? null : () => onSpanIconPressed!(span),
+                                  icon: Icon(span.approved ? Icons.undo : Icons.check, color: Colors.white)),
+                              IconButton(
+                                  padding: const EdgeInsets.all(2),
+                                  constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                                  iconSize: 18,
+                                  onPressed: onDeleteIconPressed == null || span.id == null ? null : () => onDeleteIconPressed!(span),
+                                  icon: Icon(Icons.delete, color: Colors.white))
+                            ],
+                          ))
                     ]))));
           }
           return blocks;

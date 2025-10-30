@@ -123,23 +123,23 @@ paths:
               schema:
                 type: string
 
-  /V1/appointments/{appId}:
+  /V1/appointment:
     patch:
       tags:
         - Appointments
       summary: Delete user by Id
-      operationId: createAppointment
+      operationId: confirmAppointment
       parameters:
-        - name: appId
-          in: path
-          required: true
-          schema:
-            type: integer
         - in: header
           name: Authorization
           schema:
             type: string
           required: true
+        - name: eventId
+          in: query
+          required: true
+          schema:
+            type: string
       responses:
         '201':
           description: Single user deleted
@@ -215,6 +215,10 @@ components:
           minLength: 5
           maxLength: 80
         registration:
+          type: string
+          minLength: 5
+          maxLength: 80
+        event_id:
           type: string
           minLength: 5
           maxLength: 80

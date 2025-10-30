@@ -3,12 +3,10 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../widgets/weekday_calendar.dart';
-import 'package:intl/intl.dart';
 import '../../models/reservation.dart';
 import '../../providers/reservation_provider.dart';
 import '../../providers/booking_form_provider.dart';
 import '../../providers/booking_ui_provider.dart';
-import '../operator/login_screen.dart';
 import '../../services/api_client.dart';
 
 class BookingScreen extends StatefulWidget {
@@ -102,85 +100,80 @@ class _BookingScreenState extends State<BookingScreen> {
                                   child: LayoutBuilder(builder: (context, constraints) {
                                     final double fieldWidth = constraints.maxWidth / 3;
                                     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                      const Text('Personal Information', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                                      const Text('Detalji rezervacije', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                                       const SizedBox(height: 16),
                                       Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: FractionallySizedBox(
-                                          widthFactor: 1 / 3,
+                                          alignment: Alignment.centerLeft,
+                                          child: FractionallySizedBox(
+                                              widthFactor: 1 / 3,
+                                              child: TextFormField(
+                                                  controller: ui.nameController,
+                                                  decoration: const InputDecoration(labelText: 'Ime', prefixIcon: Icon(Icons.person)),
+                                                  validator: (value) {
+                                                    if (value == null || value.isEmpty) {
+                                                      return 'Unesite vaše ime';
+                                                    }
+                                                    return null;
+                                                  }))),
+                                      const SizedBox(height: 16),
+                                      SizedBox(
+                                          width: fieldWidth,
                                           child: TextFormField(
-                                              controller: ui.nameController,
-                                              decoration: const InputDecoration(labelText: 'Full Name', prefixIcon: Icon(Icons.person)),
+                                              controller: ui.emailController,
+                                              decoration: const InputDecoration(labelText: 'E-mail', prefixIcon: Icon(Icons.email)),
+                                              keyboardType: TextInputType.emailAddress,
                                               validator: (value) {
                                                 if (value == null || value.isEmpty) {
-                                                  return 'Please enter your name';
+                                                  return 'Unesite vaš e-mail';
+                                                }
+                                                if (!value.contains('@')) {
+                                                  return 'Unesite ispravan e-mail';
                                                 }
                                                 return null;
-                                              }),
-                                        ),
-                                      ),
+                                              })),
                                       const SizedBox(height: 16),
                                       SizedBox(
-                                        width: fieldWidth,
-                                        child: TextFormField(
-                                            controller: ui.emailController,
-                                            decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email)),
-                                            keyboardType: TextInputType.emailAddress,
-                                            validator: (value) {
-                                              if (value == null || value.isEmpty) {
-                                                return 'Please enter your email';
-                                              }
-                                              if (!value.contains('@')) {
-                                                return 'Please enter a valid email';
-                                              }
-                                              return null;
-                                            }),
-                                      ),
+                                          width: fieldWidth,
+                                          child: TextFormField(
+                                              controller: ui.phoneController,
+                                              decoration: const InputDecoration(labelText: 'Telefon', prefixIcon: Icon(Icons.phone)),
+                                              keyboardType: TextInputType.phone,
+                                              validator: (value) {
+                                                if (value == null || value.isEmpty) {
+                                                  return 'Unesite vaš broj telefona';
+                                                }
+                                                return null;
+                                              })),
                                       const SizedBox(height: 16),
                                       SizedBox(
-                                        width: fieldWidth,
-                                        child: TextFormField(
-                                            controller: ui.phoneController,
-                                            decoration: const InputDecoration(labelText: 'Phone Number', prefixIcon: Icon(Icons.phone)),
-                                            keyboardType: TextInputType.phone,
-                                            validator: (value) {
-                                              if (value == null || value.isEmpty) {
-                                                return 'Please enter your phone number';
-                                              }
-                                              return null;
-                                            }),
-                                      ),
-                                      const SizedBox(height: 16),
-                                      SizedBox(
-                                        width: fieldWidth,
-                                        child: TextFormField(
-                                            controller: ui.registrationController,
-                                            decoration: const InputDecoration(labelText: 'Registracija', prefixIcon: Icon(Icons.directions_car)),
-                                            keyboardType: TextInputType.text,
-                                            validator: (value) {
-                                              if (value == null || value.isEmpty) {
-                                                return 'Please enter registration number';
-                                              }
-                                              return null;
-                                            }),
-                                      ),
+                                          width: fieldWidth,
+                                          child: TextFormField(
+                                              controller: ui.registrationController,
+                                              decoration: const InputDecoration(labelText: 'Registracija', prefixIcon: Icon(Icons.directions_car)),
+                                              keyboardType: TextInputType.text,
+                                              validator: (value) {
+                                                if (value == null || value.isEmpty) {
+                                                  return 'Unesite registraciju vozila';
+                                                }
+                                                return null;
+                                              })),
                                       const SizedBox(height: 12),
                                       // Horizontal service selector below phone number
                                       Row(children: [
                                         const Icon(Icons.build_circle, size: 18, color: Colors.grey),
                                         const SizedBox(width: 8),
-                                        const Text('Service:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey)),
+                                        const Text('Servis:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey)),
                                         const SizedBox(width: 12),
                                         Expanded(
                                             child: Wrap(spacing: 8, runSpacing: 8, children: [
                                           ChoiceChip(
-                                              label: Text('Small', style: TextStyle(color: form.selectedService ? null : Colors.white, fontWeight: FontWeight.w600)),
+                                              label: Text('15 min', style: TextStyle(color: form.selectedService ? null : Colors.white, fontWeight: FontWeight.w600)),
                                               selected: form.selectedService == false,
                                               showCheckmark: false,
                                               selectedColor: Theme.of(context).primaryColor,
                                               onSelected: (_) => form.selectService(false)),
                                           ChoiceChip(
-                                              label: Text('Big', style: TextStyle(color: form.selectedService ? Colors.white : null, fontWeight: FontWeight.w600)),
+                                              label: Text('30 min', style: TextStyle(color: form.selectedService ? Colors.white : null, fontWeight: FontWeight.w600)),
                                               selected: form.selectedService == true,
                                               showCheckmark: false,
                                               selectedColor: Theme.of(context).primaryColor,
@@ -192,10 +185,9 @@ class _BookingScreenState extends State<BookingScreen> {
                                       const Divider(height: 1),
                                       const SizedBox(height: 16),
 
-                                      const Text('Select Date & Time', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                                      const Text('Datum zamjene guma', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                                       const SizedBox(height: 16),
                                       LayoutBuilder(builder: (context, constraints) {
-                                        final isWide = constraints.maxWidth >= 700;
                                         final calendarWidget = WeekdayTwoWeekCalendar(
                                             firstDay: DateTime.now(),
                                             lastDay: DateTime.now().add(const Duration(days: 90)),
@@ -207,10 +199,10 @@ class _BookingScreenState extends State<BookingScreen> {
                                             dayButtonScale: 1.0);
 
                                         final timeWidget = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                          const Text('Time', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                                          const Text('Vrijeme', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                                           const SizedBox(height: 12),
                                           if (form.selectedDay == null)
-                                            Text('Select a weekday to see slots', style: TextStyle(color: Colors.grey[700]))
+                                            Text('Odaberite datum kako bi vidjeli dostupne termine', style: TextStyle(color: Colors.grey[700]))
                                           else ...[
                                             Builder(builder: (context) {
                                               final slots = form.generateTimeSlots();
@@ -218,11 +210,11 @@ class _BookingScreenState extends State<BookingScreen> {
                                                 return Row(children: [
                                                   const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2)),
                                                   const SizedBox(width: 8),
-                                                  Text('Loading available time slots...', style: TextStyle(color: Colors.grey[700]))
+                                                  Text('Učitavanje dostupnih termina...', style: TextStyle(color: Colors.grey[700]))
                                                 ]);
                                               }
                                               if (slots.isEmpty) {
-                                                return Text('No available time slots for the selected day.', style: TextStyle(color: Colors.red[700]));
+                                                return Text('Nema dostupnih termina za odabrani datum.', style: TextStyle(color: Colors.red[700]));
                                               }
                                               return Wrap(spacing: 8, runSpacing: 8, children: [
                                                 for (final t in slots)
@@ -238,17 +230,9 @@ class _BookingScreenState extends State<BookingScreen> {
                                           ]
                                         ]);
 
-                                        if (isWide) {
-                                          return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                            // Calendar on the left
-                                            Expanded(flex: 3, child: calendarWidget),
-                                            const SizedBox(width: 16),
-                                            // Time slots on the right
-                                            Expanded(flex: 2, child: timeWidget)
-                                          ]);
-                                        } else {
-                                          return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [calendarWidget, const SizedBox(height: 16), timeWidget]);
-                                        }
+                                        return Row(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [Expanded(flex: 3, child: calendarWidget), const SizedBox(width: 16), Expanded(flex: 2, child: timeWidget)]);
                                       })
                                     ]);
                                   }))),
@@ -259,20 +243,7 @@ class _BookingScreenState extends State<BookingScreen> {
                                   padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                               child: ui.isSubmitting
                                   ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                  : const Text('Submit Reservation', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
-                          const SizedBox(height: 16),
-                          Center(
-                            child: TextButton.icon(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                                );
-                              },
-                              icon: const Icon(Icons.lock_open),
-                              label: const Text('Operator login'),
-                            ),
-                          ),
+                                  : const Text('Rezerviraj!', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
                         ]))))));
   }
 }

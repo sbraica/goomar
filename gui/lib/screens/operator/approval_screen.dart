@@ -197,8 +197,6 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                               if (span.id == null) return;
                               final makeApproved = !span.approved;
                               Provider.of<ReservationProvider>(context, listen: false).setApproved(span.id!, makeApproved);
-                              final msg = makeApproved ? 'Marked as confirmed' : 'Marked as unconfirmed';
-                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
                             },
                             dayStart: const TimeOfDay(hour: 8, minute: 0),
                             dayEnd: const TimeOfDay(hour: 16, minute: 0),

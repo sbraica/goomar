@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.openapitools.model.FreeSlotRest;
 import org.openapitools.model.ReservationRest;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.*;
@@ -39,19 +40,19 @@ public class CalendarService implements ICalendarService {
 
     @SneakyThrows
     @Override
-    public int insertReservation(ReservationRest rr) {
+    public String insertReservation(ReservationRest rr) {
         ZoneId zone = ZoneId.of("Europe/Zagreb");
 
         ZonedDateTime startZoned = rr.getDateTime().atZone(zone);
         ZonedDateTime endZoned = startZoned.plusMinutes(rr.getLongService() ? 30 : 15);
 
-        Event event = new Event().setSummary(rr.getUsername()).setDescription(rr.getPhone()).setDescription("GOOMAR APP").setStart(new EventDateTime().setDateTime(new DateTime(startZoned.toInstant().toEpochMilli()))
+        Event event = new Event().setSummary(rr.getUsername()).setDescription(rr.getPhone()).setColorId("5").setStart(new EventDateTime().setDateTime(new DateTime(startZoned.toInstant().toEpochMilli()))
                 .setTimeZone(zone.getId())).setEnd(new EventDateTime().setDateTime(new DateTime(endZoned.toInstant().toEpochMilli())).setTimeZone(zone.getId()));
 
         Event created = calendar.events().insert(calendarId, event).execute();
 
-        log.info("✅ Event created: %s (%s)%n",created.getSummary(), created.getHtmlLink());
-        return 0;
+        log.info("Event created: {}: {}, {}", created.getId(), created.getSummary(), created.getStart());
+        return created.getId();
     }
 
     @SneakyThrows
@@ -124,5 +125,11 @@ public class CalendarService implements ICalendarService {
         return freeSlots;
     }
 
+    @SneakyThrows
+    @Override
+    public void confirmAppointment(String eventId) {
+        Event event = calendar.events().get(calendarId, eventId).execute().setStatus("confirmed").setColorId("1");
+        calendar.events().update(calendarId, event.getId(), event).execute();
+    }
 }
 

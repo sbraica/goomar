@@ -28,7 +28,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class GmailEmailService implements IEmailService {
+public class GmailService implements IGmailService {
     private final Gmail gmail;
 
     private final static DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy., HH:mm");
