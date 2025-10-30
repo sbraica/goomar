@@ -1,7 +1,6 @@
 package com.goomar.security.services;
 
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -11,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class FlexiUserDetailsService implements UserDetailsService {
+public class GoomarUserDetailsService implements UserDetailsService {
 
     private static final Map<String, String> USERS = Map.of(
             "admin", "$2a$12$qKb14CslVOJwv4oThGL/UewHLP3MPircWrpQIfN6DUkZxM9Ha9xXy"
@@ -21,7 +20,7 @@ public class FlexiUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         String password = USERS.get(username);
 
-        return new FlexiUserDetails(username, password, List.of(
+        return new GoomarUserDetails(username, password, List.of(
                 new SimpleGrantedAuthority("ROLE_ADMIN")
         ));
     }

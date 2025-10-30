@@ -1,9 +1,8 @@
 package com.goomar.security.jwt;
 
-import com.goomar.security.services.FlexiUserDetails;
+import com.goomar.security.services.GoomarUserDetails;
 import io.jsonwebtoken.*;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
@@ -23,7 +22,7 @@ public class JwtUtils {
     private String jwtCookie;
 
 
-    public ResponseCookie generateJwtToken(FlexiUserDetails userPrincipal) {
+    public ResponseCookie generateJwtToken(GoomarUserDetails userPrincipal) {
 
         String jwt =
                 Jwts.builder().setSubject("1").setId("1").setIssuedAt(new Date()).setExpiration(new Date((new Date()).getTime() + jwtExpirationSec * 1000L))

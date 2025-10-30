@@ -11,7 +11,7 @@ import java.util.List;
 
 @Getter
 @RequiredArgsConstructor
-public class FlexiUserDetails implements UserDetails {
+public class GoomarUserDetails implements UserDetails {
 
     private final String username;
     private final String password;
