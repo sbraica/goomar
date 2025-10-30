@@ -2,6 +2,7 @@ package com.goomar.controller;
 
 import com.google.api.services.calendar.model.*;
 import com.goomar.service.ICalendarService;
+import com.goomar.service.IEmailService;
 import com.goomar.service.IEntryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +24,7 @@ import java.util.List;
 @Slf4j
 public class AppointmentController implements AppointmentsApi {
     private final IEntryService entryService;
-    private final ICalendarService calendarService;
+
 
     @Override
     public ResponseEntity<Void> createAppointment(Integer appId, String authorization) {
