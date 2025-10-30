@@ -66,7 +66,7 @@ public class WebSecurityConfig {
                 .exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
                 .authorizeRequests()
-                .requestMatchers("/V1/reservation", "/V1/freeslots/**", "/V1/token").permitAll() // public endpoint
+                .requestMatchers("/V1/reservation","/V1/confirmation", "/V1/freeslots/**", "/V1/token").permitAll() // public endpoint
                 .anyRequest().authenticated();
 
         http.authenticationProvider(authenticationProvider());

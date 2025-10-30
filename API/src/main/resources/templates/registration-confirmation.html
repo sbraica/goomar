@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<body style="font-family: Arial, sans-serif; background-color: #f8f9fa; padding: 20px;">
+<div style="max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px;">
+    <h2 style="color: #0f62fe;">Poštovani {{customerName}}!</h2>
+
+    <p>
+        Molimo potvrdite rezervaciju izmjene guma:
+    </p>
+    <p>
+        Vozilo: {{registration}}
+    </p>
+    <p>
+        Termin: {{timeslot}}
+    </p>
+
+    <p style="text-align: center; margin: 30px 0;">
+        <a href="{{confirmationUrl}}" target="_blank"
+           style="background-color: #0f62fe; color: white; padding: 12px 20px;
+                text-decoration: none; border-radius: 5px;">
+            Potvrdi rezervaciju
+        </a>
+    </p>
+
+    <p>
+        Ili otvorite link u internet pregledniku:<br>
+        <a href="{{confirmationUrl}}" target="_blank">{{confirmationUrl}}</a>
+    </p>
+
+    <p style="color: #666; font-size: 12px;">
+        Ukoliko niste rezervirali termin u Auto-kući Bosnić zanemarite ovaj e-mail.
+    </p>
+</div>
+</body>
+</html>

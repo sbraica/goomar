@@ -103,6 +103,25 @@ paths:
                 default: [ ]
                 items:
                   $ref: "#/components/schemas/FreeSlotRest"
+  /V1/confirmation:
+    get:
+      tags:
+        - Reservations
+      summary: Get all application users
+      operationId: getConfirmation
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of application users
+          content:
+            text/html:
+              schema:
+                type: string
 
   /V1/appointments/{appId}:
     patch:
@@ -124,7 +143,6 @@ paths:
       responses:
         '201':
           description: Single user deleted
-
   /V1/reservation:
     post:
       tags:

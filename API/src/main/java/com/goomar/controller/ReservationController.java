@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @RestController
@@ -23,11 +24,16 @@ public class ReservationController implements ReservationsApi {
     private final IEmailService emailService;
 
     @Override
-    public ResponseEntity<Integer> createReservation(ReservationRest reservationRest) {
-        calendarService.insertReservation(reservationRest);
-        emailService.sendText("stipe.braica@gmail.com", "subject", "body");
+    public ResponseEntity<Integer> createReservation(ReservationRest rr) {
+        UUID uuid = UUID.randomUUID();
+        calendarService.insertReservation(rr);
+        emailService.send(rr, uuid);
+        return new ResponseEntity(entryService.insertReservation(rr, uuid), HttpStatus.OK);
+    }
 
-        return new ResponseEntity(entryService.insertReservation(reservationRest), HttpStatus.OK);
+    @Override
+    public ResponseEntity<String> getConfirmation(String token) {
+        return new ResponseEntity(entryService.getConfirmation(token), HttpStatus.OK);
     }
 
     @Override
