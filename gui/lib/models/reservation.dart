@@ -1,5 +1,6 @@
 class Reservation {
   final int id;
+  final String? event_id; // backend event identifier for PATCH operations
   final String username;
   final String email;
   final String phone;
@@ -11,6 +12,7 @@ class Reservation {
 
   Reservation({
     required this.id,
+    this.event_id,
     required this.username,
     required this.email,
     required this.phone,
@@ -34,6 +36,7 @@ class Reservation {
 
     return Reservation(
       id: (json['id'] ?? 0) is int ? json['id'] as int : int.tryParse('${json['id'] ?? '0'}') ?? 0,
+      event_id: (json['event_id'] ?? json['event_id'] ?? json['event_id'])?.toString(),
       username: (json['username'] ?? json['name'] ?? '') as String,
       email: (json['email'] ?? '') as String,
       phone: (json['phone'] ?? '') as String,
@@ -48,6 +51,7 @@ class Reservation {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      if (event_id != null) 'event_id': event_id,
       'username': username,
       'email': email,
       'phone': phone,

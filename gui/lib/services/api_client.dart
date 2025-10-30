@@ -195,6 +195,23 @@ class ApiClient {
       throw ApiException('Network error while creating reservation', e.toString());
     }
   }
+
+  /// Set appointment approved/unapproved by eventId via PATCH.
+  /// Endpoint: /V1/appointment?eventId=<id>
+  /// Sends JSON body { "approved": true|false } for clarity, although backend may ignore it.
+  Future<void> setAppointmentApproved(String eventId, bool approved) async {
+    final url = _uri('/V1/appointment?eventId=$eventId');
+    try {
+      final resp = await http.patch(url, headers: _headers(json: true)).timeout(const Duration(seconds: 10));
+      if (resp.statusCode < 200 || resp.statusCode >= 300) {
+        throw ApiException('Failed to update appointment approval: HTTP ${resp.statusCode}', resp.body);
+      }
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      throw ApiException('Network error while updating appointment', e.toString());
+    }
+  }
 }
 
 class ApiException implements Exception {

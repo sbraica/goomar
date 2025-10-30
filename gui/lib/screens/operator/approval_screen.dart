@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import '../../providers/reservation_provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../widgets/reservation_card.dart';
 import '../../widgets/week_time_grid.dart';
-import '../../models/reservation.dart';
 
 class ApprovalScreen extends StatefulWidget {
   const ApprovalScreen({Key? key}) : super(key: key);
@@ -15,29 +12,23 @@ class ApprovalScreen extends StatefulWidget {
 }
 
 class _ApprovalScreenState extends State<ApprovalScreen> {
-  // Local state for operator scheduler view
-  DateTime focusedDay = DateTime.now();
-  DateTime? selectedDay;
-  TimeOfDay? selectedTime;
-  final int slotMinutes = 15; // fixed 15-minute slots
-
+  // UI state moved to provider: focusedDay, selectedDay, selectedTime
+  final int slotMinutes = 15;
   DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
-
   DateTime _mondayOf(DateTime d) => _dateOnly(d).subtract(Duration(days: d.weekday - DateTime.monday));
 
   @override
   void initState() {
     super.initState();
-    // Load reservations when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       try {
         final monday = _mondayOf(DateTime.now());
         await Provider.of<ReservationProvider>(context, listen: false).loadReservations(weekStart: monday);
+        // also set focusedDay in provider
+        Provider.of<ReservationProvider>(context, listen: false).setFocusedDay(monday);
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to load reservations from server'), backgroundColor: Colors.red),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to load reservations from server'), backgroundColor: Colors.red));
         }
       }
     });
@@ -53,15 +44,17 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
     final reservationProvider = Provider.of<ReservationProvider>(context);
 
-    // Week bounds
+    // Read UI state from provider
+    final DateTime focusedDay = reservationProvider.focusedDay;
+    final DateTime? selectedDay = reservationProvider.selectedDay;
+    final TimeOfDay? selectedTime = reservationProvider.selectedTime;
+
     final weekStart = _mondayOf(focusedDay);
     final weekEnd = weekStart.add(const Duration(days: 7));
 
-    // Build occupied set and visual spans for reservations in the visible week.
     final occupied = <DateTime>{};
     final spans = <ReservationSpan>[];
 
-    // Helpers to compute 15-min slots for a given day, skipping lunch
     List<TimeOfDay> _daySlots() {
       final List<TimeOfDay> slots = [];
       TimeOfDay t = const TimeOfDay(hour: 8, minute: 0);
@@ -93,11 +86,9 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
       final dt = r.date_time;
       if (dt.isBefore(weekStart) || !dt.isBefore(weekEnd)) continue;
 
-      // Visual span uses exact start (can be off-grid) and duration from service type
       final int duration = r.longService ? 30 : 15;
       spans.add(ReservationSpan(id: r.id, start: DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute), durationMinutes: duration, label: r.username, approved: r.approved));
 
-      // Disable taps on any 15-min grid cell that overlaps with the reservation interval
       final DateTime resStart = DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute);
       final DateTime resEnd = resStart.add(Duration(minutes: duration));
       for (final tod in daySlots) {
@@ -110,10 +101,8 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
     }
 
     void onSelectSlot(DateTime slot) {
-      setState(() {
-        selectedDay = slot;
-        selectedTime = TimeOfDay(hour: slot.hour, minute: slot.minute);
-      });
+      // set via provider
+      Provider.of<ReservationProvider>(context, listen: false).setSelectedSlot(slot);
     }
 
     final firstDay = DateTime.now();
@@ -142,7 +131,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                   child: Chip(
                       avatar: const Icon(Icons.person, size: 16, color: Colors.white),
                       label: Text(authProvider.currentUser?.username ?? 'Operator', style: const TextStyle(color: Colors.white)),
-                      backgroundColor: Theme.of(context).primaryColor.withOpacity(0.8)))),
+                      backgroundColor: Theme.of(context).primaryColor.withAlpha((0.8 * 255).round())))),
           IconButton(
               icon: const Icon(Icons.logout),
               tooltip: 'Logout',
@@ -167,7 +156,8 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                             onPrevWeek: () async {
                               if (reservationProvider.isLoading) return;
                               final prev = weekStart.subtract(const Duration(days: 7));
-                              setState(() => focusedDay = DateTime(prev.year, prev.month, prev.day));
+                              // update provider-focused day instead of setState
+                              reservationProvider.setFocusedDay(DateTime(prev.year, prev.month, prev.day));
                               try {
                                 await reservationProvider.loadReservations(weekStart: prev);
                               } catch (_) {
@@ -180,7 +170,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                             onNextWeek: () async {
                               if (reservationProvider.isLoading) return;
                               final next = weekStart.add(const Duration(days: 7));
-                              setState(() => focusedDay = DateTime(next.year, next.month, next.day));
+                              reservationProvider.setFocusedDay(DateTime(next.year, next.month, next.day));
                               try {
                                 await reservationProvider.loadReservations(weekStart: next);
                               } catch (_) {
@@ -193,10 +183,18 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                             selectedDay: selectedDay,
                             selectedTime: selectedTime,
                             onSelectSlot: onSelectSlot,
-                            onSpanIconPressed: (span) {
+                            onSpanIconPressed: (span) async {
                               if (span.id == null) return;
                               final makeApproved = !span.approved;
-                              Provider.of<ReservationProvider>(context, listen: false).setApproved(span.id!, makeApproved);
+                              try {
+                                await Provider.of<ReservationProvider>(context, listen: false).setApprovedRemote(span.id!, makeApproved);
+                              } catch (e) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Failed to update approval: $e'), backgroundColor: Colors.red),
+                                  );
+                                }
+                              }
                             },
                             dayStart: const TimeOfDay(hour: 8, minute: 0),
                             dayEnd: const TimeOfDay(hour: 16, minute: 0),

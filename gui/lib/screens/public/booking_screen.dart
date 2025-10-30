@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../widgets/weekday_calendar.dart';
@@ -9,20 +7,14 @@ import '../../providers/booking_form_provider.dart';
 import '../../providers/booking_ui_provider.dart';
 import '../../services/api_client.dart';
 
-class BookingScreen extends StatefulWidget {
+class BookingScreen extends StatelessWidget {
   const BookingScreen({Key? key}) : super(key: key);
 
-  @override
-  State<BookingScreen> createState() => _BookingScreenState();
-}
-
-class _BookingScreenState extends State<BookingScreen> {
-  final _formKey = GlobalKey<FormState>();
-
-  Future<void> _submitBooking() async {
+  Future<void> _submitBooking(BuildContext context) async {
     final form = Provider.of<BookingFormProvider>(context, listen: false);
     final ui = Provider.of<BookingUiProvider>(context, listen: false);
-    if (_formKey.currentState!.validate() && form.selectedDay != null && form.selectedTime != null) {
+    final formState = ui.formKey.currentState;
+    if (formState != null && formState.validate() && form.selectedDay != null && form.selectedTime != null) {
       final start = DateTime(form.selectedDay!.year, form.selectedDay!.month, form.selectedDay!.day, form.selectedTime!.hour, form.selectedTime!.minute);
       final reservation = Reservation(
           id: 0,
@@ -42,7 +34,7 @@ class _BookingScreenState extends State<BookingScreen> {
         // Optionally also keep local list up-to-date for operator view
         Provider.of<ReservationProvider>(context, listen: false).addReservation(reservation);
 
-        if (!mounted) return;
+        if (!context.mounted) return;
         showDialog(
             context: context,
             builder: (ctx) => AlertDialog(
@@ -53,7 +45,7 @@ class _BookingScreenState extends State<BookingScreen> {
                         onPressed: () {
                           // Close the dialog and clear the form & provider state
                           Navigator.of(ctx).pop();
-                          _formKey.currentState?.reset();
+                          ui.formKey.currentState?.reset();
                           ui.clearInputs();
                           Provider.of<BookingFormProvider>(context, listen: false).reset();
                         },
@@ -61,10 +53,10 @@ class _BookingScreenState extends State<BookingScreen> {
                       )
                     ]));
       } catch (e) {
-        if (!mounted) return;
+        if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to submit reservation. ${e.toString()}'), backgroundColor: Colors.red));
       } finally {
-        if (mounted) ui.isSubmitting = false;
+        if (context.mounted) ui.isSubmitting = false;
       }
     } else if (form.selectedDay == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a date')));
@@ -72,8 +64,6 @@ class _BookingScreenState extends State<BookingScreen> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a time slot')));
     }
   }
-
-  bool _isValidEmail(String v) => v.contains('@');
 
   bool _isFormComplete(BookingFormProvider form, BookingUiProvider ui) {
     return ui.areTextFieldsComplete && form.selectedDay != null && form.selectedTime != null;
@@ -90,7 +80,7 @@ class _BookingScreenState extends State<BookingScreen> {
                 child: SingleChildScrollView(
                     padding: const EdgeInsets.all(16.0),
                     child: Form(
-                        key: _formKey,
+                        key: ui.formKey,
                         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                           Card(
                               elevation: 4,
@@ -238,7 +228,7 @@ class _BookingScreenState extends State<BookingScreen> {
                                   }))),
                           const SizedBox(height: 24),
                           ElevatedButton(
-                              onPressed: _isFormComplete(form, ui) && !ui.isSubmitting ? _submitBooking : null,
+                              onPressed: _isFormComplete(form, ui) && !ui.isSubmitting ? () => _submitBooking(context) : null,
                               style: ElevatedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                               child: ui.isSubmitting

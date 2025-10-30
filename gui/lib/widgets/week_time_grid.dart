@@ -66,7 +66,7 @@ class _WeekGridPainter extends CustomPainter {
       final Rect bandRect = Rect.fromLTWH(left, y, right - left, rowHeight);
       final bool isOdd = r % 2 == 1;
       final Color c = isOdd ? bandColorOdd : bandColorEven;
-      if (c.opacity > 0) {
+      if (c.alpha > 0) {
         canvas.drawRect(bandRect, Paint()..color = c);
       }
     }
@@ -422,7 +422,7 @@ class WeekTimeGrid extends StatelessWidget {
                 height: height,
                 child: Container(
                     decoration: BoxDecoration(
-                      color: (span.approved ? Colors.green.shade400 : Colors.red.shade300).withOpacity(0.85),
+                      color: (span.approved ? Colors.green.shade400 : Colors.red.shade300).withAlpha((0.85 * 255).round()),
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(color: span.approved ? Colors.green.shade700 : Colors.red.shade600, width: 1),
                     ),
@@ -482,10 +482,10 @@ class WeekTimeGrid extends StatelessWidget {
         final Color bandOdd = Colors.transparent;
         final Color bandEven = Colors.transparent;
         final Color todayTint = Colors.transparent;
-        final Color hourLineColor = isDark ? Colors.white.withOpacity(0.28) : Colors.black.withOpacity(0.28);
-        final Color minorLineColor = isDark ? Colors.white.withOpacity(0.14) : Colors.black.withOpacity(0.14);
+        final Color hourLineColor = isDark ? Colors.white.withAlpha((0.28 * 255).round()) : Colors.black.withAlpha((0.28 * 255).round());
+        final Color minorLineColor = isDark ? Colors.white.withAlpha((0.14 * 255).round()) : Colors.black.withAlpha((0.14 * 255).round());
 
-        final double? lunchSplitRowIndex = (lunchS != null) ? ((lunchS! - dayStartMin) / slotMinutes) : null;
+        final double? lunchSplitRowIndex = (lunchS != null) ? ((lunchS - dayStartMin) / slotMinutes) : null;
 
         final Widget gridPaint = SizedBox(
             height: totalHeight,
@@ -524,14 +524,6 @@ class WeekTimeGrid extends StatelessWidget {
         // Fits: no scroll necessary
         return SizedBox(height: totalHeight, width: constraints.maxWidth, child: overlay);
       }))
-    ]);
-  }
-
-  Widget _legendSwatch(BuildContext context, Color bg, Color fg, String label) {
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      Container(width: 14, height: 14, decoration: BoxDecoration(color: bg, border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(3))),
-      const SizedBox(width: 6),
-      Text(label, style: TextStyle(color: fg, fontSize: 12))
     ]);
   }
 }

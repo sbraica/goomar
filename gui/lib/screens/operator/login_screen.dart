@@ -40,11 +40,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final primary = Theme.of(context).primaryColor;
     return Scaffold(
         body: Container(
             decoration: BoxDecoration(
                 gradient: LinearGradient(
-                    begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Theme.of(context).primaryColor, Theme.of(context).primaryColor.withOpacity(0.6)])),
+                    begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [primary, primary.withAlpha((0.6 * 255).round())])),
             child: SafeArea(
                 child: Center(
                     child: SingleChildScrollView(

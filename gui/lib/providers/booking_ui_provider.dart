@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 class BookingUiProvider with ChangeNotifier {
+  // Form key moved here so BookingScreen can be stateless
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+
   // Text controllers owned by the provider so we can notify UI on changes
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();

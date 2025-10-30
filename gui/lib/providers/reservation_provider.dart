@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import '../models/reservation.dart';
 import '../services/api_client.dart';
 
@@ -6,6 +7,11 @@ class ReservationProvider with ChangeNotifier {
   final List<Reservation> _reservations = [];
   bool _isLoading = false;
   String? _lastError;
+
+  // UI state moved to provider
+  DateTime focusedDay = DateTime.now();
+  DateTime? selectedDay;
+  TimeOfDay? selectedTime;
 
   List<Reservation> get reservations => [..._reservations];
   bool get isLoading => _isLoading;
@@ -61,6 +67,31 @@ class ReservationProvider with ChangeNotifier {
     }
   }
 
+  /// Toggle approved state and call backend PATCH to persist.
+  /// Uses optimistic update; reverts on error and sets lastError.
+  Future<void> setApprovedRemote(int id, bool value) async {
+    _setError(null);
+    final index = _reservations.indexWhere((r) => r.id == id);
+    if (index == -1) return;
+    final prevApproved = _reservations[index].approved;
+    final prevPending = _reservations[index].pending;
+
+    // Optimistic local update
+    setApproved(id, value);
+
+    try {
+      final eventId = _reservations[index].event_id.toString();
+      await ApiClient.instance.setAppointmentApproved(eventId, value);
+    } catch (e) {
+      // Revert on error and expose message
+      _reservations[index].approved = prevApproved;
+      _reservations[index].pending = prevPending;
+      _setError(e.toString());
+      notifyListeners();
+      rethrow;
+    }
+  }
+
   void rejectReservation(int id) {
     _reservations.removeWhere((r) => r.id == id);
     notifyListeners();
@@ -68,6 +99,24 @@ class ReservationProvider with ChangeNotifier {
 
   List<DateTime> getBookedDates() {
     return _reservations.map((r) => DateTime(r.date_time.year, r.date_time.month, r.date_time.day)).toList();
+  }
+
+  // UI setters for screens
+  void setFocusedDay(DateTime d) {
+    focusedDay = d;
+    notifyListeners();
+  }
+
+  void setSelectedSlot(DateTime slot) {
+    selectedDay = DateTime(slot.year, slot.month, slot.day);
+    selectedTime = TimeOfDay(hour: slot.hour, minute: slot.minute);
+    notifyListeners();
+  }
+
+  void clearSelectedSlot() {
+    selectedDay = null;
+    selectedTime = null;
+    notifyListeners();
   }
 
   Future<void> loadReservations({required DateTime weekStart}) async {
