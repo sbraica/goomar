@@ -129,7 +129,7 @@ class _WeekGridPainter extends CustomPainter {
 }
 
 class ReservationSpan {
-  final int? id; // optional reservation id to map actions
+  final String? id; // optional reservation id (UUID) to map actions
   final DateTime start;
   final int durationMinutes;
   final String? label;
@@ -449,6 +449,7 @@ class WeekTimeGrid extends StatelessWidget {
                           right: 0,
                           child: Row(
                             children: [
+                              if (!span.approved)
                               IconButton(
                                   padding: const EdgeInsets.all(2),
                                   constraints: const BoxConstraints(minWidth: 28, minHeight: 28),

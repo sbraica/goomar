@@ -23,16 +23,37 @@ public class ReservationController implements ReservationsApi {
     private final IGmailService emailService;
 
     @Override
-    public ResponseEntity<Integer> createReservation(ReservationRest rr) {
-        UUID uuid = UUID.randomUUID();
-        String calendarId = calendarService.insertReservation(rr);
-        emailService.sendReservation(rr, uuid);
-        return new ResponseEntity(entryService.insertReservation(rr, uuid, calendarId), HttpStatus.OK);
+    public ResponseEntity<Void> confirmReservation(String authorization, String eventId) {
+        ReservationRest rr = entryService.confirmReservation(eventId);
+        calendarService.confirmAppointment( eventId);
+        emailService.sendConfirmation(rr);
+        return new ResponseEntity(HttpStatus.CREATED);
     }
 
     @Override
-    public ResponseEntity<String> getConfirmation(String token) {
-        return new ResponseEntity(entryService.getConfirmation(token), HttpStatus.OK);
+    public ResponseEntity<Void> createReservation(ReservationRest rr) {
+        String calendarId = calendarService.insertReservation(rr);
+        UUID uuid = entryService.insertReservation(rr, calendarId);
+        emailService.sendReservation(rr, uuid);
+        return new ResponseEntity(entryService.insertReservation(rr, calendarId), HttpStatus.OK);
+    }
+
+    @Override
+    public ResponseEntity<Void> deleteReservation(String authorization, String eventId) {
+        ReservationRest rr = entryService.deleteAppoitnment(eventId);
+        calendarService.deleteAppointment( eventId);
+        emailService.sendDelete(rr);
+        return new ResponseEntity(HttpStatus.NO_CONTENT);
+    }
+
+    @Override
+    public ResponseEntity<List<FreeSlotRest>> getAppointments(String authorization, Integer year, Integer month, Integer day) {
+        return new ResponseEntity(entryService.getAppointments(authorization, year, month, day), HttpStatus.OK);
+    }
+
+    @Override
+    public ResponseEntity<String> getConfirmation(String uuid) {
+        return new ResponseEntity(entryService.getConfirmation(uuid), HttpStatus.OK);
     }
 
     @Override

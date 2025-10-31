@@ -28,44 +28,6 @@ paths:
             application/json; charset=utf-8:
               schema:
                 $ref: '#/components/schemas/TokenRsp'
-
-  /V1/appointments/{year}/{month}/{day}:
-    get:
-      tags:
-        - Appointments
-      summary: Get all application users
-      operationId: getAppointments
-      parameters:
-        - in: header
-          name: Authorization
-          schema:
-            type: string
-          required: true
-        - name: year
-          in: path
-          required: true
-          schema:
-            type: integer
-        - name: month
-          in: path
-          required: true
-          schema:
-            type: integer
-        - name: day
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: List of application users
-          content:
-            application/json; charset=utf-8:
-              schema:
-                type: array
-                default: [ ]
-                items:
-                  $ref: "#/components/schemas/ReservationRest"
   /V1/freeslots/{year}/{month}/{day}:
     get:
       tags:
@@ -110,7 +72,7 @@ paths:
       summary: Get all application users
       operationId: getConfirmation
       parameters:
-        - name: token
+        - name: uuid
           in: query
           required: true
           schema:
@@ -122,46 +84,6 @@ paths:
             text/html:
               schema:
                 type: string
-
-  /V1/appointment:
-    patch:
-      tags:
-        - Appointments
-      summary: Delete user by Id
-      operationId: confirmAppointment
-      parameters:
-        - in: header
-          name: Authorization
-          schema:
-            type: string
-          required: true
-        - name: eventId
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        '201':
-          description: Single user deleted
-    delete:
-      tags:
-        - Appointments
-      summary: Delete user by Id
-      operationId: deleteAppointment
-      parameters:
-        - in: header
-          name: Authorization
-          schema:
-            type: string
-          required: true
-        - name: eventId
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        '201':
-          description: Single user deleted
   /V1/reservation:
     post:
       tags:
@@ -178,10 +100,81 @@ paths:
       responses:
         '201':
           description: create/update reservation
+    patch:
+      tags:
+        - Reservations
+      summary: Delete user by Id
+      operationId: confirmReservation
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+        - name: eventId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Single user deleted
+    delete:
+      tags:
+        - Reservations
+      summary: Delete user by Id
+      operationId: deleteReservation
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+        - name: eventId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Single user deleted
+  /V1/reservations/{year}/{month}/{day}:
+    get:
+      tags:
+        - Reservations
+      summary: Get all application users
+      operationId: getAppointments
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: month
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: day
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of application users
           content:
-            application/json:
+            application/json; charset=utf-8:
               schema:
-                type: integer
+                type: array
+                default: [ ]
+                items:
+                  $ref: "#/components/schemas/FreeSlotRest"
 components:
   securitySchemes:
     BearerAuth:
@@ -208,16 +201,17 @@ components:
           type: string
     ReservationRest:
       required:
-        - id
         - username
         - email
         - phone
         - date_time
         - registration
         - longService
+        - confirmed
       properties:
         id:
-          type: integer
+          type: string
+          format: uuid
         username:
           type: string
           minLength: 5

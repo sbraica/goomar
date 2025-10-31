@@ -10,4 +10,6 @@ public interface IGmailService {
     void sendHtml(String to, String subject, String htmlBody);
     void sendReservation(ReservationRest rr, UUID uuid);
     void sendConfirmation(ReservationRest rr);
+
+    void sendDelete(ReservationRest rr);
 }

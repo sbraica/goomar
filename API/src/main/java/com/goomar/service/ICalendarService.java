@@ -17,4 +17,6 @@ public interface ICalendarService {
     List<FreeSlotRest> getFreeSlots(LocalDate date, boolean longService);
 
     void confirmAppointment(String eventId);
+
+    void deleteAppointment(String eventId);
 }

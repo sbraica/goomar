@@ -20,13 +20,9 @@ public class EntryService implements IEntryService {
     final DSLContext ctx;
 
     @Override
-    public int insertReservation(ReservationRest rr, UUID uuid, String eventId) {
-        log.info(">>insertReservation({})", rr);
-        if (rr.getId() == 0) {
-            return ctx.insertInto(ENTRIES, ENTRIES.DATE_TIME, ENTRIES.USERNAME, ENTRIES.PHONE, ENTRIES.EMAIL, ENTRIES.REGISTRATION, ENTRIES.LONG_SERVICE, ENTRIES.CONFIRMED, ENTRIES.TOKEN, ENTRIES.EVENT_ID)
-                    .values(rr.getDateTime(), rr.getUsername(), rr.getPhone(), rr.getEmail(), rr.getRegistration(), rr.getLongService(), false, uuid, eventId).returningResult(ENTRIES.ID).fetchOne().value1();
-        }
-        return 0;
+    public UUID insertReservation(ReservationRest rr, String eventId) {
+            return ctx.insertInto(ENTRIES, ENTRIES.DATE_TIME, ENTRIES.USERNAME, ENTRIES.PHONE, ENTRIES.EMAIL, ENTRIES.REGISTRATION, ENTRIES.LONG_SERVICE, ENTRIES.CONFIRMED, ENTRIES.EVENT_ID)
+                    .values(rr.getDateTime(), rr.getUsername(), rr.getPhone(), rr.getEmail(), rr.getRegistration(), rr.getLongService(), false, eventId).returningResult(ENTRIES.ID).fetchOne().value1();
     }
 
 
@@ -48,8 +44,13 @@ public class EntryService implements IEntryService {
     }
 
     @Override
-    public ReservationRest confirmAppoitnment(String eventId) {
-        return ctx.update(ENTRIES).set(ENTRIES.CONFIRMED, true).where(ENTRIES.EVENT_ID.eq(eventId)).returning().fetchOneInto(ReservationRest.class);
+    public ReservationRest confirmReservation(String eventId) {
+        return ctx.update(ENTRIES).set(ENTRIES.EMAIL_OK, true).where(ENTRIES.EVENT_ID.eq(eventId)).returning().fetchOneInto(ReservationRest.class);
+    }
+
+    @Override
+    public ReservationRest deleteAppoitnment(String eventId) {
+        return ctx.deleteFrom(ENTRIES).where(ENTRIES.EVENT_ID.eq(eventId)).returning().fetchOneInto(ReservationRest.class);
     }
 
 }

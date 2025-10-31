@@ -84,7 +84,7 @@ class ApiClient {
     final y = weekStart.year;
     final m = weekStart.month; // integers in path
     final d = weekStart.day;   // start-of-week (Monday)
-    final url = _uri('/V1/appointments/$y/$m/$d');
+    final url = _uri('/V1/reservations/$y/$m/$d');
     try {
       final resp = await http.get(url, headers: _headers()).timeout(const Duration(seconds: 10));
       if (resp.statusCode < 200 || resp.statusCode >= 300) {

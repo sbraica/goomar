@@ -119,5 +119,11 @@ public class CalendarService implements ICalendarService {
         Event event = calendar.events().get(calendarId, eventId).execute().setStatus("confirmed").setColorId("1");
         calendar.events().update(calendarId, event.getId(), event).execute();
     }
+
+    @SneakyThrows
+    @Override
+    public void deleteAppointment(String eventId) {
+        calendar.events().delete(calendarId, eventId).execute();
+    }
 }
 

@@ -1,5 +1,7 @@
 class Reservation {
-  final int id;
+  /// Reservation identifier is a UUID string provided by the backend.
+  /// When creating a new reservation, this should be null (omit from payload).
+  final String? id;
   final String? event_id; // backend event identifier for PATCH operations
   final String username;
   final String email;
@@ -11,7 +13,7 @@ class Reservation {
   final DateTime date_time;
 
   Reservation({
-    required this.id,
+    this.id,
     this.event_id,
     required this.username,
     required this.email,
@@ -34,9 +36,15 @@ class Reservation {
     final bool approved = json['approved'] == true;
     final bool pending = json.containsKey('pending') ? (json['pending'] == true) : !approved;
 
+    // Prefer explicit `id` if present, else fall back to `event_id` for compatibility
+    String? parseId(dynamic v) {
+      if (v == null) return null;
+      return v.toString().isEmpty ? null : v.toString();
+    }
+
     return Reservation(
-      id: (json['id'] ?? 0) is int ? json['id'] as int : int.tryParse('${json['id'] ?? '0'}') ?? 0,
-      event_id: (json['event_id'] ?? json['event_id'] ?? json['event_id'])?.toString(),
+      id: parseId(json['id']) ?? parseId(json['event_id']),
+      event_id: parseId(json['event_id']),
       username: (json['username'] ?? json['name'] ?? '') as String,
       email: (json['email'] ?? '') as String,
       phone: (json['phone'] ?? '') as String,
@@ -50,7 +58,7 @@ class Reservation {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      if (id != null) 'id': id,
       if (event_id != null) 'event_id': event_id,
       'username': username,
       'email': email,

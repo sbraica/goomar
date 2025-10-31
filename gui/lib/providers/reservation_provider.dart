@@ -48,8 +48,8 @@ class ReservationProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void approveReservation(int id) {
-    final index = _reservations.indexWhere((r) => r.id == id);
+  void approveReservation(String id) {
+    final index = _reservations.indexWhere((r) => r.id != null && r.id == id);
     if (index != -1) {
       _reservations[index].confirmed = true;
       _reservations[index].pending = false;
@@ -57,8 +57,8 @@ class ReservationProvider with ChangeNotifier {
     }
   }
 
-  void setApproved(int id, bool value) {
-    final index = _reservations.indexWhere((r) => r.id == id);
+  void setApproved(String id, bool value) {
+    final index = _reservations.indexWhere((r) => r.id != null && r.id == id);
     if (index != -1) {
       _reservations[index].confirmed = value;
       // if approved => not pending; if unapproved => pending
@@ -69,9 +69,9 @@ class ReservationProvider with ChangeNotifier {
 
   /// Toggle approved state and call backend PATCH to persist.
   /// Uses optimistic update; reverts on error and sets lastError.
-  Future<void> setApprovedRemote(int id, bool value) async {
+  Future<void> setApprovedRemote(String id, bool value) async {
     _setError(null);
-    final index = _reservations.indexWhere((r) => r.id == id);
+    final index = _reservations.indexWhere((r) => r.id != null && r.id == id);
     if (index == -1) return;
     final prevApproved = _reservations[index].confirmed;
     final prevPending = _reservations[index].pending;
@@ -80,7 +80,8 @@ class ReservationProvider with ChangeNotifier {
     setApproved(id, value);
 
     try {
-      final eventId = (_reservations[index].event_id ?? _reservations[index].id.toString());
+      final eventId = (_reservations[index].event_id ?? _reservations[index].id);
+      if (eventId == null || eventId.isEmpty) throw Exception('Missing event id for appointment update');
       await ApiClient.instance.setAppointmentApproved(eventId, value);
     } catch (e) {
       // Revert on error and expose message
@@ -94,9 +95,9 @@ class ReservationProvider with ChangeNotifier {
 
   /// Delete a reservation locally and remotely via DELETE endpoint.
   /// Uses optimistic removal; reinserts on failure and sets lastError.
-  Future<void> deleteReservationRemote(int id) async {
+  Future<void> deleteReservationRemote(String id) async {
     _setError(null);
-    final index = _reservations.indexWhere((r) => r.id == id);
+    final index = _reservations.indexWhere((r) => r.id != null && r.id == id);
     if (index == -1) return;
     final removed = _reservations[index];
 
@@ -105,7 +106,8 @@ class ReservationProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final eventId = (removed.event_id ?? removed.id.toString());
+      final eventId = (removed.event_id ?? removed.id);
+      if (eventId == null || eventId.isEmpty) throw Exception('Missing event id for appointment deletion');
       await ApiClient.instance.deleteAppointment(eventId);
     } catch (e) {
       // Reinsert on error
@@ -116,8 +118,8 @@ class ReservationProvider with ChangeNotifier {
     }
   }
 
-  void rejectReservation(int id) {
-    _reservations.removeWhere((r) => r.id == id);
+  void rejectReservation(String id) {
+    _reservations.removeWhere((r) => r.id != null && r.id == id);
     notifyListeners();
   }
 

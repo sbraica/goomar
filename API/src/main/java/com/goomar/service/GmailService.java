@@ -55,7 +55,7 @@ public class GmailService implements IGmailService {
                 "customerName", rr.getUsername(),
                 "registration", rr.getRegistration(),
                 "timeslot", rr.getDateTime().format(formatter),
-                "confirmationUrl", appUrl + "/V1/confirmation?token="+uuid.toString()
+                "confirmationUrl", appUrl + "/V1/confirmation?uuid="+uuid.toString()
         );
         var resource = new ClassPathResource("templates/registration-confirmation.html");
         String content = Files.readString(resource.getFile().toPath(), StandardCharsets.UTF_8);
@@ -81,6 +81,22 @@ public class GmailService implements IGmailService {
             content = content.replace("{{" + entry.getKey() + "}}", entry.getValue());
         }
         sendHtml(rr.getEmail(), "Potvrda termina", content);
+    }
+
+    @SneakyThrows
+    @Override
+    public void sendDelete(ReservationRest rr) {
+        Map<String, String> values = Map.of(
+                "customerName", rr.getUsername(),
+                "registration", rr.getRegistration(),
+                "timeslot", rr.getDateTime().format(formatter));
+        var resource = new ClassPathResource("templates/appointnment-deletion.html");
+        String content = Files.readString(resource.getFile().toPath(), StandardCharsets.UTF_8);
+
+        for (var entry : values.entrySet()) {
+            content = content.replace("{{" + entry.getKey() + "}}", entry.getValue());
+        }
+        sendHtml(rr.getEmail(), "Poništenje termina !!!", content);
     }
 
     @SneakyThrows
