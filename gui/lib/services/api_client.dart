@@ -183,9 +183,7 @@ class ApiClient {
     final url = _uri('/V1/reservation');
     final body = jsonEncode(reservation.toJson());
     try {
-      final resp = await http
-          .post(url, headers: _headers(json: true), body: body)
-          .timeout(const Duration(seconds: 10));
+      final resp = await http.post(url, headers: _headers(json: true), body: body).timeout(const Duration(seconds: 10));
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
         throw ApiException('Failed to create reservation: HTTP ${resp.statusCode}', resp.body);
       }
@@ -210,6 +208,22 @@ class ApiClient {
       rethrow;
     } catch (e) {
       throw ApiException('Network error while updating appointment', e.toString());
+    }
+  }
+
+  /// Delete an appointment by eventId via DELETE.
+  /// Endpoint: /V1/appointment?eventId=<id>
+  Future<void> deleteAppointment(String eventId) async {
+    final url = _uri('/V1/appointment?eventId=$eventId');
+    try {
+      final resp = await http.delete(url, headers: _headers()).timeout(const Duration(seconds: 10));
+      if (resp.statusCode < 200 || resp.statusCode >= 300) {
+        throw ApiException('Failed to delete appointment: HTTP ${resp.statusCode}', resp.body);
+      }
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      throw ApiException('Network error while deleting appointment', e.toString());
     }
   }
 }

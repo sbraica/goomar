@@ -38,7 +38,7 @@ public class EntryService implements IEntryService {
         LocalDateTime startOfWeek = date.atStartOfDay();
         LocalDateTime endOfWeek = date.plusDays(5).atStartOfDay();
 
-        return ctx.select(ENTRIES.ID, ENTRIES.USERNAME, ENTRIES.DATE_TIME, ENTRIES.EMAIL, ENTRIES.PHONE, ENTRIES.REGISTRATION, ENTRIES.LONG_SERVICE, ENTRIES.EMAIL, ENTRIES.CONFIRMED, ENTRIES.EVENT_ID)
+        return ctx.select(ENTRIES.ID, ENTRIES.USERNAME, ENTRIES.DATE_TIME, ENTRIES.EMAIL, ENTRIES.PHONE, ENTRIES.REGISTRATION, ENTRIES.LONG_SERVICE, ENTRIES.EMAIL, ENTRIES.CONFIRMED, ENTRIES.EVENT_ID, ENTRIES.CONFIRMED)
                   .from(ENTRIES).where(ENTRIES.DATE_TIME.ge(startOfWeek).and(ENTRIES.DATE_TIME.lt(endOfWeek))).orderBy(ENTRIES.DATE_TIME.asc()).fetchInto(ReservationRest.class);
     }
 
@@ -46,4 +46,10 @@ public class EntryService implements IEntryService {
     public String getConfirmation(String token) {
         return "<html><body><h2>Rezervacija potvrđena!</h2></body></html>";
     }
+
+    @Override
+    public ReservationRest confirmAppoitnment(String eventId) {
+        return ctx.update(ENTRIES).set(ENTRIES.CONFIRMED, true).where(ENTRIES.EVENT_ID.eq(eventId)).returning().fetchOneInto(ReservationRest.class);
+    }
+
 }

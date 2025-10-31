@@ -26,7 +26,7 @@ public class ReservationController implements ReservationsApi {
     public ResponseEntity<Integer> createReservation(ReservationRest rr) {
         UUID uuid = UUID.randomUUID();
         String calendarId = calendarService.insertReservation(rr);
-        emailService.send(rr, uuid);
+        emailService.sendReservation(rr, uuid);
         return new ResponseEntity(entryService.insertReservation(rr, uuid, calendarId), HttpStatus.OK);
     }
 

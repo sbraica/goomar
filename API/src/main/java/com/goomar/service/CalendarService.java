@@ -64,15 +64,8 @@ public class CalendarService implements ICalendarService {
         DateTime timeMin = new DateTime(startOfDay.toInstant().toEpochMilli());
         DateTime timeMax = new DateTime(endOfDay.toInstant().toEpochMilli());
 
-        List<Event> allEvents = calendar.events()
-                .list(calendarId)
-                .setTimeMin(timeMin)
-                .setTimeMax(timeMax)
-                .setOrderBy("startTime")
-                .setShowDeleted(false)
-                .setSingleEvents(true)
-                .execute()
-                .getItems();
+        List<Event> allEvents = calendar.events().list(calendarId).setTimeMin(timeMin).setTimeMax(timeMax).setOrderBy("startTime")
+                .setShowDeleted(false).setSingleEvents(true).execute().getItems();
 
         List<TimePeriod> busyPeriods = new ArrayList<>();
         for (Event event : allEvents) {
@@ -88,18 +81,13 @@ public class CalendarService implements ICalendarService {
             if (!start.toLocalDate().equals(end.toLocalDate()))
                 continue;
 
-            busyPeriods.add(new TimePeriod()
-                    .setStart(event.getStart().getDateTime())
-                    .setEnd(event.getEnd().getDateTime()));
+            busyPeriods.add(new TimePeriod().setStart(event.getStart().getDateTime()).setEnd(event.getEnd().getDateTime()));
         }
 
         ZonedDateTime lunchStart = date.atTime(LocalTime.of(12, 0)).atZone(ZoneId.systemDefault());
         ZonedDateTime lunchEnd = date.atTime(LocalTime.of(13, 0)).atZone(ZoneId.systemDefault());
-        busyPeriods.add(new TimePeriod()
-                .setStart(new DateTime(lunchStart.toInstant().toEpochMilli()))
-                .setEnd(new DateTime(lunchEnd.toInstant().toEpochMilli())));
+        busyPeriods.add(new TimePeriod().setStart(new DateTime(lunchStart.toInstant().toEpochMilli())).setEnd(new DateTime(lunchEnd.toInstant().toEpochMilli())));
 
-        // Ensure busy periods are processed in chronological order
         busyPeriods.sort(Comparator.comparingLong(tp -> tp.getStart().getValue()));
 
         List<FreeSlotRest> freeSlots = new ArrayList<>();

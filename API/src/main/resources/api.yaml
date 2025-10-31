@@ -143,6 +143,25 @@ paths:
       responses:
         '201':
           description: Single user deleted
+    delete:
+      tags:
+        - Appointments
+      summary: Delete user by Id
+      operationId: deleteAppointment
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+        - name: eventId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Single user deleted
   /V1/reservation:
     post:
       tags:
@@ -223,6 +242,8 @@ components:
           minLength: 5
           maxLength: 80
         longService:
+          type: boolean
+        confirmed:
           type: boolean
     FreeSlotRest:
       required:

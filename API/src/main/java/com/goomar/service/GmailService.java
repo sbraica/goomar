@@ -49,7 +49,7 @@ public class GmailService implements IGmailService {
 
     @SneakyThrows
     @Override
-    public void send(ReservationRest rr, UUID uuid) {
+    public void sendReservation(ReservationRest rr, UUID uuid) {
 
         Map<String, String> values = Map.of(
                 "customerName", rr.getUsername(),
@@ -64,6 +64,23 @@ public class GmailService implements IGmailService {
             content = content.replace("{{" + entry.getKey() + "}}", entry.getValue());
         }
         sendHtml(rr.getEmail(), "Potvrda rezervacije", content);
+    }
+
+    @SneakyThrows
+    @Override
+    public void sendConfirmation(ReservationRest rr) {
+
+        Map<String, String> values = Map.of(
+                "customerName", rr.getUsername(),
+                "registration", rr.getRegistration(),
+                "timeslot", rr.getDateTime().format(formatter));
+        var resource = new ClassPathResource("templates/appointnment-confirmation.html");
+        String content = Files.readString(resource.getFile().toPath(), StandardCharsets.UTF_8);
+
+        for (var entry : values.entrySet()) {
+            content = content.replace("{{" + entry.getKey() + "}}", entry.getValue());
+        }
+        sendHtml(rr.getEmail(), "Potvrda termina", content);
     }
 
     @SneakyThrows

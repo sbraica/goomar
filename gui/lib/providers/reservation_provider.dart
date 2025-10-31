@@ -22,7 +22,7 @@ class ReservationProvider with ChangeNotifier {
   }
 
   List<Reservation> get approvedReservations {
-    return _reservations.where((r) => r.approved).toList();
+    return _reservations.where((r) => r.confirmed).toList();
   }
 
   void _setLoading(bool v) {
@@ -51,7 +51,7 @@ class ReservationProvider with ChangeNotifier {
   void approveReservation(int id) {
     final index = _reservations.indexWhere((r) => r.id == id);
     if (index != -1) {
-      _reservations[index].approved = true;
+      _reservations[index].confirmed = true;
       _reservations[index].pending = false;
       notifyListeners();
     }
@@ -60,7 +60,7 @@ class ReservationProvider with ChangeNotifier {
   void setApproved(int id, bool value) {
     final index = _reservations.indexWhere((r) => r.id == id);
     if (index != -1) {
-      _reservations[index].approved = value;
+      _reservations[index].confirmed = value;
       // if approved => not pending; if unapproved => pending
       _reservations[index].pending = !value;
       notifyListeners();
@@ -73,19 +73,43 @@ class ReservationProvider with ChangeNotifier {
     _setError(null);
     final index = _reservations.indexWhere((r) => r.id == id);
     if (index == -1) return;
-    final prevApproved = _reservations[index].approved;
+    final prevApproved = _reservations[index].confirmed;
     final prevPending = _reservations[index].pending;
 
     // Optimistic local update
     setApproved(id, value);
 
     try {
-      final eventId = _reservations[index].event_id.toString();
+      final eventId = (_reservations[index].event_id ?? _reservations[index].id.toString());
       await ApiClient.instance.setAppointmentApproved(eventId, value);
     } catch (e) {
       // Revert on error and expose message
-      _reservations[index].approved = prevApproved;
+      _reservations[index].confirmed = prevApproved;
       _reservations[index].pending = prevPending;
+      _setError(e.toString());
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  /// Delete a reservation locally and remotely via DELETE endpoint.
+  /// Uses optimistic removal; reinserts on failure and sets lastError.
+  Future<void> deleteReservationRemote(int id) async {
+    _setError(null);
+    final index = _reservations.indexWhere((r) => r.id == id);
+    if (index == -1) return;
+    final removed = _reservations[index];
+
+    // Optimistic remove
+    _reservations.removeAt(index);
+    notifyListeners();
+
+    try {
+      final eventId = (removed.event_id ?? removed.id.toString());
+      await ApiClient.instance.deleteAppointment(eventId);
+    } catch (e) {
+      // Reinsert on error
+      _reservations.insert(index, removed);
       _setError(e.toString());
       notifyListeners();
       rethrow;

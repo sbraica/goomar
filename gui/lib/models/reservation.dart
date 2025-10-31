@@ -7,7 +7,7 @@ class Reservation {
   final String registration;
   final bool longService;
   bool pending;
-  bool approved;
+  bool confirmed;
   final DateTime date_time;
 
   Reservation({
@@ -19,7 +19,7 @@ class Reservation {
     required this.registration,
     required this.longService,
     required this.pending,
-    required this.approved,
+    required this.confirmed,
     required this.date_time,
   });
 
@@ -43,7 +43,7 @@ class Reservation {
       registration: (json['registration'] ?? json['plate'] ?? '') as String,
       longService: json['longService'] == true,
       pending: pending,
-      approved: approved,
+      confirmed: json['confirmed'] == true,
       date_time: parseDate(json['date_time']),
     );
   }
@@ -57,6 +57,7 @@ class Reservation {
       'phone': phone,
       'registration': registration,
       'longService': longService,
+      'confirmed': confirmed,
       'date_time': date_time.toIso8601String(),
     };
   }

@@ -19,7 +19,7 @@ class BookingScreen extends StatelessWidget {
       final reservation = Reservation(
           id: 0,
           pending: true,
-          approved: false,
+          confirmed: false,
           username: ui.name,
           email: ui.email,
           phone: ui.phone,

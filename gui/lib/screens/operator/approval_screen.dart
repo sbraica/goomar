@@ -87,7 +87,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
       if (dt.isBefore(weekStart) || !dt.isBefore(weekEnd)) continue;
 
       final int duration = r.longService ? 30 : 15;
-      spans.add(ReservationSpan(id: r.id, start: DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute), durationMinutes: duration, label: r.username, approved: r.approved));
+      spans.add(ReservationSpan(id: r.id, start: DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute), durationMinutes: duration, label: r.username, approved: r.confirmed));
 
       final DateTime resStart = DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute);
       final DateTime resEnd = resStart.add(Duration(minutes: duration));
@@ -195,6 +195,20 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                                   );
                                 }
                               }
+                            },
+                            onDeleteIconPressed: (span) async {
+                              if (span.id == null) return;
+                              _showConfirmDialog(context, 'Delete appointment', 'Are you sure you want to delete this appointment?', () async {
+                                try {
+                                  await Provider.of<ReservationProvider>(context, listen: false).deleteReservationRemote(span.id!);
+                                } catch (e) {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Failed to delete appointment: $e'), backgroundColor: Colors.red),
+                                    );
+                                  }
+                                }
+                              });
                             },
                             dayStart: const TimeOfDay(hour: 8, minute: 0),
                             dayEnd: const TimeOfDay(hour: 16, minute: 0),
