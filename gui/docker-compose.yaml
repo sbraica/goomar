@@ -1,0 +1,41 @@
+version: '3.8'
+networks:
+    goomar_be:
+volumes:
+  pgdata3:
+services:
+    goomardb:
+        networks:
+            - goomar_be
+        image: postgres:12-alpine
+        restart: unless-stopped
+        container_name: goomar_db
+        ports:
+            - "5436:5432"
+        environment:
+            - POSTGRES_DB=postgres
+            - POSTGRES_PASSWORD=postgres
+            - POSTGRES_USER=postgres
+        volumes:
+            - pgdata3:/var/lib/postgresql/data
+    goomarapi:
+        networks:
+            - goomar_be
+        container_name: goomar_api
+        image: goomar_api:latest
+        restart: unless-stopped
+        ports:
+            - 8011:8080
+        environment:
+            DB_URL: jdbc:postgresql://goomardb:5432/goomar
+            DB_USER: goomar
+            DB_PASS: goomar
+            EMAIL_ENABLED: true
+    goomargui:
+        networks:
+            - goomar_be
+        image: goomar_gui:latest
+        restart: unless-stopped
+        container_name: goomar_gui
+        ports:
+            - 8012:80
