@@ -30,7 +30,7 @@ services:
             DB_URL: jdbc:postgresql://goomardb:5432/goomar
             DB_USER: goomar
             DB_PASS: goomar
-            APP_URL: https://termin.bosnic.hr
+            APP_URL: https://terminapi.bosnic.hr
             EMAIL_ENABLED: true
     goomargui:
         networks:
