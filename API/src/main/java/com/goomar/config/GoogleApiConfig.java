@@ -13,16 +13,14 @@ import com.google.api.services.calendar.Calendar;
 import com.google.api.services.gmail.Gmail;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.http.HttpMethod;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
-import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.List;
@@ -38,9 +36,13 @@ public class GoogleApiConfig {
             "https://www.googleapis.com/auth/calendar"
     );
 
+    /**
+     * GoogleAuthorizationCodeFlow bean is always created.
+     */
     @Bean
     public GoogleAuthorizationCodeFlow googleAuthorizationCodeFlow() throws GeneralSecurityException, IOException {
         final NetHttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
+
         GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(
                 JSON_FACTORY,
                 new InputStreamReader(new ClassPathResource("credentials.json").getInputStream())
@@ -57,8 +59,10 @@ public class GoogleApiConfig {
                 .build();
     }
 
-    @Bean
-    public Gmail googleGmailService(GoogleAuthorizationCodeFlow flow) throws Exception {
+    /**
+     * Creates Gmail client dynamically. Call only after user authorization.
+     */
+    public Gmail createGmailClient(GoogleAuthorizationCodeFlow flow) throws Exception {
         Credential credential = flow.loadCredential("user");
         if (credential == null) {
             throw new IllegalStateException("No credentials found. User must authorize first!");
@@ -70,8 +74,10 @@ public class GoogleApiConfig {
         ).setApplicationName(APPLICATION_NAME).build();
     }
 
-    @Bean
-    public Calendar googleCalendarService(GoogleAuthorizationCodeFlow flow) throws Exception {
+    /**
+     * Creates Calendar client dynamically. Call only after user authorization.
+     */
+    public Calendar createCalendarClient(GoogleAuthorizationCodeFlow flow) throws Exception {
         Credential credential = flow.loadCredential("user");
         if (credential == null) {
             throw new IllegalStateException("No credentials found. User must authorize first!");
@@ -83,6 +89,9 @@ public class GoogleApiConfig {
         ).setApplicationName(APPLICATION_NAME).build();
     }
 
+    /**
+     * Controller for web-based authorization flow.
+     */
     @RestController
     public static class GoogleOAuthController {
 
@@ -93,10 +102,10 @@ public class GoogleApiConfig {
         }
 
         /**
-         * Start OAuth flow manually in production
+         * Start OAuth flow manually.
          */
         @GetMapping("/google/auth")
-        public String authorize() throws IOException {
+        public String authorize() {
             String authUrl = flow.newAuthorizationUrl()
                     .setRedirectUri("https://terminapi.bosnic.hr/oauth2/callback")
                     .build();
@@ -104,7 +113,7 @@ public class GoogleApiConfig {
         }
 
         /**
-         * Callback endpoint to receive authorization code from Google
+         * Callback endpoint for Google to return authorization code.
          */
         @GetMapping("/oauth2/callback")
         public String callback(@RequestParam String code) throws IOException {
@@ -112,7 +121,7 @@ public class GoogleApiConfig {
                     .setRedirectUri("https://terminapi.bosnic.hr/oauth2/callback")
                     .execute();
             flow.createAndStoreCredential(tokenResponse, "user");
-            return "Authorization successful!";
+            return "Authorization successful! You can now use Calendar and Gmail APIs.";
         }
     }
 }
