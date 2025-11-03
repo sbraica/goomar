@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart' as dotenv;
 import '../models/reservation.dart';
 
 /// Simple API client wrapping HTTP calls to the backend.
@@ -11,10 +12,21 @@ class ApiClient {
   final String baseUrl;
 
   /// Global singleton configured from environment with a sensible default.
-  /// You can override by creating your own instance if needed.
-  static final ApiClient instance = ApiClient._(
-    const String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:8080'),
-  );
+  /// Lazily initialized to ensure .env is loaded in main() before reading.
+  static ApiClient get instance => _instance ??= ApiClient._(_resolveBaseUrl());
+  static ApiClient? _instance;
+
+  static String _resolveBaseUrl() {
+    try {
+      final fromEnv = dotenv.dotenv.env['HOST'];
+      if (fromEnv != null && fromEnv.isNotEmpty) {
+        return fromEnv;
+      }
+    } catch (_) {
+      // dotenv may not be loaded; fall back to dart-define/default
+    }
+    return const String.fromEnvironment('HOST', defaultValue: '');
+  }
 
   /// Bearer token for authenticated requests (set after login).
   String? _authToken;
