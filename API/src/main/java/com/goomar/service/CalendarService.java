@@ -1,5 +1,8 @@
 package com.goomar.service;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
+import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.DateTime;
 import com.google.api.services.calendar.Calendar;
 import com.google.api.services.calendar.model.*;
@@ -22,10 +25,21 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class CalendarService implements ICalendarService {
-    private final Calendar calendar;
     @Value("${goomar.calendarId}")
     private String calendarId;
+    private final GoogleAuthorizationCodeFlow flow;
 
+    public Calendar getCalendarClient() throws Exception {
+        var credential = flow.loadCredential("user");
+        if (credential == null) {
+            throw new IllegalStateException("User must authorize first!");
+        }
+        return new Calendar.Builder(
+                GoogleNetHttpTransport.newTrustedTransport(),
+                JacksonFactory.getDefaultInstance(),
+                credential
+        ).setApplicationName("Goomar App").build();
+    }
     @Override
     @SneakyThrows
     public List<Event> getEventsForDay(LocalDate date) {
@@ -36,7 +50,7 @@ public class CalendarService implements ICalendarService {
         DateTime timeMax = new DateTime(endOfDay.toInstant().toEpochMilli());
 
 
-        return calendar.events().list(calendarId).setTimeMin(timeMin).setTimeMax(timeMax).setOrderBy("startTime").setShowDeleted(false).setSingleEvents(true).execute().getItems();
+        return getCalendarClient().events().list(calendarId).setTimeMin(timeMin).setTimeMax(timeMax).setOrderBy("startTime").setShowDeleted(false).setSingleEvents(true).execute().getItems();
     }
 
     @SneakyThrows
@@ -50,7 +64,7 @@ public class CalendarService implements ICalendarService {
         Event event = new Event().setSummary(rr.getUsername()).setDescription(rr.getPhone()).setColorId("5").setStart(new EventDateTime().setDateTime(new DateTime(startZoned.toInstant().toEpochMilli()))
                 .setTimeZone(zone.getId())).setEnd(new EventDateTime().setDateTime(new DateTime(endZoned.toInstant().toEpochMilli())).setTimeZone(zone.getId()));
 
-        Event created = calendar.events().insert(calendarId, event).execute();
+        Event created = getCalendarClient().events().insert(calendarId, event).execute();
 
         log.info("Event created: {}: {}, {}", created.getId(), created.getSummary(), created.getStart());
         return created.getId();
@@ -68,7 +82,7 @@ public class CalendarService implements ICalendarService {
 
         List<Event> allEvents = null;
         try {
-            allEvents = calendar.events().list(calendarId).setTimeMin(timeMin).setTimeMax(timeMax).setOrderBy("startTime")
+            allEvents = getCalendarClient().events().list(calendarId).setTimeMin(timeMin).setTimeMax(timeMax).setOrderBy("startTime")
                     .setShowDeleted(false).setSingleEvents(true).execute().getItems();
         } catch (IOException e) {
             log.error("Error getting events for day: {}", date, e);
@@ -126,13 +140,13 @@ public class CalendarService implements ICalendarService {
     @SneakyThrows
     @Override
     public void confirmAppointment(String eventId) {
-        Event event = calendar.events().get(calendarId, eventId).execute().setStatus("confirmed").setColorId("1");
-        calendar.events().update(calendarId, event.getId(), event).execute();
+        Event event = getCalendarClient().events().get(calendarId, eventId).execute().setStatus("confirmed").setColorId("1");
+        getCalendarClient().events().update(calendarId, event.getId(), event).execute();
     }
 
     @SneakyThrows
     @Override
     public void deleteAppointment(String eventId) {
-        calendar.events().delete(calendarId, eventId).execute();
+        getCalendarClient().events().delete(calendarId, eventId).execute();
     }
 }
