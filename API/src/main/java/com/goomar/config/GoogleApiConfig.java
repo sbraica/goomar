@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.HttpMethod;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -37,13 +38,9 @@ public class GoogleApiConfig {
             "https://www.googleapis.com/auth/calendar"
     );
 
-    /**
-     * Creates the GoogleAuthorizationCodeFlow bean.
-     */
     @Bean
     public GoogleAuthorizationCodeFlow googleAuthorizationCodeFlow() throws GeneralSecurityException, IOException {
         final NetHttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
-
         GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(
                 JSON_FACTORY,
                 new InputStreamReader(new ClassPathResource("credentials.json").getInputStream())
@@ -61,8 +58,11 @@ public class GoogleApiConfig {
     }
 
     @Bean
-    public Gmail googleGmailService(GoogleAuthorizationCodeFlow flow, Environment env) throws Exception {
+    public Gmail googleGmailService(GoogleAuthorizationCodeFlow flow) throws Exception {
         Credential credential = flow.loadCredential("user");
+        if (credential == null) {
+            throw new IllegalStateException("No credentials found. User must authorize first!");
+        }
         return new Gmail.Builder(
                 GoogleNetHttpTransport.newTrustedTransport(),
                 JSON_FACTORY,
@@ -71,8 +71,11 @@ public class GoogleApiConfig {
     }
 
     @Bean
-    public Calendar googleCalendarService(GoogleAuthorizationCodeFlow flow, Environment env) throws Exception {
+    public Calendar googleCalendarService(GoogleAuthorizationCodeFlow flow) throws Exception {
         Credential credential = flow.loadCredential("user");
+        if (credential == null) {
+            throw new IllegalStateException("No credentials found. User must authorize first!");
+        }
         return new Calendar.Builder(
                 GoogleNetHttpTransport.newTrustedTransport(),
                 JSON_FACTORY,
@@ -89,12 +92,25 @@ public class GoogleApiConfig {
             this.flow = flow;
         }
 
+        /**
+         * Start OAuth flow manually in production
+         */
+        @GetMapping("/google/auth")
+        public String authorize() throws IOException {
+            String authUrl = flow.newAuthorizationUrl()
+                    .setRedirectUri("https://terminapi.bosnic.hr/oauth2/callback")
+                    .build();
+            return "<a href=\"" + authUrl + "\" target=\"_blank\">Authorize Google Access</a>";
+        }
+
+        /**
+         * Callback endpoint to receive authorization code from Google
+         */
         @GetMapping("/oauth2/callback")
         public String callback(@RequestParam String code) throws IOException {
             TokenResponse tokenResponse = flow.newTokenRequest(code)
-                    .setRedirectUri("https://terminapi.bosnic.hr/oauth2/callback") // Production URI
+                    .setRedirectUri("https://terminapi.bosnic.hr/oauth2/callback")
                     .execute();
-
             flow.createAndStoreCredential(tokenResponse, "user");
             return "Authorization successful!";
         }
