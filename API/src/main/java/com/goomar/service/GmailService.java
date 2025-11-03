@@ -67,7 +67,7 @@ public class GmailService implements IGmailService {
     @SneakyThrows
     @Override
     public void sendReservation(ReservationRest rr, UUID uuid) {
-
+        log.info("sendReservation(rr={}, uuid={})", rr, uuid);
         Map<String, String> values = Map.of(
                 "customerName", rr.getUsername(),
                 "registration", rr.getRegistration(),
@@ -86,7 +86,7 @@ public class GmailService implements IGmailService {
     @SneakyThrows
     @Override
     public void sendConfirmation(ReservationRest rr) {
-
+        log.info("sendConfirmation(rr={})", rr);
         Map<String, String> values = Map.of(
                 "customerName", rr.getUsername(),
                 "registration", rr.getRegistration(),
