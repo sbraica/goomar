@@ -210,7 +210,7 @@ class ApiClient {
   /// Endpoint: /V1/appointment?eventId=<id>
   /// Sends JSON body { "approved": true|false } for clarity, although backend may ignore it.
   Future<void> setAppointmentApproved(String eventId, bool approved) async {
-    final url = _uri('/V1/appointment?eventId=$eventId');
+    final url = _uri('/V1/reservation?eventId=$eventId');
     try {
       final resp = await http.patch(url, headers: _headers(json: true)).timeout(const Duration(seconds: 10));
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
@@ -226,7 +226,7 @@ class ApiClient {
   /// Delete an appointment by eventId via DELETE.
   /// Endpoint: /V1/appointment?eventId=<id>
   Future<void> deleteAppointment(String eventId) async {
-    final url = _uri('/V1/appointment?eventId=$eventId');
+    final url = _uri('/V1/reservation?eventId=$eventId');
     try {
       final resp = await http.delete(url, headers: _headers()).timeout(const Duration(seconds: 10));
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
