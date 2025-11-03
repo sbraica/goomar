@@ -70,7 +70,9 @@ public class WebSecurityConfig {
                                 "/V1/reservation/**",
                                 "/V1/confirmation/**",
                                 "/V1/freeslots/**",
-                                "/V1/token/**"
+                                "/V1/token/**",
+                                "/google/auth",
+                                "/oauth2/callback"
                         ).permitAll()
                         .anyRequest().authenticated()
                 );

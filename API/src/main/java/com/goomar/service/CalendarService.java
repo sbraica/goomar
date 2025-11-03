@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.time.*;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -58,14 +59,21 @@ public class CalendarService implements ICalendarService {
     @SneakyThrows
     @Override
     public List<FreeSlotRest> getFreeSlots(LocalDate date, boolean longService) {
+        log.info("getFreeSlots(date={}, longService={})", date, longService);
         ZonedDateTime startOfDay = date.atTime(LocalTime.of(8, 0)).atZone(ZoneId.systemDefault());
         ZonedDateTime endOfDay = date.atTime(LocalTime.of(16, 0)).atZone(ZoneId.systemDefault());
 
         DateTime timeMin = new DateTime(startOfDay.toInstant().toEpochMilli());
         DateTime timeMax = new DateTime(endOfDay.toInstant().toEpochMilli());
 
-        List<Event> allEvents = calendar.events().list(calendarId).setTimeMin(timeMin).setTimeMax(timeMax).setOrderBy("startTime")
-                .setShowDeleted(false).setSingleEvents(true).execute().getItems();
+        List<Event> allEvents = null;
+        try {
+            allEvents = calendar.events().list(calendarId).setTimeMin(timeMin).setTimeMax(timeMax).setOrderBy("startTime")
+                    .setShowDeleted(false).setSingleEvents(true).execute().getItems();
+        } catch (IOException e) {
+            log.error("Error getting events for day: {}", date, e);
+            throw e;
+        }
 
         List<TimePeriod> busyPeriods = new ArrayList<>();
         for (Event event : allEvents) {
