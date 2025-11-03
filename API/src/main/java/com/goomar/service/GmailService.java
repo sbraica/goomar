@@ -76,10 +76,11 @@ public class GmailService implements IGmailService {
         );
         var resource = new ClassPathResource("templates/registration-confirmation.html");
         String content = Files.readString(resource.getFile().toPath(), StandardCharsets.UTF_8);
-
+        log.info("preparing content");
         for (var entry : values.entrySet()) {
             content = content.replace("{{" + entry.getKey() + "}}", entry.getValue());
         }
+        log.info("sendHtml(rr.getEmail(), content={})", content);
         sendHtml(rr.getEmail(), "Potvrda rezervacije", content);
     }
 
