@@ -61,7 +61,7 @@ public class GoogleApiConfig {
     }
 
     @Bean
-    public Gmail gmailService(GoogleAuthorizationCodeFlow flow, Environment env) throws Exception {
+    public Gmail googleGmailService(GoogleAuthorizationCodeFlow flow, Environment env) throws Exception {
         Credential credential = flow.loadCredential("user");
         return new Gmail.Builder(
                 GoogleNetHttpTransport.newTrustedTransport(),
@@ -70,11 +70,8 @@ public class GoogleApiConfig {
         ).setApplicationName(APPLICATION_NAME).build();
     }
 
-    /**
-     * Creates the Calendar service using the same credential.
-     */
     @Bean
-    public Calendar calendarService(GoogleAuthorizationCodeFlow flow, Environment env) throws Exception {
+    public Calendar googleCalendarService(GoogleAuthorizationCodeFlow flow, Environment env) throws Exception {
         Credential credential = flow.loadCredential("user");
         return new Calendar.Builder(
                 GoogleNetHttpTransport.newTrustedTransport(),
