@@ -1,5 +1,9 @@
 package com.goomar.service;
 
+import com.google.api.client.auth.oauth2.Credential;
+import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
+import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.Base64;
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.Message;
@@ -29,13 +33,26 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class GmailService implements IGmailService {
-    private final Gmail gmail;
+    private final GoogleAuthorizationCodeFlow flow;
 
     private final static DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy., HH:mm");
 
     @Value("${goomar.appUrl}")
     private String appUrl;
     private String fromAddress = "termin@bosnic.hr";
+
+    public Gmail getGmailClient() throws Exception {
+        Credential credential = flow.loadCredential("user");
+        if (credential == null) {
+            throw new IllegalStateException("User must authorize first!");
+        }
+
+        return new Gmail.Builder(
+                GoogleNetHttpTransport.newTrustedTransport(),
+                JacksonFactory.getDefaultInstance(),
+                credential
+        ).setApplicationName("Goomar App").build();
+    }
 
     @Override
     public void sendText(String to, String subject, String body) {
@@ -104,7 +121,7 @@ public class GmailService implements IGmailService {
         MimeMessage mimeMessage = buildMime(to, subject, content, html);
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         mimeMessage.writeTo(buffer);
-        Message sent = gmail.users().messages().send("me", (new Message()).setRaw(Base64.encodeBase64URLSafeString(buffer.toByteArray()))).execute();
+        Message sent = getGmailClient().users().messages().send("me", (new Message()).setRaw(Base64.encodeBase64URLSafeString(buffer.toByteArray()))).execute();
         log.info("📧 Email sent to={} subject={} id={}", to, subject, sent.getId());
     }
 
