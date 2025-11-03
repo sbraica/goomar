@@ -13,7 +13,7 @@ import java.util.Map;
 public class GoomarUserDetailsService implements UserDetailsService {
 
     private static final Map<String, String> USERS = Map.of(
-            "admin", "$2a$12$qKb14CslVOJwv4oThGL/UewHLP3MPircWrpQIfN6DUkZxM9Ha9xXy"
+            "admin", "$2a$12$tljWS7pfA3cloE3XlQiS5exgb0ign5zefYD7Bn1VqVAjEeBpIBJtG"
     );
 
     @Override
