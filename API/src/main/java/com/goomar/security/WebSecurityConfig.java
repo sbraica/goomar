@@ -60,15 +60,22 @@ public class WebSecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.cors().and().csrf().disable()
+        http
+                .cors().and()
+                .csrf().disable()
                 .exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
-                .authorizeRequests()
-                .requestMatchers("/V1/reservation","/V1/confirmation", "/V1/freeslots/**", "/V1/token").permitAll() // public endpoint
-                .anyRequest().authenticated();
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/V1/reservation/**",
+                                "/V1/confirmation/**",
+                                "/V1/freeslots/**",
+                                "/V1/token/**"
+                        ).permitAll()
+                        .anyRequest().authenticated()
+                );
 
         http.authenticationProvider(authenticationProvider());
-
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
