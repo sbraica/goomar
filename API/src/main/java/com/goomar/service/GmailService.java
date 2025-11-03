@@ -74,6 +74,7 @@ public class GmailService implements IGmailService {
                 "timeslot", rr.getDateTime().format(formatter),
                 "confirmationUrl", appUrl + "/V1/confirmation?uuid="+uuid.toString()
         );
+        log.info("loading template");
         var resource = new ClassPathResource("templates/registration-confirmation.html");
         String content = Files.readString(resource.getFile().toPath(), StandardCharsets.UTF_8);
         log.info("preparing content");
