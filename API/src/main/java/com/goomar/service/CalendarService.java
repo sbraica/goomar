@@ -11,8 +11,8 @@ import org.openapitools.model.ReservationRest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
 import java.io.IOException;
+
 import java.time.*;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -75,6 +75,8 @@ public class CalendarService implements ICalendarService {
             throw e;
         }
 
+
+        log.info("fetched");
         List<TimePeriod> busyPeriods = new ArrayList<>();
         for (Event event : allEvents) {
             if (event.getStart() == null || event.getEnd() == null)
@@ -134,4 +136,3 @@ public class CalendarService implements ICalendarService {
         calendar.events().delete(calendarId, eventId).execute();
     }
 }
-
