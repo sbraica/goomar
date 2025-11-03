@@ -118,6 +118,7 @@ public class GmailService implements IGmailService {
 
     @SneakyThrows
     private void sendMail(String to, String subject, String content, boolean html) {
+        log.info("sendMail(to={}, subject={}, content={}, html={})", to, subject, content, html);
         MimeMessage mimeMessage = buildMime(to, subject, content, html);
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         mimeMessage.writeTo(buffer);
