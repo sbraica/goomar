@@ -4,6 +4,7 @@ import com.goomar.service.ICalendarService;
 import com.goomar.service.IGmailService;
 import com.goomar.service.IEntryService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.openapitools.api.ReservationsApi;
 import org.openapitools.model.FreeSlotRest;
 import org.openapitools.model.ReservationRest;
@@ -17,6 +18,7 @@ import java.util.UUID;
 
 @RequiredArgsConstructor
 @RestController
+@Slf4j
 public class ReservationController implements ReservationsApi {
     private final IEntryService entryService;
     private final ICalendarService calendarService;
@@ -24,9 +26,13 @@ public class ReservationController implements ReservationsApi {
 
     @Override
     public ResponseEntity<Void> confirmReservation(String authorization, String eventId) {
+        log.info("confirmReservation(eventId={})", eventId);
         ReservationRest rr = entryService.confirmReservation(eventId);
+        log.info("1", eventId);
         calendarService.confirmAppointment( eventId);
+        log.info("2", eventId);
         emailService.sendConfirmation(rr);
+        log.info("3", eventId);
         return new ResponseEntity(HttpStatus.CREATED);
     }
 
