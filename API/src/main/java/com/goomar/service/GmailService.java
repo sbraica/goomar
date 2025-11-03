@@ -21,7 +21,9 @@ import jakarta.mail.Session;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.format.DateTimeFormatter;
@@ -76,7 +78,10 @@ public class GmailService implements IGmailService {
         );
         log.info("loading template");
         var resource = new ClassPathResource("templates/registration-confirmation.html");
-        String content = Files.readString(resource.getFile().toPath(), StandardCharsets.UTF_8);
+        String content;
+        try (var reader = new BufferedReader(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
+            content = reader.lines().reduce("", (acc, line) -> acc + line + "\n");
+        }
         log.info("preparing content");
         for (var entry : values.entrySet()) {
             content = content.replace("{{" + entry.getKey() + "}}", entry.getValue());
@@ -94,7 +99,10 @@ public class GmailService implements IGmailService {
                 "registration", rr.getRegistration(),
                 "timeslot", rr.getDateTime().format(formatter));
         var resource = new ClassPathResource("templates/appointnment-confirmation.html");
-        String content = Files.readString(resource.getFile().toPath(), StandardCharsets.UTF_8);
+        String content;
+        try (var reader = new BufferedReader(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
+            content = reader.lines().reduce("", (acc, line) -> acc + line + "\n");
+        }
 
         for (var entry : values.entrySet()) {
             content = content.replace("{{" + entry.getKey() + "}}", entry.getValue());
@@ -110,8 +118,10 @@ public class GmailService implements IGmailService {
                 "registration", rr.getRegistration(),
                 "timeslot", rr.getDateTime().format(formatter));
         var resource = new ClassPathResource("templates/appointnment-deletion.html");
-        String content = Files.readString(resource.getFile().toPath(), StandardCharsets.UTF_8);
-
+        String content;
+        try (var reader = new BufferedReader(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
+            content = reader.lines().reduce("", (acc, line) -> acc + line + "\n");
+        }
         for (var entry : values.entrySet()) {
             content = content.replace("{{" + entry.getKey() + "}}", entry.getValue());
         }
