@@ -32,6 +32,8 @@ services:
             DB_PASS: goomar
             APP_URL: https://terminapi.bosnic.hr
             EMAIL_ENABLED: true
+        volumes:
+          - /appdata/goomar/tokens:/app/tokens
     goomargui:
         networks:
             - goomar_be
