@@ -8,10 +8,8 @@ import 'package:url_strategy/url_strategy.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'providers/reservation_provider.dart';
 import 'providers/auth_provider.dart';
-import 'providers/booking_form_provider.dart';
 import 'providers/login_ui_provider.dart';
 import 'providers/booking_ui_provider.dart';
-import 'screens/public/booking_screen.dart';
 import 'screens/operator/login_screen.dart';
 
 Future<void> main() async {
@@ -36,7 +34,6 @@ class MyApp extends StatelessWidget {
         providers: [
           ChangeNotifierProvider(create: (_) => ReservationProvider()),
           ChangeNotifierProvider(create: (_) => AuthProvider()),
-          ChangeNotifierProvider(create: (_) => BookingFormProvider()),
           ChangeNotifierProvider(create: (_) => BookingUiProvider()),
           ChangeNotifierProvider(create: (_) => LoginUiProvider()),
         ],
@@ -53,8 +50,7 @@ class MyApp extends StatelessWidget {
               useMaterial3: true,
               inputDecorationTheme: InputDecorationTheme(border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), filled: true, fillColor: Colors.grey.shade100)),
           routes: {
-            '/': (_) => const BookingScreen(),
-            '/login': (_) => const LoginScreen(),
+            '/': (_) => const LoginScreen(),
           },
           initialRoute: '/',
         ));

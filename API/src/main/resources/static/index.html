@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rezervacija termina</title>
+  <meta name="theme-color" content="#0ea5e9" />
+  <style>
+    :root {
+      --bg: #f8fafc;         /* slate-50 */
+      --card: #ffffff;       /* white */
+      --text: #0f172a;       /* slate-900 */
+      --muted: #475569;      /* slate-600 */
+      --primary: #0ea5e9;    /* sky-500 */
+      --primary-d: #0284c7;  /* sky-600 */
+      --ring: rgba(14,165,233,0.3);
+    }
+
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      color: var(--text);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .page {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 16px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .hero {
+      background: linear-gradient(180deg, #e0f2fe, #f0f9ff);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+
+    .hero h1 {
+      margin: 0 0 8px 0;
+      font-size: 22px;
+      line-height: 1.2;
+    }
+
+    .hero p { margin: 0; color: var(--muted); font-size: 14px; }
+
+        /* Company logo */
+        .logo {
+          display: block;
+          max-width: 200px;
+          width: 60%;
+          height: auto;
+          margin: 0 auto 12px auto;
+        }
+
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+      border: 1px solid #e2e8f0;
+    }
+
+    .section-title {
+      font-size: 14px;
+      color: var(--muted);
+      margin: 0 0 8px 0;
+      letter-spacing: .3px;
+    }
+
+    label { display: block; font-size: 14px; margin-bottom: 6px; color: var(--muted); }
+
+    input[type="date"], input[type="text"], input[type="email"], input[type="tel"] {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px 14px;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      font-size: 16px; /* mobile-friendly */
+      background: #ffffff;
+      outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px var(--ring);
+    }
+
+    .timeslot-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .timeslot {
+      flex: 1 0 calc(33.33% - 8px);
+      min-width: 92px;
+      text-align: center;
+      padding: 12px 10px;
+      border-radius: 12px;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      color: var(--text);
+      font-size: 16px;
+      cursor: pointer;
+      user-select: none;
+      transition: background .15s ease, color .15s ease, border-color .15s ease, transform .02s ease;
+    }
+    .timeslot:active { transform: scale(0.995); }
+    .timeslot[aria-pressed="true"] {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 16px;
+      border-radius: 14px;
+      border: none;
+      color: #fff;
+      background: var(--primary);
+      box-shadow: 0 6px 14px rgba(2,132,199,0.25);
+      cursor: pointer;
+      transition: background .15s ease, box-shadow .15s ease, transform .02s ease;
+    }
+    .cta:active { transform: translateY(1px); }
+    .cta:focus { outline: none; box-shadow: 0 0 0 4px var(--ring); }
+    .cta:hover { background: var(--primary-d); }
+
+    .help { color: var(--muted); font-size: 13px; }
+
+    .footer { text-align: center; color: var(--muted); font-size: 12px; padding: 8px 0 24px; }
+
+    .hidden { display: none !important; }
+    .success {
+      background: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-weight: 600;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <main class="page" role="main">
+    <section class="hero" aria-label="Uvod">
+      <img class="logo" src="https://www.bosnic.hr/wp-content/uploads/2025/10/bosnic-logo-2025-xl.png" alt="Bosnić logo" />
+      <h1>Rezervirajte svoj termin</h1>
+      <p>Brzo i jednostavno naručivanje s mobitela. Bez registracije.</p>
+    </section>
+
+    <section class="card" aria-label="Odabir datuma">
+      <h2 class="section-title">Datum</h2>
+      <label for="date">Odaberite datum</label>
+      <input type="date" id="date" name="date" />
+      <div style="height:10px"></div>
+      <label class="section-title" for="duration15">Trajanje</label>
+      <div role="radiogroup" aria-label="Trajanje" style="display:flex; gap:12px; align-items:center;">
+        <label style="display:flex; align-items:center; gap:6px;">
+          <input type="radio" id="duration15" name="duration" value="15" checked>
+          15 min
+        </label>
+        <label style="display:flex; align-items:center; gap:6px;">
+          <input type="radio" id="duration30" name="duration" value="30">
+          30 min
+        </label>
+      </div>
+    </section>
+
+    <section class="card" aria-label="Dostupni termini">
+      <h2 class="section-title">Dostupni termini</h2>
+      <div id="timeslot-container" class="timeslot-row"></div>
+      <p id="timeslot-hint" class="help">Odaberite datum kako bi se prikazali termini.</p>
+    </section>
+
+    <section class="card" aria-label="Podaci">
+      <h2 class="section-title">Vaši podaci</h2>
+      <label for="name">Ime i prezime</label>
+      <input type="text" id="name" name="name" inputmode="text" autocomplete="name" placeholder="npr. Ana Horvat" />
+
+      <div style="height:12px"></div>
+
+      <label for="email">E‑pošta</label>
+      <input type="email" id="email" name="email" autocomplete="email" placeholder="npr. ana@example.com" />
+
+      <div style="height:12px"></div>
+
+      <label for="phone">Telefon</label>
+      <input type="tel" id="phone" name="phone" inputmode="tel" autocomplete="tel" placeholder="npr. 091 123 4567" />
+
+      <div style="height:16px"></div>
+
+        <label for="registrationNumber">Registracijski broj</label>
+        <input type="text" id="registrationNumber" name="registrationNumber" inputmode="text" autocomplete="off" placeholder="npr. ABC-123" />
+
+        <div style="height:12px"></div>
+
+        <button id="submitBtn" class="cta">Rezerviraj termin</button>
+
+      <div id="confirmation" class="success hidden" role="status" aria-live="polite">
+        Uspješno ste rezervirali termin. Vidimo se!
+      </div>
+    </section>
+
+    <div class="footer">© <span id="year"></span> Bosnić</div>
+  </main>
+
+  <script>
+    // Utility: format today's date as yyyy-mm-dd
+    function todayIso() {
+      const d = new Date();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${d.getFullYear()}-${m}-${day}`;
+    }
+
+    // Elements
+    const dateInput = document.getElementById('date');
+    const container = document.getElementById('timeslot-container');
+    const hint = document.getElementById('timeslot-hint');
+    const submitBtn = document.getElementById('submitBtn');
+    const confirmation = document.getElementById('confirmation');
+
+    // Elements (more)
+    function isLongSelected() {
+      const selected = document.querySelector('input[name="duration"]:checked');
+      return selected && selected.value === '30';
+    }
+
+    // Init date input: min = today
+    dateInput.min = todayIso();
+
+    function clearSelection() {
+      container.querySelectorAll('.timeslot').forEach(btn => btn.setAttribute('aria-pressed', 'false'));
+    }
+
+    async function loadTimeslots() {
+      container.innerHTML = '';
+      clearSelection();
+
+      // If no date, keep hint
+      if (!dateInput.value) {
+        hint.textContent = 'Odaberite datum kako bi se prikazali termini.';
+        hint.classList.remove('hidden');
+        return;
+      }
+
+      // Build API URL from date and long flag
+      const [yyyy, mm, dd] = dateInput.value.split('-');
+      const y = String(parseInt(yyyy, 10));
+      const m = String(parseInt(mm, 10));
+      const d = String(parseInt(dd, 10));
+      const longParam = isLongSelected() ? 'true' : 'false';
+      // Direct call to upstream API; ensure CORS is disabled/allowed in your browser
+      const url = `https://terminapi.bosnic.hr/V1/freeslots/${y}/${m}/${d}?long=${longParam}`;
+
+      hint.textContent = 'Učitavanje termina...';
+      hint.classList.remove('hidden');
+
+      try {
+        const res = await fetch(url, { credentials: 'omit' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        container.innerHTML = '';
+        clearSelection();
+
+        if (!Array.isArray(data) || data.length === 0) {
+          hint.textContent = 'Nema dostupnih termina za odabrani datum.';
+          hint.classList.remove('hidden');
+          return;
+        }
+
+        hint.classList.add('hidden');
+
+        data.forEach(slot => {
+          const label = `${slot.start}–${slot.end}`;
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.textContent = label;
+          btn.className = 'timeslot';
+          btn.setAttribute('aria-pressed', 'false');
+          btn.dataset.start = slot.start;
+          btn.dataset.end = slot.end;
+          btn.addEventListener('click', () => {
+            clearSelection();
+            btn.setAttribute('aria-pressed', 'true');
+          });
+          container.appendChild(btn);
+        });
+      } catch (e) {
+        container.innerHTML = '';
+        hint.textContent = 'Greška pri dohvaćanju termina. Pokušajte ponovno.';
+        hint.classList.remove('hidden');
+        console.error('Greška dohvaćanja termina', e);
+      }
+    }
+
+    dateInput.addEventListener('change', loadTimeslots);
+    document.querySelectorAll('input[name="duration"]').forEach(r => r.addEventListener('change', loadTimeslots));
+
+    submitBtn.addEventListener('click', async () => {
+      const selectedTime = Array.from(container.querySelectorAll('.timeslot'))
+        .find(b => b.getAttribute('aria-pressed') === 'true');
+
+      const name = document.getElementById('name').value.trim();
+      const registrationNumberInput = document.getElementById('registrationNumber');
+      const registrationNumber = registrationNumberInput ? registrationNumberInput.value.trim() : '';
+      const emailInput = document.getElementById('email');
+      const phoneInput = document.getElementById('phone');
+      const email = emailInput.value.trim();
+      const phone = phoneInput.value.trim();
+
+      if (!dateInput.value) { alert('Molimo odaberite datum.'); return; }
+      if (!selectedTime) { alert('Molimo odaberite termin.'); return; }
+      if (!name) { alert('Molimo unesite ime i prezime.'); return; }
+      if (!email && !phone) {
+        alert('Molimo unesite barem e‑poštu ili telefon.');
+        return;
+      }
+      if (email && !emailInput.checkValidity()) {
+        alert('Molimo unesite ispravnu e‑poštu.');
+        emailInput.focus();
+        return;
+      }
+      const phoneClean = phone.replace(/\s+/g, '');
+      if (phone && !/^[0-9()+\-]{6,}$/.test(phoneClean)) {
+        alert('Molimo unesite ispravan telefonski broj.');
+        phoneInput.focus();
+        return;
+      }
+      if (registrationNumber && registrationNumber.length < 3) {
+        alert('Molimo unesite ispravan registracijski broj (minimalno 3 znaka).');
+        registrationNumberInput.focus();
+        return;
+      }
+
+      // Build API payload per spec
+      const date = dateInput.value; // YYYY-MM-DD
+      const start = selectedTime?.dataset.start; // HH:MM
+      const dateTime = `${date}T${start}:00.000`;
+
+      const payload = {
+        username: name,
+        email: email || null,
+        phone: phone || null,
+        registration: registrationNumber || null,
+        longService: isLongSelected(),
+        confirmed: false,
+        date_time: dateTime
+      };
+
+      // POST to upstream API directly (ensure CORS is disabled/allowed in your browser)
+      const url = 'https://terminapi.bosnic.hr/V1/reservation';
+
+      // Basic UX: disable button during request
+      const originalText = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Slanje...';
+
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(payload),
+          credentials: 'omit'
+        });
+
+        if (!res.ok) {
+          const msg = `Rezervacija nije uspjela (HTTP ${res.status}). Pokušajte ponovno.`;
+          console.error(msg);
+          alert(msg);
+          return;
+        }
+
+        // Success
+        confirmation.classList.remove('hidden');
+        console.log('Rezervacija poslana:', payload);
+      } catch (e) {
+        console.error('Greška pri slanju rezervacije', e);
+        alert('Greška pri slanju rezervacije. Pokušajte ponovno.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+      }
+    });
+
+    // Footer year
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Initial render
+    loadTimeslots();
+  </script>
+</body>
+</html>

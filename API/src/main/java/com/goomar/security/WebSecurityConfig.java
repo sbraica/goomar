@@ -20,6 +20,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 
 import java.util.List;
 
@@ -66,7 +67,12 @@ public class WebSecurityConfig {
                 .exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
                         .requestMatchers(
+                                "/",
+                                "/index.html",
+                                "/login",
+                                "/login/**",
                                 "/V1/reservation/**",
                                 "/V1/confirmation/**",
                                 "/V1/freeslots/**",
