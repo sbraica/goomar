@@ -142,57 +142,32 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
         ]),
         body: Column(children: [
           if (reservationProvider.isLoading) const LinearProgressIndicator(minHeight: 2),
-          // Operator week scheduler (fixed 15-minute slots)
           Expanded(
               child: Padding(
                   padding: const EdgeInsets.all(12.0),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                    // The grid below will expand to fill the remaining space
                     Expanded(
                         child: WeekTimeGrid(
                             weekStart: weekStart,
                             onPrevWeek: () async {
                               if (reservationProvider.isLoading) return;
-                              // Recompute from the latest provider state to avoid stale closures
                               final base = _mondayOf(reservationProvider.focusedDay);
                               final prev = base.subtract(const Duration(days: 7));
-                              // Update the focused day first so the header changes immediately
                               reservationProvider.setFocusedDay(DateTime(prev.year, prev.month, prev.day));
-                              // Start loading in the background; don't block UI repaint
-                              // Errors are handled with a snackbar, state remains on the chosen week
-                              // ignore: unawaited_futures
-                              reservationProvider
-                                  .loadReservations(weekStart: prev)
-                                  .catchError((_) {
+                              reservationProvider.loadReservations(weekStart: prev).catchError((_) {
                                 if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Failed to load reservations for previous week'),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to load reservations for previous week'),backgroundColor: Colors.red));
                                 }
                               });
                             },
                             onNextWeek: () async {
                               if (reservationProvider.isLoading) return;
-                              // Recompute from the latest provider state to avoid stale closures
                               final base = _mondayOf(reservationProvider.focusedDay);
                               final next = base.add(const Duration(days: 7));
-                              // Update the focused day first so the header changes immediately
                               reservationProvider.setFocusedDay(DateTime(next.year, next.month, next.day));
-                              // Load in background; keep UI responsive and keep header on the requested week
-                              // ignore: unawaited_futures
-                              reservationProvider
-                                  .loadReservations(weekStart: next)
-                                  .catchError((_) {
+                              reservationProvider.loadReservations(weekStart: next).catchError((_) {
                                 if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Failed to load reservations for next week'),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to load reservations for next week'),backgroundColor: Colors.red));
                                 }
                               });
                             },
@@ -232,7 +207,6 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                             lastDay: lastDay,
                             spans: spans))
                   ])))
-          // Lists (no tabs): Pending section then Approved section
         ]));
   }
 
