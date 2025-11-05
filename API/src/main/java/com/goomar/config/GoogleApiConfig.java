@@ -67,13 +67,13 @@ public class GoogleApiConfig {
 
         @GetMapping("/google/auth")
         public String authorize() {
-            String authUrl = flow.newAuthorizationUrl().setRedirectUri("https://terminapi.bosnic.hr/oauth2/callback").build();
+            String authUrl = flow.newAuthorizationUrl().setRedirectUri("https://termin.bosnic.hr/oauth2/callback").build();
             return "<a href=\"" + authUrl + "\" target=\"_blank\">Authorize Google Access</a>";
         }
 
         @GetMapping("/oauth2/callback")
         public String callback(@RequestParam String code) throws IOException {
-            TokenResponse tokenResponse = flow.newTokenRequest(code).setRedirectUri("https://terminapi.bosnic.hr/oauth2/callback").execute();
+            TokenResponse tokenResponse = flow.newTokenRequest(code).setRedirectUri("https://termin.bosnic.hr/oauth2/callback").execute();
             flow.createAndStoreCredential(tokenResponse, "user");
             return "Authorization successful! You can now use Calendar and Gmail APIs.";
         }

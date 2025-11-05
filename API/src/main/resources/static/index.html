@@ -261,7 +261,7 @@
       const d = String(parseInt(dd, 10));
       const longParam = isLongSelected() ? 'true' : 'false';
       // Direct call to upstream API; ensure CORS is disabled/allowed in your browser
-      const url = `https://terminapi.bosnic.hr/V1/freeslots/${y}/${m}/${d}?long=${longParam}`;
+      const url = `https://termin.bosnic.hr/V1/freeslots/${y}/${m}/${d}?long=${longParam}`;
 
       hint.textContent = 'Učitavanje termina...';
       hint.classList.remove('hidden');
@@ -360,7 +360,7 @@
       };
 
       // POST to upstream API directly (ensure CORS is disabled/allowed in your browser)
-      const url = 'https://terminapi.bosnic.hr/V1/reservation';
+      const url = 'https://termin.bosnic.hr/V1/reservation';
 
       // Basic UX: disable button during request
       const originalText = submitBtn.textContent;
