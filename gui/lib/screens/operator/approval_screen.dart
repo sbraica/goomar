@@ -117,9 +117,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                   await reservationProvider.loadReservations(weekStart: currentMonday);
                 } catch (_) {
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Failed to refresh reservations'), backgroundColor: Colors.red),
-                    );
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to refresh reservations'), backgroundColor: Colors.red));
                   }
                 }
               },
@@ -162,8 +160,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                                 await reservationProvider.loadReservations(weekStart: prev);
                               } catch (_) {
                                 if (mounted) {
-                                  ScaffoldMessenger.of(context)
-                                      .showSnackBar(const SnackBar(content: Text('Failed to load reservations for previous week'), backgroundColor: Colors.red));
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to load reservations for previous week'), backgroundColor: Colors.red));
                                 }
                               }
                             },
@@ -175,8 +172,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                                 await reservationProvider.loadReservations(weekStart: next);
                               } catch (_) {
                                 if (mounted) {
-                                  ScaffoldMessenger.of(context)
-                                      .showSnackBar(const SnackBar(content: Text('Failed to load reservations for next week'), backgroundColor: Colors.red));
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to load reservations for next week'), backgroundColor: Colors.red));
                                 }
                               }
                             },
@@ -190,9 +186,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                                 await Provider.of<ReservationProvider>(context, listen: false).setApprovedRemote(span.id!, makeApproved);
                               } catch (e) {
                                 if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Failed to update approval: $e'), backgroundColor: Colors.red),
-                                  );
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update approval: $e'), backgroundColor: Colors.red));
                                 }
                               }
                             },
@@ -203,9 +197,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                                   await Provider.of<ReservationProvider>(context, listen: false).deleteReservationRemote(span.id!);
                                 } catch (e) {
                                   if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Failed to delete appointment: $e'), backgroundColor: Colors.red),
-                                    );
+                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete appointment: $e'), backgroundColor: Colors.red));
                                   }
                                 }
                               });

@@ -235,18 +235,6 @@ class WeekTimeGrid extends StatelessWidget {
       return '$startStr – $endStr';
     }
 
-    // Navigation bounds: determine if prev/next week stays within [firstDay,lastDay]
-    bool canPrev() {
-      final prevMonday = _dateOnly(weekStart.subtract(const Duration(days: 7)));
-      return !_dateOnly(prevMonday).isBefore(_dateOnly(DateTime(firstDay.year, firstDay.month, firstDay.day)));
-    }
-
-    bool canNext() {
-      final nextMonday = _dateOnly(weekStart.add(const Duration(days: 7)));
-      // Allow showing next if at least Monday is within range
-      return !_dateOnly(nextMonday).isAfter(_dateOnly(lastDay));
-    }
-
     final times = _buildTimes();
 
     // Build occupied lookup normalized to minute precision
@@ -259,9 +247,9 @@ class WeekTimeGrid extends StatelessWidget {
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       // Header with navigation
       Row(children: [
-        IconButton(icon: const Icon(Icons.chevron_left), onPressed: canPrev() ? onPrevWeek : null, tooltip: 'Previous week'),
+        IconButton(icon: const Icon(Icons.chevron_left), onPressed: onPrevWeek, tooltip: 'Previous week'),
         Expanded(child: Text(headerTitle(), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold))),
-        IconButton(icon: const Icon(Icons.chevron_right), onPressed: canNext() ? onNextWeek : null, tooltip: 'Next week')
+        IconButton(icon: const Icon(Icons.chevron_right), onPressed: onNextWeek, tooltip: 'Next week')
       ]),
       const SizedBox(height: 8),
       // Day headers
