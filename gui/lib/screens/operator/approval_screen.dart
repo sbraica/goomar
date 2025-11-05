@@ -152,7 +152,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                             onPrevWeek: () async {
                               if (reservationProvider.isLoading) return;
                               final base = _mondayOf(reservationProvider.focusedDay);
-                              final prev = base.subtract(const Duration(days: 7));
+                              final prev = DateTime(base.year, base.month, base.day - 7);
                               reservationProvider.setFocusedDay(DateTime(prev.year, prev.month, prev.day));
                               reservationProvider.loadReservations(weekStart: prev).catchError((_) {
                                 if (mounted) {
@@ -163,7 +163,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                             onNextWeek: () async {
                               if (reservationProvider.isLoading) return;
                               final base = _mondayOf(reservationProvider.focusedDay);
-                              final next = base.add(const Duration(days: 7));
+                              final next = DateTime(base.year, base.month, base.day + 7);
                               reservationProvider.setFocusedDay(DateTime(next.year, next.month, next.day));
                               reservationProvider.loadReservations(weekStart: next).catchError((_) {
                                 if (mounted) {

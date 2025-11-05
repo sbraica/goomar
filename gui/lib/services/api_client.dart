@@ -103,21 +103,12 @@ class ApiClient {
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
         throw ApiException('Failed to fetch reservations: HTTP ${resp.statusCode}', resp.body);
       }
-
-      final body = resp.body.trim();
-      final decoded = jsonDecode(body);
+      final decoded = jsonDecode(resp.body);
       if (decoded is List) {
         return decoded.map<Reservation>((e) => Reservation.fromJson(e as Map<String, dynamic>)).toList();
-      }
-
-      if (decoded is Map<String, dynamic>) {
-        final list = (decoded['items'] ?? decoded['reservations']);
-        if (list is List) {
-          return list.map<Reservation>((e) => Reservation.fromJson(e as Map<String, dynamic>)).toList();
-        }
-      }
-
+      } else {
       throw ApiException('Unexpected response format when fetching reservations', resp.body);
+      }
     } on ApiException {
       rethrow;
     } catch (e) {
