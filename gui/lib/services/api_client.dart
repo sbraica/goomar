@@ -95,19 +95,45 @@ class ApiClient {
   Future<List<Reservation>> getReservations(DateTime weekStart) async {
     final y = weekStart.year;
     final m = weekStart.month; // integers in path
-    final d = weekStart.day;   // start-of-week (Monday)
+    final d = weekStart.day; // start-of-week (Monday)
     final url = _uri('/V1/reservations/$y/$m/$d');
     try {
       final resp = await http.get(url, headers: _headers()).timeout(const Duration(seconds: 10));
+
+      // Treat 204 (No Content) and 404 (Not Found) as "no reservations for this week"
+      if (resp.statusCode == 204 || resp.statusCode == 404) {
+        return <Reservation>[];
+      }
+
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
         throw ApiException('Failed to fetch reservations: HTTP ${resp.statusCode}', resp.body);
       }
-      final decoded = jsonDecode(resp.body);
-      if (decoded is List) {
-        return decoded.map<Reservation>((e) => Reservation.fromJson(e as Map<String, dynamic>)).toList();
-      } else {
-        throw ApiException('Unexpected response format when fetching reservations', resp.body);
+
+      // Some backends may return an empty body or "null" for no data
+      final body = resp.body.trim();
+      if (body.isEmpty || body.toLowerCase() == 'null') {
+        return <Reservation>[];
       }
+
+      final decoded = jsonDecode(body);
+      if (decoded is List) {
+        return decoded
+            .map<Reservation>((e) => Reservation.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+
+      // Also support an envelope like { items: [...] } or { reservations: [...] }
+      if (decoded is Map<String, dynamic>) {
+        final list = (decoded['items'] ?? decoded['reservations']);
+        if (list is List) {
+          return list
+              .map<Reservation>((e) => Reservation.fromJson(e as Map<String, dynamic>))
+              .toList();
+        }
+      }
+
+      // Fallback: unexpected shape
+      throw ApiException('Unexpected response format when fetching reservations', resp.body);
     } on ApiException {
       rethrow;
     } catch (e) {

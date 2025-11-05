@@ -153,28 +153,48 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                             weekStart: weekStart,
                             onPrevWeek: () async {
                               if (reservationProvider.isLoading) return;
-                              final prev = weekStart.subtract(const Duration(days: 7));
-                              // update provider-focused day instead of setState
+                              // Recompute from the latest provider state to avoid stale closures
+                              final base = _mondayOf(reservationProvider.focusedDay);
+                              final prev = base.subtract(const Duration(days: 7));
+                              // Update the focused day first so the header changes immediately
                               reservationProvider.setFocusedDay(DateTime(prev.year, prev.month, prev.day));
-                              try {
-                                await reservationProvider.loadReservations(weekStart: prev);
-                              } catch (_) {
+                              // Start loading in the background; don't block UI repaint
+                              // Errors are handled with a snackbar, state remains on the chosen week
+                              // ignore: unawaited_futures
+                              reservationProvider
+                                  .loadReservations(weekStart: prev)
+                                  .catchError((_) {
                                 if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to load reservations for previous week'), backgroundColor: Colors.red));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Failed to load reservations for previous week'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
                                 }
-                              }
+                              });
                             },
                             onNextWeek: () async {
                               if (reservationProvider.isLoading) return;
-                              final next = weekStart.add(const Duration(days: 7));
+                              // Recompute from the latest provider state to avoid stale closures
+                              final base = _mondayOf(reservationProvider.focusedDay);
+                              final next = base.add(const Duration(days: 7));
+                              // Update the focused day first so the header changes immediately
                               reservationProvider.setFocusedDay(DateTime(next.year, next.month, next.day));
-                              try {
-                                await reservationProvider.loadReservations(weekStart: next);
-                              } catch (_) {
+                              // Load in background; keep UI responsive and keep header on the requested week
+                              // ignore: unawaited_futures
+                              reservationProvider
+                                  .loadReservations(weekStart: next)
+                                  .catchError((_) {
                                 if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to load reservations for next week'), backgroundColor: Colors.red));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Failed to load reservations for next week'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
                                 }
-                              }
+                              });
                             },
                             selectedDay: selectedDay,
                             selectedTime: selectedTime,
