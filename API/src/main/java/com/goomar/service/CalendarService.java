@@ -56,6 +56,7 @@ public class CalendarService implements ICalendarService {
     @SneakyThrows
     @Override
     public String insertReservation(ReservationRest rr) {
+        log.info("insertReservation(rr={})", rr);
         ZoneId zone = ZoneId.of("Europe/Zagreb");
 
         ZonedDateTime startZoned = rr.getDateTime().atZone(zone);
@@ -140,6 +141,7 @@ public class CalendarService implements ICalendarService {
     @SneakyThrows
     @Override
     public void confirmAppointment(String eventId) {
+        log.info("confirmAppointment(eventId={})", eventId);
         Event event = getCalendarClient().events().get(calendarId, eventId).execute().setStatus("confirmed").setColorId("1");
         getCalendarClient().events().update(calendarId, event.getId(), event).execute();
     }
@@ -147,6 +149,7 @@ public class CalendarService implements ICalendarService {
     @SneakyThrows
     @Override
     public void deleteAppointment(String eventId) {
+        log.info("deleteAppointment(eventId={})", eventId);
         getCalendarClient().events().delete(calendarId, eventId).execute();
     }
 }
