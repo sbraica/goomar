@@ -21,7 +21,7 @@ public class EntryService implements IEntryService {
 
     @Override
     public UUID insertReservation(ReservationRest rr, String eventId) {
-            return ctx.insertInto(ENTRIES, ENTRIES.DATE_TIME, ENTRIES.USERNAME, ENTRIES.PHONE, ENTRIES.EMAIL, ENTRIES.REGISTRATION, ENTRIES.LONG_SERVICE, ENTRIES.CONFIRMED, ENTRIES.EVENT_ID, ENTRIES.EMAIL_OK)
+            return ctx.insertInto(ENTRIES, ENTRIES.DATE_TIME, ENTRIES.NAME, ENTRIES.PHONE, ENTRIES.EMAIL, ENTRIES.REGISTRATION, ENTRIES.LONG, ENTRIES.CONFIRMED, ENTRIES.EVENT_ID, ENTRIES.EMAIL_OK)
                     .values(rr.getDateTime(), rr.getUsername(), rr.getPhone(), rr.getEmail(), rr.getRegistration(), rr.getLongService(), false, eventId, false).returningResult(ENTRIES.ID).fetchOne().value1();
     }
 
@@ -34,7 +34,7 @@ public class EntryService implements IEntryService {
         LocalDateTime startOfWeek = date.atStartOfDay();
         LocalDateTime endOfWeek = date.plusDays(5).atStartOfDay();
 
-        return ctx.select(ENTRIES.ID, ENTRIES.USERNAME, ENTRIES.DATE_TIME, ENTRIES.EMAIL, ENTRIES.PHONE, ENTRIES.REGISTRATION, ENTRIES.LONG_SERVICE, ENTRIES.EMAIL, ENTRIES.CONFIRMED, ENTRIES.EVENT_ID, ENTRIES.CONFIRMED)
+        return ctx.select(ENTRIES.ID, ENTRIES.NAME, ENTRIES.DATE_TIME, ENTRIES.EMAIL, ENTRIES.PHONE, ENTRIES.REGISTRATION, ENTRIES.LONG, ENTRIES.EMAIL, ENTRIES.CONFIRMED, ENTRIES.EVENT_ID, ENTRIES.CONFIRMED)
                   .from(ENTRIES).where(ENTRIES.DATE_TIME.ge(startOfWeek).and(ENTRIES.DATE_TIME.lt(endOfWeek))).orderBy(ENTRIES.DATE_TIME.asc()).fetchInto(ReservationRest.class);
     }
 
