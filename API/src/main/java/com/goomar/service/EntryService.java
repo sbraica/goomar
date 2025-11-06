@@ -21,7 +21,8 @@ public class EntryService implements IEntryService {
 
     @Override
     public UUID insertReservation(ReservationRest rr, String eventId) {
-            return ctx.insertInto(ENTRIES, ENTRIES.DATE_TIME, ENTRIES.NAME, ENTRIES.PHONE, ENTRIES.EMAIL, ENTRIES.REGISTRATION, ENTRIES.LONG, ENTRIES.CONFIRMED, ENTRIES.EVENT_ID, ENTRIES.EMAIL_OK)
+        log.info(">>insertReservation(eventId={})", eventId);
+        return ctx.insertInto(ENTRIES, ENTRIES.DATE_TIME, ENTRIES.NAME, ENTRIES.PHONE, ENTRIES.EMAIL, ENTRIES.REGISTRATION, ENTRIES.LONG, ENTRIES.CONFIRMED, ENTRIES.EVENT_ID, ENTRIES.EMAIL_OK)
                     .values(rr.getDateTime(), rr.getName(), rr.getPhone(), rr.getEmail(), rr.getRegistration(), rr.getLongService(), false, eventId, false).returningResult(ENTRIES.ID).fetchOne().value1();
     }
 
@@ -40,16 +41,19 @@ public class EntryService implements IEntryService {
 
     @Override
     public String getConfirmation(String token) {
+        log.info(">>getConfirmation(token={})", token);
         return "<html><body><h2>Rezervacija potvrđena!</h2></body></html>";
     }
 
     @Override
     public ReservationRest confirmReservation(String eventId) {
+        log.info(">>confirmReservation(eventId={})", eventId);
         return ctx.update(ENTRIES).set(ENTRIES.EMAIL_OK, true).where(ENTRIES.EVENT_ID.eq(eventId)).returning().fetchOneInto(ReservationRest.class);
     }
 
     @Override
     public ReservationRest deleteAppoitnment(String eventId) {
+        log.info(">>deleteAppoitnment(eventId={})", eventId);
         return ctx.deleteFrom(ENTRIES).where(ENTRIES.EVENT_ID.eq(eventId)).returning().fetchOneInto(ReservationRest.class);
     }
 
