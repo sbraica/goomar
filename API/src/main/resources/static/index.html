@@ -148,49 +148,19 @@
       font-weight: 600;
       text-align: center;
     }
-    .flatpickr-container {
-        position: relative;
-        display: block;
-        isolation: isolate; /* ensures z-index inside works predictably */
-    }
-
-    .flatpickr-container input {
-        width: 100%;
-        box-sizing: border-box;
-        padding-right: 48px;  /* room for the button */
-        -webkit-appearance: none; /* avoid iOS inner shadow clipping */
-    }
-
-    .calendar-button {
-        position: absolute;
-        inset-block: 0;              /* top:0; bottom:0 */
-        inset-inline-end: 8px;       /* right in LTR, left in RTL */
-        width: 36px;
-        display: grid;
-        place-items: center;
-        border: 0;
-        background: transparent;
-        cursor: pointer;
-        z-index: 2;                  /* sit above the input border */
-        -webkit-appearance: none;
-    }
-
-    .calendar-icon {
-        width: 22px;
-        height: 22px;
-        display: block;              /* prevents baseline cropping */
-        overflow: visible;           /* fixes SVG clipping in some browsers */
-        color: var(--muted);
-        transition: color .15s ease;
-    }
-
-    .calendar-button:hover .calendar-icon,
-    .flatpickr-container input:focus + .calendar-button .calendar-icon {
-        color: var(--primary);
+  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pikaday/css/pikaday.css" />
+  <script src="https://cdn.jsdelivr.net/npm/pikaday/pikaday.js"></script>
+  <style>
+    /* Hide Saturday (6) and Sunday (7) columns in Pikaday; ensure Monday is first day */
+    .pika-single .pika-table { table-layout: fixed; width: 100%; }
+    .pika-single .pika-table th:nth-child(6),
+    .pika-single .pika-table td:nth-child(6),
+    .pika-single .pika-table th:nth-child(7),
+    .pika-single .pika-table td:nth-child(7) {
+      display: none !important;
     }
   </style>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </head>
 <body>
   <main class="page" role="main">
@@ -203,16 +173,7 @@
     <section class="card" aria-label="Odabir datuma">
       <h2 class="section-title">Datum</h2>
         <label for="date">Odaberite datum</label>
-        <div class="flatpickr-container">
-            <input type="text" id="date" name="date" readonly />
-            <button type="button" class="calendar-button" aria-label="Otvori kalendar">
-                <svg class="calendar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                     preserveAspectRatio="xMidYMid meet">
-                    <path fill="currentColor"
-                          d="M7 10h5v5H7zm-2 9q-.825 0-1.413-.588T3 17V6q0-.825.588-1.413T5 4h1V2h2v2h8V2h2v2h1q.825 0 1.413.588T21 6v11q0 .825-.588 1.413T19 19zM5 8h14V6H5zm0 11h14V10H5z"/>
-                </svg>
-            </button>
-        </div>
+      <input type="text" id="date" name="date" autocomplete="off" placeholder="Odaberite datum" />
       <div style="height:10px"></div>
       <label class="section-title" for="duration15">Trajanje</label>
       <div role="radiogroup" aria-label="Trajanje" style="display:flex; gap:12px; align-items:center;">
@@ -274,6 +235,54 @@
       return `${d.getFullYear()}-${m}-${day}`;
     }
 
+    // Utility: format any Date to yyyy-mm-dd
+    function toIso(date) {
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${date.getFullYear()}-${m}-${day}`;
+    }
+
+    // Weekend helpers
+    function isWeekendDate(date) {
+      const day = date.getDay(); // 0=Sun, 6=Sat
+      return day === 0 || day === 6;
+    }
+
+    function nextWeekday(date) {
+      const d = new Date(date.getTime());
+      while (isWeekendDate(d)) {
+        d.setDate(d.getDate() + 1);
+      }
+      return d;
+    }
+
+    function parseIsoDate(iso) {
+      if (!iso) return null;
+      const [yyyy, mm, dd] = iso.split('-').map(Number);
+      if (!yyyy || !mm || !dd) return null;
+      return new Date(yyyy, mm - 1, dd);
+    }
+
+    // Display formatting: dd.mm.yyyy
+    function formatDisplay(date) {
+      const dd = String(date.getDate()).padStart(2, '0');
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const yyyy = date.getFullYear();
+      return `${dd}.${mm}.${yyyy}`;
+    }
+
+    // Parse dd.mm.yyyy to Date
+    function parseDisplay(str) {
+      if (!str) return null;
+      const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(str.trim());
+      if (!m) return null;
+      const dd = Number(m[1]);
+      const mm = Number(m[2]);
+      const yyyy = Number(m[3]);
+      if (!dd || !mm || !yyyy) return null;
+      return new Date(yyyy, mm - 1, dd);
+    }
+
     // Elements
     const dateInput = document.getElementById('date');
     const container = document.getElementById('timeslot-container');
@@ -287,29 +296,8 @@
       return selected && selected.value === '30';
     }
 
-    // Initialize calendar widget (Flatpickr): hide weekends and block manual typing
-    // Also sets minDate=today and defaultDate to today (or next Monday if weekend)
-    dateInput.setAttribute('readonly', 'readonly'); // extra safety against manual typing on some browsers
-    const __today = new Date();
-    const __default = new Date(__today.getTime());
-    if (__default.getDay() === 6) { __default.setDate(__default.getDate() + 2); } // if Saturday -> Monday
-    if (__default.getDay() === 0) { __default.setDate(__default.getDate() + 1); } // if Sunday -> Monday
-    const fp = flatpickr(dateInput, {
-      dateFormat: 'd.m.Y',
-      minDate: 'today',
-      defaultDate: __default,
-      allowInput: false,
-      disable: [
-        function(date) { // disable Saturdays (6) and Sundays (0)
-          const d = date.getDay();
-          return d === 0 || d === 6;
-        }
-      ],
-      onChange: function() {
-        loadTimeslots();
-      }
-    });
-    document.querySelector('.calendar-icon').addEventListener('click', () => fp.open());
+    // Init date input: min = today
+    dateInput.min = todayIso();
 
     function clearSelection() {
       container.querySelectorAll('.timeslot').forEach(btn => btn.setAttribute('aria-pressed', 'false'));
@@ -326,11 +314,16 @@
         return;
       }
 
-      // Build API URL from date and long flag
-      const [yyyy, mm, dd] = dateInput.value.split('-');
-      const y = String(parseInt(yyyy, 10));
-      const m = String(parseInt(mm, 10));
-      const d = String(parseInt(dd, 10));
+      // Build API URL from selected date (display format dd.mm.yyyy)
+      const selectedDate = parseDisplay(dateInput.value);
+      if (!selectedDate) {
+        hint.textContent = 'Odaberite datum kako bi se prikazali termini.';
+        hint.classList.remove('hidden');
+        return;
+      }
+      const y = String(selectedDate.getFullYear());
+      const m = String(selectedDate.getMonth() + 1);
+      const d = String(selectedDate.getDate());
       const longParam = isLongSelected() ? 'true' : 'false';
       // Direct call to upstream API; ensure CORS is disabled/allowed in your browser
       const url = `https://termin.bosnic.hr/V1/freeslots/${y}/${m}/${d}?long=${longParam}`;
@@ -377,6 +370,42 @@
       }
     }
 
+    // Initialize Pikaday date picker: weekdays only (Mon–Fri), no JSON, no extra logic
+    (function initDatePicker() {
+      dateInput.setAttribute('readonly', 'readonly');
+
+      const today = new Date();
+      const initial = nextWeekday(today);
+
+      const picker = new Pikaday({
+        field: dateInput,
+        format: 'DD.MM.YYYY',
+        toString: (date) => formatDisplay(date),
+        parse: (str) => parseDisplay(str),
+        firstDay: 1, // Monday as first day so Sat/Sun map to columns 6 and 7
+        minDate: today,
+        defaultDate: initial,
+        setDefaultDate: true,
+        disableDayFn: (date) => isWeekendDate(date),
+        i18n: {
+          previousMonth: 'Prethodni mjesec',
+          nextMonth: 'Sljedeći mjesec',
+          months: [
+            'Siječanj', 'Veljača', 'Ožujak', 'Travanj', 'Svibanj', 'Lipanj',
+            'Srpanj', 'Kolovoz', 'Rujan', 'Listopad', 'Studeni', 'Prosinac'
+          ],
+          weekdays: [
+            'Nedjelja', 'Ponedjeljak', 'Utorak', 'Srijeda', 'Četvrtak', 'Petak', 'Subota'
+          ],
+          weekdaysShort: ['Ned', 'Pon', 'Uto', 'Sri', 'Čet', 'Pet', 'Sub']
+        },
+        onSelect: function() {
+          loadTimeslots();
+        }
+      });
+    })();
+
+    // Load times when a valid weekday is selected
     dateInput.addEventListener('change', loadTimeslots);
     document.querySelectorAll('input[name="duration"]').forEach(r => r.addEventListener('change', loadTimeslots));
 
@@ -417,9 +446,11 @@
       }
 
       // Build API payload per spec
-      const date = dateInput.value; // YYYY-MM-DD
+      const selectedDateForPayload = parseDisplay(dateInput.value);
+      if (!selectedDateForPayload) { alert('Molimo odaberite datum.'); return; }
+      const dateIso = toIso(selectedDateForPayload); // YYYY-MM-DD
       const start = selectedTime?.dataset.start; // HH:MM
-      const dateTime = `${date}T${start}:00.000`;
+      const dateTime = `${dateIso}T${start}:00.000`;
 
       const payload = {
         name: name,
