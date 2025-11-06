@@ -55,8 +55,8 @@ public class ReservationController implements ReservationsApi {
     }
 
     @Override
-    public ResponseEntity<String> getConfirmation(String uuid) {
-        return new ResponseEntity(entryService.getConfirmation(uuid), HttpStatus.OK);
+    public ResponseEntity<String> confirmEmailOK(String uuid) {
+        return new ResponseEntity(entryService.confirmEmailOK(uuid), HttpStatus.OK);
     }
 
     @Override

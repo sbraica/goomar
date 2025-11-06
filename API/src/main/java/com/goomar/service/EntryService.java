@@ -40,15 +40,16 @@ public class EntryService implements IEntryService {
     }
 
     @Override
-    public String getConfirmation(String token) {
+    public String confirmEmailOK(String token) {
         log.info(">>getConfirmation(token={})", token);
+        ctx.update(ENTRIES).set(ENTRIES.EMAIL_OK, true).where(ENTRIES.ID.eq(UUID.fromString(token))).execute();
         return "<html><body><h2>Rezervacija potvrđena!</h2></body></html>";
     }
 
     @Override
     public ReservationRest confirmReservation(String eventId) {
         log.info(">>confirmReservation(eventId={})", eventId);
-        return ctx.update(ENTRIES).set(ENTRIES.EMAIL_OK, true).where(ENTRIES.EVENT_ID.eq(eventId)).returning().fetchOneInto(ReservationRest.class);
+        return ctx.update(ENTRIES).set(ENTRIES.CONFIRMED, true).where(ENTRIES.EVENT_ID.eq(eventId)).returning().fetchOneInto(ReservationRest.class);
     }
 
     @Override

@@ -8,7 +8,7 @@ import java.util.UUID;
 public interface IEntryService {
     UUID insertReservation(ReservationRest reservationRest, String calendarId);
     List<ReservationRest> getAppointments(String authorization, int year, int month, int day);
-    String getConfirmation(String token);
+    String confirmEmailOK(String token);
     ReservationRest confirmReservation(String eventId);
     ReservationRest deleteAppoitnment(String eventId);
 }

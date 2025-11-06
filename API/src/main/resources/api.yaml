@@ -70,7 +70,7 @@ paths:
       tags:
         - Reservations
       summary: Get all application users
-      operationId: getConfirmation
+      operationId: confirmEmailOK
       parameters:
         - name: uuid
           in: query
