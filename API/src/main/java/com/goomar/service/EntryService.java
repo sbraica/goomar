@@ -36,7 +36,7 @@ public class EntryService implements IEntryService {
         LocalDateTime endOfWeek = date.plusDays(5).atStartOfDay();
 
         return ctx.select(ENTRIES.ID, ENTRIES.NAME, ENTRIES.DATE_TIME, ENTRIES.EMAIL, ENTRIES.PHONE, ENTRIES.REGISTRATION, ENTRIES.LONG, ENTRIES.EMAIL, ENTRIES.CONFIRMED, ENTRIES.EVENT_ID, ENTRIES.CONFIRMED)
-                  .from(ENTRIES).where(ENTRIES.DATE_TIME.ge(startOfWeek).and(ENTRIES.DATE_TIME.lt(endOfWeek))).orderBy(ENTRIES.DATE_TIME.asc()).fetchInto(ReservationRest.class);
+                  .from(ENTRIES).where(ENTRIES.EMAIL_OK.eq(true).and(ENTRIES.DATE_TIME.ge(startOfWeek).and(ENTRIES.DATE_TIME.lt(endOfWeek)))).orderBy(ENTRIES.DATE_TIME.asc()).fetchInto(ReservationRest.class);
     }
 
     @Override
