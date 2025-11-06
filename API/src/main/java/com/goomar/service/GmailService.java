@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.mail.Message.RecipientType;
 import jakarta.mail.MessagingException;
 import jakarta.mail.Session;
@@ -23,9 +24,10 @@ import jakarta.mail.internet.MimeMessage;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Properties;
@@ -37,23 +39,47 @@ import java.util.UUID;
 public class GmailService implements IGmailService {
     private final GoogleAuthorizationCodeFlow flow;
 
-    private final static DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy., HH:mm");
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy., HH:mm");
 
     @Value("${goomar.appUrl}")
     private String appUrl;
-    private String fromAddress = "termin@bosnic.hr";
 
-    public Gmail getGmailClient() throws Exception {
+    @Value("${goomar.mail.from:termin@bosnic.hr}")
+    private String fromAddress;
+
+    // Cached resources
+    private Gmail gmail;
+    private String tplRegistration;
+    private String tplConfirmation;
+    private String tplDeletion;
+
+    @PostConstruct
+    void init() throws Exception {
+        // Initialize Gmail client once
         Credential credential = flow.loadCredential("user");
         if (credential == null) {
             throw new IllegalStateException("User must authorize first!");
         }
-
-        return new Gmail.Builder(
+        this.gmail = new Gmail.Builder(
                 GoogleNetHttpTransport.newTrustedTransport(),
                 JacksonFactory.getDefaultInstance(),
                 credential
         ).setApplicationName("Goomar App").build();
+
+        // Preload templates
+        this.tplRegistration = loadClasspath("templates/registration-confirmation.html");
+        this.tplConfirmation = loadClasspath("templates/appointnment-confirmation.html");
+        this.tplDeletion = loadClasspath("templates/appointnment-deletion.html");
+
+        log.info("GmailService initialized: Gmail client and templates preloaded");
+    }
+
+    private String loadClasspath(String path) {
+        try (var reader = new BufferedReader(new InputStreamReader(new ClassPathResource(path).getInputStream(), StandardCharsets.UTF_8))) {
+            return reader.lines().reduce("", (acc, line) -> acc + line + "\n");
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to load template: " + path, e);
+        }
     }
 
     @Override
@@ -66,66 +92,32 @@ public class GmailService implements IGmailService {
         sendMail(to, subject, htmlBody, true);
     }
 
-    @SneakyThrows
     @Override
     public void sendReservation(ReservationRest rr, UUID uuid) {
         log.info("sendReservation(rr={}, uuid={})", rr, uuid);
-        Map<String, String> values = Map.of(
-                "customerName", rr.getUsername(),
-                "registration", rr.getRegistration(),
-                "timeslot", rr.getDateTime().format(formatter),
-                "confirmationUrl", appUrl + "/V1/confirmation?uuid="+uuid.toString()
-        );
-        log.info("loading template");
-        var resource = new ClassPathResource("templates/registration-confirmation.html");
-        String content;
-        try (var reader = new BufferedReader(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
-            content = reader.lines().reduce("", (acc, line) -> acc + line + "\n");
-        }
-        log.info("preparing content");
-        for (var entry : values.entrySet()) {
-            content = content.replace("{{" + entry.getKey() + "}}", entry.getValue());
-        }
-        log.info("sendHtml(rr.getEmail(), content={})", content);
-        sendHtml(rr.getEmail(), "Potvrda rezervacije", content);
+        Map<String, String> values = Map.of("name", rr.getName(), "registration", rr.getRegistration(), "timeslot", rr.getDateTime().format(formatter), "confirmationUrl", appUrl + "/V1/confirmation?uuid=" + uuid);
+        sendHtml(rr.getEmail(), "Potvrda rezervacije", replacePlaceholders(tplRegistration, values));
     }
 
-    @SneakyThrows
     @Override
     public void sendConfirmation(ReservationRest rr) {
         log.info("sendConfirmation(rr={})", rr);
-        Map<String, String> values = Map.of(
-                "customerName", rr.getUsername(),
-                "registration", rr.getRegistration(),
-                "timeslot", rr.getDateTime().format(formatter));
-        var resource = new ClassPathResource("templates/appointnment-confirmation.html");
-        String content;
-        try (var reader = new BufferedReader(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
-            content = reader.lines().reduce("", (acc, line) -> acc + line + "\n");
-        }
-
-        for (var entry : values.entrySet()) {
-            content = content.replace("{{" + entry.getKey() + "}}", entry.getValue());
-        }
-        sendHtml(rr.getEmail(), "Potvrda termina", content);
+        Map<String, String> values = Map.of("name", rr.getName(), "registration", rr.getRegistration(), "timeslot", rr.getDateTime().format(formatter));
+        sendHtml(rr.getEmail(), "Potvrda termina", replacePlaceholders(tplConfirmation, values));
     }
 
-    @SneakyThrows
     @Override
     public void sendDelete(ReservationRest rr) {
-        Map<String, String> values = Map.of(
-                "customerName", rr.getUsername(),
-                "registration", rr.getRegistration(),
-                "timeslot", rr.getDateTime().format(formatter));
-        var resource = new ClassPathResource("templates/appointnment-deletion.html");
-        String content;
-        try (var reader = new BufferedReader(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
-            content = reader.lines().reduce("", (acc, line) -> acc + line + "\n");
-        }
+        Map<String, String> values = Map.of("customerName", rr.getName(),"registration", rr.getRegistration(),"timeslot", rr.getDateTime().format(formatter));
+        sendHtml(rr.getEmail(), "Poništenje termina !!!", replacePlaceholders(tplDeletion, values));
+    }
+
+    private String replacePlaceholders(String template, Map<String, String> values) {
+        String result = template;
         for (var entry : values.entrySet()) {
-            content = content.replace("{{" + entry.getKey() + "}}", entry.getValue());
+            result = result.replace("{{" + entry.getKey() + "}}", entry.getValue());
         }
-        sendHtml(rr.getEmail(), "Poništenje termina !!!", content);
+        return result;
     }
 
     @SneakyThrows
@@ -134,7 +126,9 @@ public class GmailService implements IGmailService {
         MimeMessage mimeMessage = buildMime(to, subject, content, html);
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         mimeMessage.writeTo(buffer);
-        Message sent = getGmailClient().users().messages().send("me", (new Message()).setRaw(Base64.encodeBase64URLSafeString(buffer.toByteArray()))).execute();
+        Message sent = gmail.users().messages()
+                .send("me", new Message().setRaw(Base64.encodeBase64URLSafeString(buffer.toByteArray())))
+                .execute();
         log.info("📧 Email sent to={} subject={} id={}", to, subject, sent.getId());
     }
 

@@ -26,7 +26,7 @@ class ReservationCard extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(reservation.username, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text(reservation.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   Text(isApproved ? 'Approved' : 'Pending Approval', style: TextStyle(fontSize: 12, color: isApproved ? Colors.green : Colors.orange, fontWeight: FontWeight.w500))
                 ])),
                 Container(

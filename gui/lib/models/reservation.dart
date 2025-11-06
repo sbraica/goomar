@@ -3,7 +3,7 @@ class Reservation {
   /// When creating a new reservation, this should be null (omit from payload).
   final String? id;
   final String? event_id; // backend event identifier for PATCH operations
-  final String username;
+  final String name;
   final String email;
   final String phone;
   final String registration;
@@ -15,7 +15,7 @@ class Reservation {
   Reservation({
     this.id,
     this.event_id,
-    required this.username,
+    required this.name,
     required this.email,
     required this.phone,
     required this.registration,
@@ -45,7 +45,7 @@ class Reservation {
     return Reservation(
       id: parseId(json['id']) ?? parseId(json['event_id']),
       event_id: parseId(json['event_id']),
-      username: (json['username'] ?? json['name'] ?? '') as String,
+      name: (json['name'] ?? json['name'] ?? '') as String,
       email: (json['email'] ?? '') as String,
       phone: (json['phone'] ?? '') as String,
       registration: (json['registration'] ?? json['plate'] ?? '') as String,
@@ -60,7 +60,7 @@ class Reservation {
     return {
       if (id != null) 'id': id,
       if (event_id != null) 'event_id': event_id,
-      'username': username,
+      'name': name,
       'email': email,
       'phone': phone,
       'registration': registration,

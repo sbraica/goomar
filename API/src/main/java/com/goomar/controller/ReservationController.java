@@ -28,11 +28,8 @@ public class ReservationController implements ReservationsApi {
     public ResponseEntity<Void> confirmReservation(String authorization, String eventId) {
         log.info("confirmReservation(eventId={})", eventId);
         ReservationRest rr = entryService.confirmReservation(eventId);
-        log.info("1", eventId);
         calendarService.confirmAppointment( eventId);
-        log.info("2", eventId);
         emailService.sendConfirmation(rr);
-        log.info("3", eventId);
         return new ResponseEntity(HttpStatus.CREATED);
     }
 

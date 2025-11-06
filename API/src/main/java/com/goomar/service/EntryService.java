@@ -22,7 +22,7 @@ public class EntryService implements IEntryService {
     @Override
     public UUID insertReservation(ReservationRest rr, String eventId) {
             return ctx.insertInto(ENTRIES, ENTRIES.DATE_TIME, ENTRIES.NAME, ENTRIES.PHONE, ENTRIES.EMAIL, ENTRIES.REGISTRATION, ENTRIES.LONG, ENTRIES.CONFIRMED, ENTRIES.EVENT_ID, ENTRIES.EMAIL_OK)
-                    .values(rr.getDateTime(), rr.getUsername(), rr.getPhone(), rr.getEmail(), rr.getRegistration(), rr.getLongService(), false, eventId, false).returningResult(ENTRIES.ID).fetchOne().value1();
+                    .values(rr.getDateTime(), rr.getName(), rr.getPhone(), rr.getEmail(), rr.getRegistration(), rr.getLongService(), false, eventId, false).returningResult(ENTRIES.ID).fetchOne().value1();
     }
 
 

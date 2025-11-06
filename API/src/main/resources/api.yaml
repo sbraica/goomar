@@ -201,7 +201,7 @@ components:
           type: string
     ReservationRest:
       required:
-        - username
+        - name
         - email
         - phone
         - date_time
@@ -212,7 +212,7 @@ components:
         id:
           type: string
           format: uuid
-        username:
+        name:
           type: string
           minLength: 5
           maxLength: 128
