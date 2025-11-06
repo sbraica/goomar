@@ -83,33 +83,23 @@ public class GmailService implements IGmailService {
     }
 
     @Override
-    public void sendText(String to, String subject, String body) {
-        sendMail(to, subject, body, false);
-    }
-
-    @Override
-    public void sendHtml(String to, String subject, String htmlBody) {
-        sendMail(to, subject, htmlBody, true);
-    }
-
-    @Override
     public void sendReservation(ReservationRest rr, UUID uuid) {
         log.info("sendReservation(rr={}, uuid={})", rr, uuid);
         Map<String, String> values = Map.of("name", rr.getName(), "registration", rr.getRegistration(), "timeslot", rr.getDateTime().format(formatter), "confirmationUrl", appUrl + "/V1/confirmation?uuid=" + uuid);
-        sendHtml(rr.getEmail(), "Potvrda rezervacije", replacePlaceholders(tplRegistration, values));
+        sendMail(rr.getEmail(), "Potvrda rezervacije", replacePlaceholders(tplRegistration, values));
     }
 
     @Override
     public void sendConfirmation(ReservationRest rr) {
         log.info("sendConfirmation(rr={})", rr);
         Map<String, String> values = Map.of("name", rr.getName(), "registration", rr.getRegistration(), "timeslot", rr.getDateTime().format(formatter));
-        sendHtml(rr.getEmail(), "Potvrda termina", replacePlaceholders(tplConfirmation, values));
+        sendMail(rr.getEmail(), "Potvrda termina", replacePlaceholders(tplConfirmation, values));
     }
 
     @Override
     public void sendDelete(ReservationRest rr) {
-        Map<String, String> values = Map.of("customerName", rr.getName(),"registration", rr.getRegistration(),"timeslot", rr.getDateTime().format(formatter));
-        sendHtml(rr.getEmail(), "Poništenje termina !!!", replacePlaceholders(tplDeletion, values));
+        Map<String, String> values = Map.of("name", rr.getName(),"registration", rr.getRegistration(),"timeslot", rr.getDateTime().format(formatter));
+        sendMail(rr.getEmail(), "Poništenje termina !!!", replacePlaceholders(tplDeletion, values));
     }
 
     private String replacePlaceholders(String template, Map<String, String> values) {
@@ -121,9 +111,9 @@ public class GmailService implements IGmailService {
     }
 
     @SneakyThrows
-    private void sendMail(String to, String subject, String content, boolean html) {
-        log.info("sendMail(to={}, subject={}, content={}, html={})", to, subject, content, html);
-        MimeMessage mimeMessage = buildMime(to, subject, content, html);
+    public void sendMail(String to, String subject, String content) {
+        log.info("sendMail(to={}, subject={})", to, subject);
+        MimeMessage mimeMessage = buildMime(to, subject, content);
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         mimeMessage.writeTo(buffer);
         Message sent = gmail.users().messages()
@@ -132,18 +122,14 @@ public class GmailService implements IGmailService {
         log.info("📧 Email sent to={} subject={} id={}", to, subject, sent.getId());
     }
 
-    private MimeMessage buildMime(String to, String subject, String content, boolean html) throws MessagingException {
+    private MimeMessage buildMime(String to, String subject, String content) throws MessagingException {
         Properties props = new Properties();
         Session session = Session.getInstance(props, null);
         MimeMessage email = new MimeMessage(session);
         email.setFrom(new InternetAddress(fromAddress));
         email.addRecipient(RecipientType.TO, new InternetAddress(to));
         email.setSubject(subject, StandardCharsets.UTF_8.name());
-        if (html) {
-            email.setContent(content, "text/html; charset=UTF-8");
-        } else {
-            email.setText(content, StandardCharsets.UTF_8.name());
-        }
+        email.setContent(content, "text/html; charset=UTF-8");
         return email;
     }
 
