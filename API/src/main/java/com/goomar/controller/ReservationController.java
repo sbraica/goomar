@@ -38,7 +38,7 @@ public class ReservationController implements ReservationsApi {
         String calendarId = calendarService.insertReservation(rr);
         UUID uuid = entryService.insertReservation(rr, calendarId);
         emailService.sendReservation(rr, uuid);
-        return new ResponseEntity(entryService.insertReservation(rr, calendarId), HttpStatus.OK);
+        return new ResponseEntity(uuid, HttpStatus.OK);
     }
 
     @Override
