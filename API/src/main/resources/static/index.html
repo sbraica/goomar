@@ -148,6 +148,46 @@
       font-weight: 600;
       text-align: center;
     }
+    .flatpickr-container {
+        position: relative;
+        display: block;
+        isolation: isolate; /* ensures z-index inside works predictably */
+    }
+
+    .flatpickr-container input {
+        width: 100%;
+        box-sizing: border-box;
+        padding-right: 48px;  /* room for the button */
+        -webkit-appearance: none; /* avoid iOS inner shadow clipping */
+    }
+
+    .calendar-button {
+        position: absolute;
+        inset-block: 0;              /* top:0; bottom:0 */
+        inset-inline-end: 8px;       /* right in LTR, left in RTL */
+        width: 36px;
+        display: grid;
+        place-items: center;
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+        z-index: 2;                  /* sit above the input border */
+        -webkit-appearance: none;
+    }
+
+    .calendar-icon {
+        width: 22px;
+        height: 22px;
+        display: block;              /* prevents baseline cropping */
+        overflow: visible;           /* fixes SVG clipping in some browsers */
+        color: var(--muted);
+        transition: color .15s ease;
+    }
+
+    .calendar-button:hover .calendar-icon,
+    .flatpickr-container input:focus + .calendar-button .calendar-icon {
+        color: var(--primary);
+    }
   </style>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -162,8 +202,17 @@
 
     <section class="card" aria-label="Odabir datuma">
       <h2 class="section-title">Datum</h2>
-      <label for="date">Odaberite datum</label>
-      <input type="date" id="date" name="date" />
+        <label for="date">Odaberite datum</label>
+        <div class="flatpickr-container">
+            <input type="text" id="date" name="date" readonly />
+            <button type="button" class="calendar-button" aria-label="Otvori kalendar">
+                <svg class="calendar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                     preserveAspectRatio="xMidYMid meet">
+                    <path fill="currentColor"
+                          d="M7 10h5v5H7zm-2 9q-.825 0-1.413-.588T3 17V6q0-.825.588-1.413T5 4h1V2h2v2h8V2h2v2h1q.825 0 1.413.588T21 6v11q0 .825-.588 1.413T19 19zM5 8h14V6H5zm0 11h14V10H5z"/>
+                </svg>
+            </button>
+        </div>
       <div style="height:10px"></div>
       <label class="section-title" for="duration15">Trajanje</label>
       <div role="radiogroup" aria-label="Trajanje" style="display:flex; gap:12px; align-items:center;">
@@ -246,7 +295,7 @@
     if (__default.getDay() === 6) { __default.setDate(__default.getDate() + 2); } // if Saturday -> Monday
     if (__default.getDay() === 0) { __default.setDate(__default.getDate() + 1); } // if Sunday -> Monday
     const fp = flatpickr(dateInput, {
-      dateFormat: 'Y-m-d',
+      dateFormat: 'd.m.Y',
       minDate: 'today',
       defaultDate: __default,
       allowInput: false,
@@ -260,6 +309,7 @@
         loadTimeslots();
       }
     });
+    document.querySelector('.calendar-icon').addEventListener('click', () => fp.open());
 
     function clearSelection() {
       container.querySelectorAll('.timeslot').forEach(btn => btn.setAttribute('aria-pressed', 'false'));
