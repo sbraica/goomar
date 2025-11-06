@@ -149,6 +149,8 @@
       text-align: center;
     }
   </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </head>
 <body>
   <main class="page" role="main">
@@ -236,8 +238,28 @@
       return selected && selected.value === '30';
     }
 
-    // Init date input: min = today
-    dateInput.min = todayIso();
+    // Initialize calendar widget (Flatpickr): hide weekends and block manual typing
+    // Also sets minDate=today and defaultDate to today (or next Monday if weekend)
+    dateInput.setAttribute('readonly', 'readonly'); // extra safety against manual typing on some browsers
+    const __today = new Date();
+    const __default = new Date(__today.getTime());
+    if (__default.getDay() === 6) { __default.setDate(__default.getDate() + 2); } // if Saturday -> Monday
+    if (__default.getDay() === 0) { __default.setDate(__default.getDate() + 1); } // if Sunday -> Monday
+    const fp = flatpickr(dateInput, {
+      dateFormat: 'Y-m-d',
+      minDate: 'today',
+      defaultDate: __default,
+      allowInput: false,
+      disable: [
+        function(date) { // disable Saturdays (6) and Sundays (0)
+          const d = date.getDay();
+          return d === 0 || d === 6;
+        }
+      ],
+      onChange: function() {
+        loadTimeslots();
+      }
+    });
 
     function clearSelection() {
       container.querySelectorAll('.timeslot').forEach(btn => btn.setAttribute('aria-pressed', 'false'));

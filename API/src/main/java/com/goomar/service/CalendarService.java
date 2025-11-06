@@ -40,18 +40,6 @@ public class CalendarService implements ICalendarService {
                 credential
         ).setApplicationName("Goomar App").build();
     }
-    @Override
-    @SneakyThrows
-    public List<Event> getEventsForDay(LocalDate date) {
-        ZonedDateTime startOfDay = date.atTime(LocalTime.of(8, 0)).atZone(ZoneId.systemDefault());
-        ZonedDateTime endOfDay = date.atTime(LocalTime.of(16, 0)).atZone(ZoneId.systemDefault());
-
-        DateTime timeMin = new DateTime(startOfDay.toInstant().toEpochMilli());
-        DateTime timeMax = new DateTime(endOfDay.toInstant().toEpochMilli());
-
-
-        return getCalendarClient().events().list(calendarId).setTimeMin(timeMin).setTimeMax(timeMax).setOrderBy("startTime").setShowDeleted(false).setSingleEvents(true).execute().getItems();
-    }
 
     @SneakyThrows
     @Override
