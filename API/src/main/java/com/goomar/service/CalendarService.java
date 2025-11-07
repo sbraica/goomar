@@ -12,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.openapitools.model.FreeSlotRest;
 import org.openapitools.model.ReservationRest;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import java.io.IOException;
 
@@ -28,6 +27,7 @@ public class CalendarService implements ICalendarService {
     @Value("${goomar.calendarId}")
     private String calendarId;
     private final GoogleAuthorizationCodeFlow flow;
+    private final ZoneId zone = ZoneId.of("Europe/Zagreb");
 
     public Calendar getCalendarClient() throws Exception {
         var credential = flow.loadCredential("user");
@@ -45,7 +45,6 @@ public class CalendarService implements ICalendarService {
     @Override
     public String insertReservation(ReservationRest rr) {
         log.info("insertReservation(rr={})", rr);
-        ZoneId zone = ZoneId.of("Europe/Zagreb");
 
         ZonedDateTime startZoned = rr.getDateTime().atZone(zone);
         ZonedDateTime endZoned = startZoned.plusMinutes(rr.getLongService() ? 30 : 15);
@@ -63,8 +62,8 @@ public class CalendarService implements ICalendarService {
     @Override
     public List<FreeSlotRest> getFreeSlots(LocalDate date, boolean longService) {
         log.info("getFreeSlots(date={}, longService={})", date, longService);
-        ZonedDateTime startOfDay = date.atTime(LocalTime.of(8, 0)).atZone(ZoneId.systemDefault());
-        ZonedDateTime endOfDay = date.atTime(LocalTime.of(16, 0)).atZone(ZoneId.systemDefault());
+        ZonedDateTime startOfDay = date.atTime(LocalTime.of(8, 0)).atZone(zone);
+        ZonedDateTime endOfDay = date.atTime(LocalTime.of(16, 0)).atZone(zone);
 
         DateTime timeMin = new DateTime(startOfDay.toInstant().toEpochMilli());
         DateTime timeMax = new DateTime(endOfDay.toInstant().toEpochMilli());
@@ -88,8 +87,8 @@ public class CalendarService implements ICalendarService {
             if (event.getStart().getDate() != null || event.getEnd().getDate() != null)
                 continue;
 
-            ZonedDateTime start = Instant.ofEpochMilli(event.getStart().getDateTime().getValue()).atZone(ZoneId.systemDefault());
-            ZonedDateTime end = Instant.ofEpochMilli(event.getEnd().getDateTime().getValue()).atZone(ZoneId.systemDefault());
+            ZonedDateTime start = Instant.ofEpochMilli(event.getStart().getDateTime().getValue()).atZone(zone);
+            ZonedDateTime end = Instant.ofEpochMilli(event.getEnd().getDateTime().getValue()).atZone(zone);
 
             if (!start.toLocalDate().equals(end.toLocalDate()))
                 continue;
@@ -97,8 +96,8 @@ public class CalendarService implements ICalendarService {
             busyPeriods.add(new TimePeriod().setStart(event.getStart().getDateTime()).setEnd(event.getEnd().getDateTime()));
         }
 
-        ZonedDateTime lunchStart = date.atTime(LocalTime.of(12, 0)).atZone(ZoneId.systemDefault());
-        ZonedDateTime lunchEnd = date.atTime(LocalTime.of(13, 0)).atZone(ZoneId.systemDefault());
+        ZonedDateTime lunchStart = date.atTime(LocalTime.of(12, 0)).atZone(zone);
+        ZonedDateTime lunchEnd = date.atTime(LocalTime.of(13, 0)).atZone(zone);
         busyPeriods.add(new TimePeriod().setStart(new DateTime(lunchStart.toInstant().toEpochMilli())).setEnd(new DateTime(lunchEnd.toInstant().toEpochMilli())));
 
         busyPeriods.sort(Comparator.comparingLong(tp -> tp.getStart().getValue()));
@@ -108,8 +107,8 @@ public class CalendarService implements ICalendarService {
         ZonedDateTime cursor = startOfDay;
 
         for (TimePeriod busy : busyPeriods) {
-            ZonedDateTime busyStart = Instant.ofEpochMilli(busy.getStart().getValue()).atZone(ZoneId.systemDefault());
-            ZonedDateTime busyEnd = Instant.ofEpochMilli(busy.getEnd().getValue()).atZone(ZoneId.systemDefault());
+            ZonedDateTime busyStart = Instant.ofEpochMilli(busy.getStart().getValue()).atZone(zone);
+            ZonedDateTime busyEnd = Instant.ofEpochMilli(busy.getEnd().getValue()).atZone(zone);
 
             while (cursor.plus(slotLength).isBefore(busyStart)) {
                 freeSlots.add(new FreeSlotRest().start(cursor.toLocalTime().toString()).end(cursor.plus(slotLength).toLocalTime().toString()));
