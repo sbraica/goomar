@@ -36,7 +36,10 @@ public class GoogleApiConfig {
     public GoogleAuthorizationCodeFlow googleAuthorizationCodeFlow() throws GeneralSecurityException, IOException {
         final NetHttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
         GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(new ClassPathResource("credentials.json").getInputStream()));
-        return new GoogleAuthorizationCodeFlow.Builder(httpTransport, JSON_FACTORY, clientSecrets, SCOPES).setApprovalPrompt("force").setAccessType("offline").setDataStoreFactory(new FileDataStoreFactory(new File(TOKENS_DIRECTORY_PATH))).build();
+        return new GoogleAuthorizationCodeFlow.Builder(httpTransport, JSON_FACTORY, clientSecrets, SCOPES)
+                .setAccessType("offline")
+                .setDataStoreFactory(new FileDataStoreFactory(new File(TOKENS_DIRECTORY_PATH)))
+                .build();
     }
 
     @RestController
@@ -50,7 +53,11 @@ public class GoogleApiConfig {
 
         @GetMapping("/google/auth")
         public String authorize() {
-            String authUrl = flow.newAuthorizationUrl().setRedirectUri("https://termin.bosnic.hr/oauth2/callback").build();
+            String authUrl = flow.newAuthorizationUrl()
+                    .setRedirectUri("https://termin.bosnic.hr/oauth2/callback")
+                    .set("access_type", "offline")
+                    .set("prompt", "consent")
+                    .build();
             return "<a href=\"" + authUrl + "\" target=\"_blank\">Authorize Google Access</a>";
         }
 

@@ -3,6 +3,7 @@ package com.goomar.service;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.Base64;
 import com.google.api.services.gmail.Gmail;
@@ -70,11 +71,9 @@ public class GmailService implements IGmailService {
             log.warn("⚠️ Gmail not initialized yet — user must authorize first via /google/auth");
         }
 
-        log.info("📩 GmailService initialized (templates loaded, gmail client: {})",
-                gmail != null ? "ready" : "not yet authorized");
+        log.info("📩 GmailService initialized (templates loaded, gmail client: {})", gmail != null ? "ready" : "not yet authorized");
     }
 
-    /** Try to create Gmail client if credentials exist */
     private synchronized void initGmailClient() throws Exception {
         if (this.gmail != null && this.credential != null) return;
 
@@ -83,65 +82,39 @@ public class GmailService implements IGmailService {
             throw new IllegalStateException("No Google credentials found. Please authorize via /google/auth");
         }
 
-        this.gmail = new Gmail.Builder(
-                GoogleNetHttpTransport.newTrustedTransport(),
-                JacksonFactory.getDefaultInstance(),
-                credential)
-                .setApplicationName("Goomar App")
-                .build();
+        this.gmail = new Gmail.Builder(GoogleNetHttpTransport.newTrustedTransport(), JacksonFactory.getDefaultInstance(), credential).setApplicationName("Goomar App").build();
 
         log.info("✅ Gmail client initialized successfully.");
     }
 
-    /** Load a file from classpath as UTF-8 string */
     private String loadClasspath(String path) {
-        try (var reader = new BufferedReader(new InputStreamReader(
-                new ClassPathResource(path).getInputStream(), StandardCharsets.UTF_8))) {
+        try (var reader = new BufferedReader(new InputStreamReader(new ClassPathResource(path).getInputStream(), StandardCharsets.UTF_8))) {
             return reader.lines().reduce("", (acc, line) -> acc + line + "\n");
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to load template: " + path, e);
         }
     }
 
-    // ----------- Public mail operations -----------
 
     @Override
     public void sendReservation(ReservationRest rr, UUID uuid) {
         log.info("sendReservation(rr={}, uuid={})", rr, uuid);
-        Map<String, String> values = Map.of(
-                "name", rr.getName(),
-                "registration", rr.getRegistration(),
-                "timeslot", rr.getDateTime().format(formatter),
-                "confirmationUrl", appUrl + "/V1/confirmation?uuid=" + uuid
-        );
-        sendMail(rr.getEmail(), "Potvrda rezervacije",
-                replacePlaceholders(tplRegistration, values));
+        Map<String, String> values = Map.of("name", rr.getName(), "registration", rr.getRegistration(), "timeslot", rr.getDateTime().format(formatter), "confirmationUrl", appUrl + "/V1/confirmation?uuid=" + uuid);
+        sendMail(rr.getEmail(), "Potvrda rezervacije", replacePlaceholders(tplRegistration, values));
     }
 
     @Override
     public void sendConfirmation(ReservationRest rr) {
         log.info("sendConfirmation(rr={})", rr);
-        Map<String, String> values = Map.of(
-                "name", rr.getName(),
-                "registration", rr.getRegistration(),
-                "timeslot", rr.getDateTime().format(formatter)
-        );
-        sendMail(rr.getEmail(), "Potvrda termina",
-                replacePlaceholders(tplConfirmation, values));
+        Map<String, String> values = Map.of("name", rr.getName(), "registration", rr.getRegistration(), "timeslot", rr.getDateTime().format(formatter));
+        sendMail(rr.getEmail(), "Potvrda termina", replacePlaceholders(tplConfirmation, values));
     }
 
     @Override
     public void sendDelete(ReservationRest rr) {
-        Map<String, String> values = Map.of(
-                "name", rr.getName(),
-                "registration", rr.getRegistration(),
-                "timeslot", rr.getDateTime().format(formatter)
-        );
-        sendMail(rr.getEmail(), "Poništenje termina !!!",
-                replacePlaceholders(tplDeletion, values));
+        Map<String, String> values = Map.of("name", rr.getName(),"registration", rr.getRegistration(),"timeslot", rr.getDateTime().format(formatter));
+        sendMail(rr.getEmail(), "Poništenje termina !!!",replacePlaceholders(tplDeletion, values));
     }
-
-    // ----------- Internal helpers -----------
 
     private String replacePlaceholders(String template, Map<String, String> values) {
         String result = template;
@@ -162,11 +135,10 @@ public class GmailService implements IGmailService {
         String encodedEmail = Base64.encodeBase64URLSafeString(buffer.toByteArray());
         Message message = new Message().setRaw(encodedEmail);
 
-        Message sent = gmail.users().messages().send("me", message).execute();
+        Message sent = executeWithRetry(() -> gmail.users().messages().send("me", message).execute(), "gmail.users.messages.send");
         log.info("📧 Email sent to={} subject={} id={}", to, subject, sent.getId());
     }
 
-    /** Ensure Gmail client exists and token is valid */
     private synchronized void ensureGmailReady() throws Exception {
         if (this.gmail == null || this.credential == null) {
             log.info("⚙️ Gmail client not ready — attempting to initialize");
@@ -180,6 +152,33 @@ public class GmailService implements IGmailService {
             } else {
                 log.warn("⚠️ Gmail token refresh failed. User reauthorization may be required.");
             }
+        }
+    }
+
+    private <T> T executeWithRetry(java.util.concurrent.Callable<T> call, String op) throws Exception {
+        try {
+            return call.call();
+        } catch (GoogleJsonResponseException e) {
+            if (e.getStatusCode() == 401) {
+                log.warn("401 from Gmail API during {}. Attempting token refresh...", op);
+                if (credential != null && credential.refreshToken()) {
+                    return call.call();
+                }
+                log.warn("Refresh failed. Reloading credential and rebuilding Gmail client...");
+                Credential reloaded = flow.loadCredential("user");
+                if (reloaded != null) {
+                    this.credential = reloaded;
+                    this.gmail = new Gmail.Builder(
+                            GoogleNetHttpTransport.newTrustedTransport(),
+                            JacksonFactory.getDefaultInstance(),
+                            credential)
+                            .setApplicationName("Goomar App")
+                            .build();
+                    return call.call();
+                }
+                throw new IllegalStateException("Google authorization expired. Please re-authorize via /google/auth");
+            }
+            throw e;
         }
     }
 

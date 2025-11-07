@@ -3,6 +3,7 @@ package com.goomar.service;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.DateTime;
 import com.google.api.services.calendar.Calendar;
@@ -48,6 +49,33 @@ public class CalendarService implements ICalendarService {
         }
     }
 
+    private <T> T executeWithRetry(java.util.concurrent.Callable<T> call, String op) throws Exception {
+        try {
+            return call.call();
+        } catch (GoogleJsonResponseException e) {
+            if (e.getStatusCode() == 401) {
+                log.warn("401 from Calendar API during {}. Attempting token refresh...", op);
+                if (credential != null && credential.refreshToken()) {
+                    return call.call();
+                }
+                log.warn("Refresh failed. Reloading credential and rebuilding client...");
+                Credential reloaded = flow.loadCredential("user");
+                if (reloaded != null) {
+                    this.credential = reloaded;
+                    this.calendarClient = new Calendar.Builder(
+                            GoogleNetHttpTransport.newTrustedTransport(),
+                            JacksonFactory.getDefaultInstance(),
+                            credential)
+                            .setApplicationName("Goomar App")
+                            .build();
+                    return call.call();
+                }
+                throw new IllegalStateException("Google authorization expired. Please re-authorize via /google/auth");
+            }
+            throw e;
+        }
+    }
+
     private synchronized void initCalendarClient() throws Exception {
         this.credential = flow.loadCredential("user");
         if (this.credential == null) {
@@ -72,7 +100,7 @@ public class CalendarService implements ICalendarService {
         Event event = new Event().setSummary(rr.getName()).setDescription(rr.getPhone()).setColorId("5").setStart(new EventDateTime().setDateTime(new DateTime(startZoned.toInstant().toEpochMilli())).setTimeZone(zone.getId()))
                 .setEnd(new EventDateTime().setDateTime(new DateTime(endZoned.toInstant().toEpochMilli())).setTimeZone(zone.getId()));
 
-        Event created = calendarClient.events().insert(calendarId, event).execute();
+        Event created = executeWithRetry(() -> calendarClient.events().insert(calendarId, event).execute(), "events.insert");
         log.info("📅 Event created: {} ({} at {})", created.getId(), created.getSummary(), created.getStart());
         return created.getId();
     }
@@ -91,7 +119,16 @@ public class CalendarService implements ICalendarService {
 
         List<Event> allEvents;
         try {
-            allEvents = calendarClient.events().list(calendarId).setTimeMin(timeMin).setTimeMax(timeMax).setOrderBy("startTime").setShowDeleted(false).setSingleEvents(true).execute().getItems();
+            Events events = executeWithRetry(
+                    () -> calendarClient.events().list(calendarId)
+                            .setTimeMin(timeMin)
+                            .setTimeMax(timeMax)
+                            .setOrderBy("startTime")
+                            .setShowDeleted(false)
+                            .setSingleEvents(true)
+                            .execute(),
+                    "events.list");
+            allEvents = events.getItems();
         } catch (IOException e) {
             log.error("Error getting events for day: {}", date, e);
             throw e;
@@ -144,9 +181,9 @@ public class CalendarService implements ICalendarService {
         ensureCalendarReady();
 
         log.info("confirmAppointment(eventId={})", eventId);
-        Event event = calendarClient.events().get(calendarId, eventId).execute();
+        Event event = executeWithRetry(() -> calendarClient.events().get(calendarId, eventId).execute(), "events.get");
         event.setStatus("confirmed").setColorId("1");
-        calendarClient.events().update(calendarId, event.getId(), event).execute();
+        executeWithRetry(() -> calendarClient.events().update(calendarId, event.getId(), event).execute(), "events.update");
     }
 
     @SneakyThrows
@@ -155,6 +192,6 @@ public class CalendarService implements ICalendarService {
         ensureCalendarReady();
 
         log.info("deleteAppointment(eventId={})", eventId);
-        calendarClient.events().delete(calendarId, eventId).execute();
+        executeWithRetry(() -> calendarClient.events().delete(calendarId, eventId).execute(), "events.delete");
     }
 }
