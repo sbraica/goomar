@@ -14,7 +14,9 @@ class ApprovalScreen extends StatefulWidget {
 class _ApprovalScreenState extends State<ApprovalScreen> {
   // UI state moved to provider: focusedDay, selectedDay, selectedTime
   final int slotMinutes = 15;
+
   DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
   DateTime _mondayOf(DateTime d) => _dateOnly(d).subtract(Duration(days: d.weekday - DateTime.monday));
 
   @override
@@ -88,7 +90,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
       if (dt.isBefore(weekStart) || !dt.isBefore(weekEnd)) continue;
 
       final int duration = r.longService ? 30 : 15;
-      spans.add(ReservationSpan(id: r.id,  start: DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute), durationMinutes: duration, label: r.name, approved: r.confirmed));
+      spans.add(ReservationSpan(id: r.id, start: DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute), durationMinutes: duration, label: r.name, approved: r.confirmed));
 
       final DateTime resStart = DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute);
       final DateTime resEnd = resStart.add(Duration(minutes: duration));
@@ -112,33 +114,11 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
     return Scaffold(
         appBar: AppBar(title: const Text('Reservation Management'), actions: [
           IconButton(
-              onPressed: () async {
-                try {
-                  final currentMonday = _mondayOf(focusedDay);
-                  await reservationProvider.loadReservations(weekStart: currentMonday);
-                } catch (_) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to refresh reservations'), backgroundColor: Colors.red));
-                  }
-                }
-              },
-              tooltip: 'Refresh',
-              icon: const Icon(Icons.refresh)),
-          Padding(
-              padding: const EdgeInsets.only(right: 8.0),
-              child: Center(
-                  child: Chip(
-                      avatar: const Icon(Icons.person, size: 16, color: Colors.white),
-                      label: Text(authProvider.currentUser?.username ?? 'Operator', style: const TextStyle(color: Colors.white)),
-                      backgroundColor: Theme.of(context).primaryColor.withAlpha((0.8 * 255).round())))),
-          IconButton(
               icon: const Icon(Icons.logout),
               tooltip: 'Logout',
               onPressed: () {
-                _showConfirmDialog(context, 'Logout', 'Are you sure you want to logout?', () {
-                  authProvider.logout();
-                  Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-                });
+                authProvider.logout();
+                Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
               })
         ]),
         body: Column(children: [
@@ -157,7 +137,8 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                               reservationProvider.setFocusedDay(DateTime(prev.year, prev.month, prev.day));
                               reservationProvider.loadReservations(weekStart: prev).catchError((_) {
                                 if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to load reservations for previous week'),backgroundColor: Colors.red));
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(const SnackBar(content: Text('Failed to load reservations for previous week'), backgroundColor: Colors.red));
                                 }
                               });
                             },
@@ -168,7 +149,8 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                               reservationProvider.setFocusedDay(DateTime(next.year, next.month, next.day));
                               reservationProvider.loadReservations(weekStart: next).catchError((_) {
                                 if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to load reservations for next week'),backgroundColor: Colors.red));
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(const SnackBar(content: Text('Failed to load reservations for next week'), backgroundColor: Colors.red));
                                 }
                               });
                             },

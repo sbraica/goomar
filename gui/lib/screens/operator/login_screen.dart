@@ -40,72 +40,87 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).primaryColor;
     return Scaffold(
-        body: Container(
-            decoration: BoxDecoration(
-                gradient: LinearGradient(
-                    begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [primary, primary.withAlpha((0.6 * 255).round())])),
-            child: SafeArea(
-                child: Center(
-                    child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(24.0),
-                        child: Card(
-                            elevation: 8,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                            child: Padding(
-                                padding: const EdgeInsets.all(32.0),
-                                child: Form(
-                                    key: _formKey,
-                                    child: Column(mainAxisSize: MainAxisSize.min, children: [
-                                      const Icon(Icons.admin_panel_settings, size: 80, color: Colors.blue),
-                                      const SizedBox(height: 24),
-                                      const Text('Operator Login', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-                                      const SizedBox(height: 8),
-                                      Text('Access reservation management', style: TextStyle(fontSize: 14, color: Colors.grey)),
-                                      const SizedBox(height: 32),
-                                      TextFormField(
-                                          controller: _usernameController,
-                                          decoration: const InputDecoration(labelText: 'Username', prefixIcon: Icon(Icons.person)),
-                                          validator: (value) {
-                                            if (value == null || value.isEmpty) {
-                                              return 'Please enter username';
-                                            }
-                                            return null;
-                                          }),
-                                      const SizedBox(height: 16),
-                                      TextFormField(
-                                          controller: _passwordController,
-                                          obscureText: Provider.of<LoginUiProvider>(context).obscurePassword,
-                                          decoration: InputDecoration(
-                                              labelText: 'Password',
-                                              prefixIcon: const Icon(Icons.lock),
-                                              suffixIcon: Consumer<LoginUiProvider>(
-                                                  builder: (context, ui, _) =>
-                                                      IconButton(icon: Icon(ui.obscurePassword ? Icons.visibility : Icons.visibility_off), onPressed: ui.toggleObscure))),
-                                          validator: (value) {
-                                            if (value == null || value.isEmpty) {
-                                              return 'Please enter password';
-                                            }
-                                            return null;
-                                          }),
-                                      const SizedBox(height: 32),
-                                      SizedBox(
-                                          width: double.infinity,
-                                          child: Consumer<LoginUiProvider>(
-                                              builder: (context, ui, _) => ElevatedButton(
-                                                  onPressed: ui.isLoading ? null : _login,
-                                                  style: ElevatedButton.styleFrom(
-                                                      padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                                                  child: ui.isLoading
-                                                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                                      : const Text('Login', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))))),
-                                      const SizedBox(height: 16),
-                                      TextButton(
-                                          onPressed: () {
-                                            Navigator.pop(context);
-                                          },
-                                          child: const Text('Back to Booking'))
-                                    ])))))))));
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 360),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Operator Login',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 24),
+                    TextFormField(
+                      controller: _usernameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Username',
+                        prefixIcon: Icon(Icons.person_outline),
+                      ),
+                      autofillHints: const [AutofillHints.username],
+                      textInputAction: TextInputAction.next,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter username';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    Consumer<LoginUiProvider>(
+                      builder: (context, ui, _) => TextFormField(
+                        controller: _passwordController,
+                        obscureText: ui.obscurePassword,
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            icon: Icon(ui.obscurePassword ? Icons.visibility : Icons.visibility_off),
+                            onPressed: ui.toggleObscure,
+                          ),
+                        ),
+                        autofillHints: const [AutofillHints.password],
+                        textInputAction: TextInputAction.done,
+                        onFieldSubmitted: (_) => ui.isLoading ? null : _login(),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter password';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Consumer<LoginUiProvider>(
+                      builder: (context, ui, _) => SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: ui.isLoading ? null : _login,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: ui.isLoading
+                              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                              : const Text('Login'),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
