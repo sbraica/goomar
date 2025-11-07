@@ -490,6 +490,35 @@
 
         // Success
         confirmation.classList.remove('hidden');
+
+        // Clear the form back to the initial state (like first open)
+        try {
+          // Clear personal inputs
+          document.getElementById('name').value = '';
+          emailInput.value = '';
+          phoneInput.value = '';
+          if (registrationNumberInput) registrationNumberInput.value = '';
+
+          // Reset duration to 15 min
+          const d15 = document.getElementById('duration15');
+          const d30 = document.getElementById('duration30');
+          if (d15) d15.checked = true;
+          if (d30) d30.checked = false;
+
+          // Reset date to the next working day and reload available timeslots
+          const initialDate = nextWeekday(new Date());
+          dateInput.value = formatDisplay(initialDate);
+
+          // Reset UI and reload slots
+          container.innerHTML = '';
+          clearSelection();
+          hint.textContent = 'Odaberite datum kako bi se prikazali termini.';
+          hint.classList.remove('hidden');
+          await loadTimeslots();
+        } catch (ignore) {
+          // Non-fatal: even if reset fails, reservation succeeded; keep showing success message
+        }
+
         console.log('Rezervacija poslana:', payload);
       } catch (e) {
         console.error('Greška pri slanju rezervacije', e);
