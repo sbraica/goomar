@@ -70,7 +70,10 @@ public class WebSecurityConfig {
                         .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
                         .requestMatchers(
                                 "/",
+                                "/flutter_service_worker.js",
                                 "/index.html",
+                                "/main.dart.js",
+                                "/assets/**",
                                 "/login",
                                 "/login/**",
                                 "/V1/reservation/**",
