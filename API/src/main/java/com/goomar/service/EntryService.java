@@ -41,7 +41,7 @@ public class EntryService implements IEntryService {
 
     @Override
     public String confirmEmailOK(String token) {
-        log.info(">>getConfirmation(token={})", token);
+        log.info(">>confirmEmailOK(token={})", token);
         ctx.update(ENTRIES).set(ENTRIES.EMAIL_OK, true).where(ENTRIES.ID.eq(UUID.fromString(token))).execute();
         return "<html><body><h2>Rezervacija potvrđena!</h2></body></html>";
     }

@@ -60,11 +60,7 @@ public class GmailService implements IGmailService {
         if (credential == null) {
             throw new IllegalStateException("User must authorize first!");
         }
-        this.gmail = new Gmail.Builder(
-                GoogleNetHttpTransport.newTrustedTransport(),
-                JacksonFactory.getDefaultInstance(),
-                credential
-        ).setApplicationName("Goomar App").build();
+        this.gmail = new Gmail.Builder(GoogleNetHttpTransport.newTrustedTransport(),JacksonFactory.getDefaultInstance(),credential).setApplicationName("Goomar App").build();
 
         // Preload templates
         this.tplRegistration = loadClasspath("templates/registration-confirmation.html");
