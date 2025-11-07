@@ -137,7 +137,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
               onPressed: () {
                 _showConfirmDialog(context, 'Logout', 'Are you sure you want to logout?', () {
                   authProvider.logout();
-                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
                 });
               })
         ]),

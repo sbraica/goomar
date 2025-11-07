@@ -1,6 +1,7 @@
 package com.goomar.advice;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.util.Strings;
 import org.postgresql.util.PSQLException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
@@ -10,11 +11,10 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestControllerAdvice
@@ -90,7 +90,26 @@ public class TokenControllerAdvice {
             log.error("{}@{}::{}", e.getClass().getSimpleName(), param, e.getCause().getMessage());
             return new ErrorMessage(appErrCode, new Date(), message, e.getMessage(), "path");
         } else {
-            return new ErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), new Date(), e.getMessage(), e.getClass().getSimpleName(), "path");
+            StackTraceElement origin = e.getCause().getStackTrace()[0];
+            String className = origin.getClassName();
+            String methodName = origin.getMethodName();
+            String fileName = origin.getFileName();
+            int lineNumber = origin.getLineNumber();
+
+            log.error("Exception caught:", e.getCause());
+
+            log.error("Exception thrown at {}.{}({}: {})", className, methodName, fileName, lineNumber);
+
+            // Build a JSON response
+            Map<String, Object> body = new HashMap<>();
+            body.put("error", e.getCause().getMessage());
+            body.put("class", className);
+            body.put("method", methodName);
+            body.put("file", fileName);
+            body.put("line", lineNumber);
+
+            return new ErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), new Date(), e.getMessage(), e.getClass().getSimpleName(), body.values().stream()
+                    .map(String::valueOf).collect(Collectors.joining(" ")));
         }
     }
 }
