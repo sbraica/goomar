@@ -1,5 +1,6 @@
 package com.goomar.service;
 
+import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
@@ -13,54 +14,74 @@ import org.openapitools.model.FreeSlotRest;
 import org.openapitools.model.ReservationRest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import java.io.IOException;
 
+import java.io.IOException;
 import java.time.*;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class CalendarService implements ICalendarService {
+
     @Value("${goomar.calendarId}")
     private String calendarId;
+
     private final GoogleAuthorizationCodeFlow flow;
     private final ZoneId zone = ZoneId.of("Europe/Zagreb");
 
-    public Calendar getCalendarClient() throws Exception {
-        var credential = flow.loadCredential("user");
-        if (credential == null) {
-            throw new IllegalStateException("User must authorize first!");
+    private Calendar calendarClient;
+    private Credential credential;
+
+    private synchronized void ensureCalendarReady() throws Exception {
+        if (this.calendarClient == null || this.credential == null) {
+            log.info("Initializing Google Calendar client...");
+            initCalendarClient();
         }
-        return new Calendar.Builder(
-                GoogleNetHttpTransport.newTrustedTransport(),
-                JacksonFactory.getDefaultInstance(),
-                credential
-        ).setApplicationName("Goomar App").build();
+
+        if (credential.getExpiresInSeconds() != null && credential.getExpiresInSeconds() < 60) {
+            if (credential.refreshToken()) {
+                log.info("🔄 Calendar access token refreshed successfully.");
+            } else {
+                log.warn("⚠️ Calendar token refresh failed. User reauthorization may be required.");
+            }
+        }
+    }
+
+    private synchronized void initCalendarClient() throws Exception {
+        this.credential = flow.loadCredential("user");
+        if (this.credential == null) {
+            throw new IllegalStateException("User must authorize first via OAuth flow!");
+        }
+
+        this.calendarClient = new Calendar.Builder(GoogleNetHttpTransport.newTrustedTransport(),JacksonFactory.getDefaultInstance(),credential).setApplicationName("Goomar App").build();
+
+        log.info("✅ Google Calendar client initialized successfully.");
     }
 
     @SneakyThrows
     @Override
     public String insertReservation(ReservationRest rr) {
+        ensureCalendarReady();
+
         log.info("insertReservation(rr={})", rr);
 
         ZonedDateTime startZoned = rr.getDateTime().atZone(zone);
         ZonedDateTime endZoned = startZoned.plusMinutes(rr.getLongService() ? 30 : 15);
 
-        Event event = new Event().setSummary(rr.getName()).setDescription(rr.getPhone()).setColorId("5").setStart(new EventDateTime().setDateTime(new DateTime(startZoned.toInstant().toEpochMilli()))
-                .setTimeZone(zone.getId())).setEnd(new EventDateTime().setDateTime(new DateTime(endZoned.toInstant().toEpochMilli())).setTimeZone(zone.getId()));
+        Event event = new Event().setSummary(rr.getName()).setDescription(rr.getPhone()).setColorId("5").setStart(new EventDateTime().setDateTime(new DateTime(startZoned.toInstant().toEpochMilli())).setTimeZone(zone.getId()))
+                .setEnd(new EventDateTime().setDateTime(new DateTime(endZoned.toInstant().toEpochMilli())).setTimeZone(zone.getId()));
 
-        Event created = getCalendarClient().events().insert(calendarId, event).execute();
-
-        log.info("Event created: {}: {}, {}", created.getId(), created.getSummary(), created.getStart());
+        Event created = calendarClient.events().insert(calendarId, event).execute();
+        log.info("📅 Event created: {} ({} at {})", created.getId(), created.getSummary(), created.getStart());
         return created.getId();
     }
 
     @SneakyThrows
     @Override
     public List<FreeSlotRest> getFreeSlots(LocalDate date, boolean longService) {
+        ensureCalendarReady();
+
         log.info("getFreeSlots(date={}, longService={})", date, longService);
         ZonedDateTime startOfDay = date.atTime(LocalTime.of(8, 0)).atZone(zone);
         ZonedDateTime endOfDay = date.atTime(LocalTime.of(16, 0)).atZone(zone);
@@ -68,31 +89,23 @@ public class CalendarService implements ICalendarService {
         DateTime timeMin = new DateTime(startOfDay.toInstant().toEpochMilli());
         DateTime timeMax = new DateTime(endOfDay.toInstant().toEpochMilli());
 
-        List<Event> allEvents = null;
+        List<Event> allEvents;
         try {
-            allEvents = getCalendarClient().events().list(calendarId).setTimeMin(timeMin).setTimeMax(timeMax).setOrderBy("startTime")
-                    .setShowDeleted(false).setSingleEvents(true).execute().getItems();
+            allEvents = calendarClient.events().list(calendarId).setTimeMin(timeMin).setTimeMax(timeMax).setOrderBy("startTime").setShowDeleted(false).setSingleEvents(true).execute().getItems();
         } catch (IOException e) {
             log.error("Error getting events for day: {}", date, e);
             throw e;
         }
 
-
-        log.info("fetched");
         List<TimePeriod> busyPeriods = new ArrayList<>();
         for (Event event : allEvents) {
-            if (event.getStart() == null || event.getEnd() == null)
-                continue;
-
-            if (event.getStart().getDate() != null || event.getEnd().getDate() != null)
-                continue;
+            if (event.getStart() == null || event.getEnd() == null) continue;
+            if (event.getStart().getDate() != null || event.getEnd().getDate() != null) continue;
 
             ZonedDateTime start = Instant.ofEpochMilli(event.getStart().getDateTime().getValue()).atZone(zone);
             ZonedDateTime end = Instant.ofEpochMilli(event.getEnd().getDateTime().getValue()).atZone(zone);
 
-            if (!start.toLocalDate().equals(end.toLocalDate()))
-                continue;
-
+            if (!start.toLocalDate().equals(end.toLocalDate())) continue;
             busyPeriods.add(new TimePeriod().setStart(event.getStart().getDateTime()).setEnd(event.getEnd().getDateTime()));
         }
 
@@ -128,15 +141,20 @@ public class CalendarService implements ICalendarService {
     @SneakyThrows
     @Override
     public void confirmAppointment(String eventId) {
+        ensureCalendarReady();
+
         log.info("confirmAppointment(eventId={})", eventId);
-        Event event = getCalendarClient().events().get(calendarId, eventId).execute().setStatus("confirmed").setColorId("1");
-        getCalendarClient().events().update(calendarId, event.getId(), event).execute();
+        Event event = calendarClient.events().get(calendarId, eventId).execute();
+        event.setStatus("confirmed").setColorId("1");
+        calendarClient.events().update(calendarId, event.getId(), event).execute();
     }
 
     @SneakyThrows
     @Override
     public void deleteAppointment(String eventId) {
+        ensureCalendarReady();
+
         log.info("deleteAppointment(eventId={})", eventId);
-        getCalendarClient().events().delete(calendarId, eventId).execute();
+        calendarClient.events().delete(calendarId, eventId).execute();
     }
 }
