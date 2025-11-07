@@ -100,16 +100,7 @@ public class TokenControllerAdvice {
 
             log.error("Exception thrown at {}.{}({}: {})", className, methodName, fileName, lineNumber);
 
-            // Build a JSON response
-            Map<String, Object> body = new HashMap<>();
-            body.put("error", e.getCause().getMessage());
-            body.put("class", className);
-            body.put("method", methodName);
-            body.put("file", fileName);
-            body.put("line", lineNumber);
-
-            return new ErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), new Date(), e.getMessage(), e.getClass().getSimpleName(), body.values().stream()
-                    .map(String::valueOf).collect(Collectors.joining(" ")));
+            return new ErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), new Date(), e.getMessage(), e.getClass().getSimpleName(), "");
         }
     }
 }
