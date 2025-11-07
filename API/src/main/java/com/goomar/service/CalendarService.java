@@ -62,12 +62,7 @@ public class CalendarService implements ICalendarService {
                 Credential reloaded = flow.loadCredential("user");
                 if (reloaded != null) {
                     this.credential = reloaded;
-                    this.calendarClient = new Calendar.Builder(
-                            GoogleNetHttpTransport.newTrustedTransport(),
-                            JacksonFactory.getDefaultInstance(),
-                            credential)
-                            .setApplicationName("Goomar App")
-                            .build();
+                    this.calendarClient = new Calendar.Builder(GoogleNetHttpTransport.newTrustedTransport(),JacksonFactory.getDefaultInstance(),credential).setApplicationName("Goomar App").build();
                     return call.call();
                 }
                 throw new IllegalStateException("Google authorization expired. Please re-authorize via /google/auth");
@@ -97,8 +92,8 @@ public class CalendarService implements ICalendarService {
         ZonedDateTime startZoned = rr.getDateTime().atZone(zone);
         ZonedDateTime endZoned = startZoned.plusMinutes(rr.getLongService() ? 30 : 15);
 
-        Event event = new Event().setSummary(rr.getName()).setDescription(rr.getPhone()).setColorId("5").setStart(new EventDateTime().setDateTime(new DateTime(startZoned.toInstant().toEpochMilli())).setTimeZone(zone.getId()))
-                .setEnd(new EventDateTime().setDateTime(new DateTime(endZoned.toInstant().toEpochMilli())).setTimeZone(zone.getId()));
+        Event event = new Event().setSummary(rr.getName()).setDescription(rr.getPhone()).setColorId("5").setStart(new EventDateTime().setDateTime(new DateTime(startZoned.toInstant().toEpochMilli()))
+                        .setTimeZone(zone.getId())).setEnd(new EventDateTime().setDateTime(new DateTime(endZoned.toInstant().toEpochMilli())).setTimeZone(zone.getId()));
 
         Event created = executeWithRetry(() -> calendarClient.events().insert(calendarId, event).execute(), "events.insert");
         log.info("📅 Event created: {} ({} at {})", created.getId(), created.getSummary(), created.getStart());
@@ -119,15 +114,7 @@ public class CalendarService implements ICalendarService {
 
         List<Event> allEvents;
         try {
-            Events events = executeWithRetry(
-                    () -> calendarClient.events().list(calendarId)
-                            .setTimeMin(timeMin)
-                            .setTimeMax(timeMax)
-                            .setOrderBy("startTime")
-                            .setShowDeleted(false)
-                            .setSingleEvents(true)
-                            .execute(),
-                    "events.list");
+            Events events = executeWithRetry(() -> calendarClient.events().list(calendarId).setTimeMin(timeMin).setTimeMax(timeMax).setOrderBy("startTime").setShowDeleted(false).setSingleEvents(true).execute(),"events.list");
             allEvents = events.getItems();
         } catch (IOException e) {
             log.error("Error getting events for day: {}", date, e);
@@ -179,7 +166,6 @@ public class CalendarService implements ICalendarService {
     @Override
     public void confirmAppointment(String eventId) {
         ensureCalendarReady();
-
         log.info("confirmAppointment(eventId={})", eventId);
         Event event = executeWithRetry(() -> calendarClient.events().get(calendarId, eventId).execute(), "events.get");
         event.setStatus("confirmed").setColorId("1");
@@ -190,7 +176,6 @@ public class CalendarService implements ICalendarService {
     @Override
     public void deleteAppointment(String eventId) {
         ensureCalendarReady();
-
         log.info("deleteAppointment(eventId={})", eventId);
         executeWithRetry(() -> calendarClient.events().delete(calendarId, eventId).execute(), "events.delete");
     }

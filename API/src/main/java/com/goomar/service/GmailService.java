@@ -168,12 +168,7 @@ public class GmailService implements IGmailService {
                 Credential reloaded = flow.loadCredential("user");
                 if (reloaded != null) {
                     this.credential = reloaded;
-                    this.gmail = new Gmail.Builder(
-                            GoogleNetHttpTransport.newTrustedTransport(),
-                            JacksonFactory.getDefaultInstance(),
-                            credential)
-                            .setApplicationName("Goomar App")
-                            .build();
+                    this.gmail = new Gmail.Builder(GoogleNetHttpTransport.newTrustedTransport(),JacksonFactory.getDefaultInstance(),credential).setApplicationName("Goomar App").build();
                     return call.call();
                 }
                 throw new IllegalStateException("Google authorization expired. Please re-authorize via /google/auth");
