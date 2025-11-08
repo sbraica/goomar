@@ -61,7 +61,7 @@ public class EntryService implements IEntryService {
     @Override
     public void setEventId(String id, String eventId) {
         log.info(">>setEventId(id={}, eventId={})", id, eventId);
-        ctx.update(ENTRIES).set(ENTRIES.EVENT_ID, eventId).where(ENTRIES.ID.eq(UUID.fromString(id)));
+        ctx.update(ENTRIES).set(ENTRIES.EVENT_ID, eventId).where(ENTRIES.ID.eq(UUID.fromString(id))).execute();
     }
 
 }
