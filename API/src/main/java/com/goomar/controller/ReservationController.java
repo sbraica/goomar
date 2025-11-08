@@ -44,9 +44,9 @@ public class ReservationController implements ReservationsApi {
     }
 
     @Override
-    public ResponseEntity<Void> makeAppointment(String authorization, String eventId) {
-        log.info("makeAppointment(eventId={})", eventId);
-        ReservationRest rr = entryService.makeAppointment(eventId);
+    public ResponseEntity<Void> makeAppointment(String authorization, String id) {
+        log.info("makeAppointment(id={})", id);
+        ReservationRest rr = entryService.makeAppointment(id);
         calendarService.insertAppoitnmnet(rr);
         emailService.sendConfirmation(rr);
         return new ResponseEntity(HttpStatus.CREATED);

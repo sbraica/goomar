@@ -47,9 +47,9 @@ public class EntryService implements IEntryService {
     }
 
     @Override
-    public ReservationRest makeAppointment(String eventId) {
-        log.info(">>confirmReservation(eventId={})", eventId);
-        return ctx.update(ENTRIES).set(ENTRIES.CONFIRMED, true).where(ENTRIES.EVENT_ID.eq(eventId)).returning().fetchOneInto(ReservationRest.class);
+    public ReservationRest makeAppointment(String id) {
+        log.info(">>makeAppointment(id={})", id);
+        return ctx.update(ENTRIES).set(ENTRIES.CONFIRMED, true).where(ENTRIES.ID.eq(UUID.fromString(id))).returning().fetchOneInto(ReservationRest.class);
     }
 
     @Override
