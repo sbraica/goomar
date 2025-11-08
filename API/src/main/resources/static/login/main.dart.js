@@ -82406,7 +82406,7 @@ return A.S($async$uO,r)},
 xw(a){return this.aey(a)},
 aey(a){var s=0,r=A.T(t.H),q=1,p=[],o=this,n,m,l,k,j,i
 var $async$xw=A.P(function(b,c){if(b===1){p.push(c)
-s=q}while(true)switch(s){case 0:j=A.eI(o.a+("/V1/reservation?eventId="+a))
+s=q}while(true)switch(s){case 0:j=A.eI(o.a+("/V1/reservation?id="+a))
 q=3
 s=6
 return A.X(A.aCQ(j,o.LK()).pT(B.iM),$async$xw)

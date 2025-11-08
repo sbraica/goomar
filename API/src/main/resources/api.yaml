@@ -130,7 +130,7 @@ paths:
           schema:
             type: string
           required: true
-        - name: eventId
+        - name: id
           in: query
           required: true
           schema:

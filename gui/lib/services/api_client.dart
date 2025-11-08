@@ -152,8 +152,8 @@ class ApiClient {
 
   /// Delete an appointment by eventId via DELETE.
   /// Endpoint: /V1/appointment?eventId=<id>
-  Future<void> deleteAppointment(String eventId) async {
-    final url = _uri('/V1/reservation?eventId=$eventId');
+  Future<void> deleteAppointment(String id) async {
+    final url = _uri('/V1/reservation?id=$id');
     try {
       final resp = await http.delete(url, headers: _headers()).timeout(const Duration(seconds: 10));
       if (resp.statusCode < 200 || resp.statusCode >= 300) {

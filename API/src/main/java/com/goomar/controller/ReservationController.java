@@ -55,7 +55,7 @@ public class ReservationController implements ReservationsApi {
 
     @Override
     public ResponseEntity<Void> deleteAppointment(String authorization, String id) {
-        log.info("deleteReservation(id={})", id);
+        log.info("deleteAppointment(id={})", id);
         ReservationRest rr = entryService.deleteAppoitnment(id);
         calendarService.deleteAppointment( rr.getEventId());
         emailService.sendDelete(rr);
