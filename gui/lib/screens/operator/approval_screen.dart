@@ -114,6 +114,19 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
     return Scaffold(
         appBar: AppBar(title: const Text('Reservation Management'), actions: [
           IconButton(
+              onPressed: () async {
+                try {
+                  final currentMonday = _mondayOf(focusedDay);
+                  await reservationProvider.loadReservations(weekStart: currentMonday);
+                } catch (_) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to refresh reservations'), backgroundColor: Colors.red));
+                  }
+                }
+              },
+              tooltip: 'Refresh',
+              icon: const Icon(Icons.refresh)),
+          IconButton(
               icon: const Icon(Icons.logout),
               tooltip: 'Logout',
               onPressed: () {
