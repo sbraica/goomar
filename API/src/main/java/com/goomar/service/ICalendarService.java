@@ -8,7 +8,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface ICalendarService {
-    String insertAppoitnmnet(ReservationRest reservationRest);
+    String insertAppoitnment(ReservationRest reservationRest);
 
     @SneakyThrows
     List<FreeSlotRest> getFreeSlots(LocalDate date, boolean longService);

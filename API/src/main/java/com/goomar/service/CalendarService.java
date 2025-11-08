@@ -80,7 +80,7 @@ public class CalendarService implements ICalendarService {
 
     @SneakyThrows
     @Override
-    public String insertAppoitnmnet(ReservationRest rr) {
+    public String insertAppoitnment(ReservationRest rr) {
         ensureCalendarReady();
 
         log.info("insertReservation(rr={})", rr);

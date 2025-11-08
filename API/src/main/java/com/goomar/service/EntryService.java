@@ -53,9 +53,15 @@ public class EntryService implements IEntryService {
     }
 
     @Override
-    public ReservationRest deleteAppoitnment(String eventId) {
-        log.info(">>deleteAppoitnment(eventId={})", eventId);
-        return ctx.deleteFrom(ENTRIES).where(ENTRIES.EVENT_ID.eq(eventId)).returning().fetchOneInto(ReservationRest.class);
+    public ReservationRest deleteAppoitnment(String id) {
+        log.info(">>deleteAppoitnment(id={})", id);
+        return ctx.deleteFrom(ENTRIES).where(ENTRIES.ID.eq(UUID.fromString(id))).returning().fetchOneInto(ReservationRest.class);
+    }
+
+    @Override
+    public void setEventId(String id, String eventId) {
+        log.info(">>setEventId(id={}, eventId={})", id, eventId);
+        ctx.update(ENTRIES).set(ENTRIES.EVENT_ID, eventId).where(ENTRIES.ID.eq(UUID.fromString(id)));
     }
 
 }

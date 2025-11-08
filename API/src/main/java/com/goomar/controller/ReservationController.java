@@ -47,16 +47,17 @@ public class ReservationController implements ReservationsApi {
     public ResponseEntity<Void> makeAppointment(String authorization, String id) {
         log.info("makeAppointment(id={})", id);
         ReservationRest rr = entryService.makeAppointment(id);
-        calendarService.insertAppoitnmnet(rr);
+        String event_id = calendarService.insertAppoitnment(rr);
         emailService.sendConfirmation(rr);
+        entryService.setEventId(id, event_id);
         return new ResponseEntity(HttpStatus.CREATED);
     }
 
     @Override
-    public ResponseEntity<Void> deleteAppointment(String authorization, String eventId) {
-        log.info("deleteReservation(id={})", eventId);
-        ReservationRest rr = entryService.deleteAppoitnment(eventId);
-        calendarService.deleteAppointment( eventId);
+    public ResponseEntity<Void> deleteAppointment(String authorization, String id) {
+        log.info("deleteReservation(id={})", id);
+        ReservationRest rr = entryService.deleteAppoitnment(id);
+        calendarService.deleteAppointment( rr.getEventId());
         emailService.sendDelete(rr);
         return new ResponseEntity(HttpStatus.NO_CONTENT);
     }
