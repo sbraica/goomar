@@ -25,24 +25,36 @@ public class ReservationController implements ReservationsApi {
     private final IGmailService emailService;
 
     @Override
-    public ResponseEntity<Void> confirmReservation(String authorization, String eventId) {
-        log.info("confirmReservation(eventId={})", eventId);
-        ReservationRest rr = entryService.confirmReservation(eventId);
-        calendarService.confirmAppointment( eventId);
-        emailService.sendConfirmation(rr);
-        return new ResponseEntity(HttpStatus.CREATED);
+    public ResponseEntity<List<FreeSlotRest>> getFreeSlots(Integer year, Integer month, Integer day, Boolean _long) {
+        return new ResponseEntity(calendarService.getFreeSlots(LocalDate.of(year, month, day), _long), HttpStatus.OK);
     }
 
     @Override
     public ResponseEntity<Void> createReservation(ReservationRest rr) {
-        String calendarId = calendarService.insertReservation(rr);
-        UUID uuid = entryService.insertReservation(rr, calendarId);
+        log.info("createReservation(id={})", rr.getId());
+        UUID uuid = entryService.insertReservation(rr);
         emailService.sendReservation(rr, uuid);
         return new ResponseEntity(uuid, HttpStatus.OK);
     }
 
     @Override
-    public ResponseEntity<Void> deleteReservation(String authorization, String eventId) {
+    public ResponseEntity<String> confirmEmailOK(String uuid) {
+        log.info("confirmEmailOK(uuid={})", uuid);
+        return new ResponseEntity(entryService.confirmEmailOK(uuid), HttpStatus.OK);
+    }
+
+    @Override
+    public ResponseEntity<Void> makeAppointment(String authorization, String eventId) {
+        log.info("makeAppointment(eventId={})", eventId);
+        ReservationRest rr = entryService.makeAppointment(eventId);
+        calendarService.insertAppoitnmnet(rr);
+        emailService.sendConfirmation(rr);
+        return new ResponseEntity(HttpStatus.CREATED);
+    }
+
+    @Override
+    public ResponseEntity<Void> deleteAppointment(String authorization, String eventId) {
+        log.info("deleteReservation(id={})", eventId);
         ReservationRest rr = entryService.deleteAppoitnment(eventId);
         calendarService.deleteAppointment( eventId);
         emailService.sendDelete(rr);
@@ -50,17 +62,7 @@ public class ReservationController implements ReservationsApi {
     }
 
     @Override
-    public ResponseEntity<List<FreeSlotRest>> getAppointments(String authorization, Integer year, Integer month, Integer day) {
-        return new ResponseEntity(entryService.getAppointments(authorization, year, month, day), HttpStatus.OK);
-    }
-
-    @Override
-    public ResponseEntity<String> confirmEmailOK(String uuid) {
-        return new ResponseEntity(entryService.confirmEmailOK(uuid), HttpStatus.OK);
-    }
-
-    @Override
-    public ResponseEntity<List<FreeSlotRest>> getFreeSlots(Integer year, Integer month, Integer day, Boolean _long) {
-        return new ResponseEntity(calendarService.getFreeSlots(LocalDate.of(year, month, day), _long), HttpStatus.OK);
+    public ResponseEntity<List<ReservationRest>> getAppointments(String authorization, Integer year, Integer month, Integer day) {
+        return new ResponseEntity(entryService.getAppointments(year, month, day), HttpStatus.OK);
     }
 }

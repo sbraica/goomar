@@ -89,7 +89,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
       print(dt);
       if (dt.isBefore(weekStart) || !dt.isBefore(weekEnd)) continue;
 
-      final int duration = r.longService ? 30 : 15;
+      final int duration = r.long ? 30 : 15;
       spans.add(ReservationSpan(id: r.id, start: DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute), durationMinutes: duration, label: r.name, approved: r.confirmed));
 
       final DateTime resStart = DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute);

@@ -20,16 +20,16 @@ public class EntryService implements IEntryService {
     final DSLContext ctx;
 
     @Override
-    public UUID insertReservation(ReservationRest rr, String eventId) {
-        log.info(">>insertReservation(eventId={})", eventId);
-        return ctx.insertInto(ENTRIES, ENTRIES.DATE_TIME, ENTRIES.NAME, ENTRIES.PHONE, ENTRIES.EMAIL, ENTRIES.REGISTRATION, ENTRIES.LONG, ENTRIES.CONFIRMED, ENTRIES.EVENT_ID, ENTRIES.EMAIL_OK)
-                    .values(rr.getDateTime(), rr.getName(), rr.getPhone(), rr.getEmail(), rr.getRegistration(), rr.getLongService(), false, eventId, false).returningResult(ENTRIES.ID).fetchOne().value1();
+    public UUID insertReservation(ReservationRest rr) {
+        log.info(">>insertReservation(id={})", rr.getId());
+        return ctx.insertInto(ENTRIES, ENTRIES.DATE_TIME, ENTRIES.NAME, ENTRIES.PHONE, ENTRIES.EMAIL, ENTRIES.REGISTRATION, ENTRIES.LONG, ENTRIES.CONFIRMED, ENTRIES.EMAIL_OK)
+                    .values(rr.getDateTime(), rr.getName(), rr.getPhone(), rr.getEmail(), rr.getRegistration(), rr.getLong(), false, false).returningResult(ENTRIES.ID).fetchOne().value1();
     }
 
 
 
     @Override
-    public List<ReservationRest> getAppointments(String authorization, int year, int month, int day) {
+    public List<ReservationRest> getAppointments(int year, int month, int day) {
         log.info(">>getAppointments(year={}, month={}, day={})", year, month, day);
         LocalDate date = LocalDate.of(year, month, day);
         LocalDateTime startOfWeek = date.atStartOfDay();
@@ -47,7 +47,7 @@ public class EntryService implements IEntryService {
     }
 
     @Override
-    public ReservationRest confirmReservation(String eventId) {
+    public ReservationRest makeAppointment(String eventId) {
         log.info(">>confirmReservation(eventId={})", eventId);
         return ctx.update(ENTRIES).set(ENTRIES.CONFIRMED, true).where(ENTRIES.EVENT_ID.eq(eventId)).returning().fetchOneInto(ReservationRest.class);
     }

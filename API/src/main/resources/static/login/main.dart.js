@@ -25208,7 +25208,7 @@ q=a.h(0,"phone")
 q=A.bw(q==null?"":q)
 p=a.h(0,"registration")
 if(p==null)p=a.h(0,"plate")
-return new A.iW(k,l,s,r,q,A.bw(p==null?"":p),J.d(a.h(0,"longService"),!0),m,J.d(a.h(0,"confirmed"),!0),new A.adf().$1(a.h(0,"date_time")))},
+return new A.iW(k,l,s,r,q,A.bw(p==null?"":p),J.d(a.h(0,"long"),!0),m,J.d(a.h(0,"confirmed"),!0),new A.adf().$1(a.h(0,"date_time")))},
 iW:function iW(a,b,c,d,e,f,g,h,i,j){var _=this
 _.a=a
 _.b=b
@@ -81780,7 +81780,7 @@ throw A.h(new A.OY(m,a,new A.tG(o,c,n)))},
 Kr(a){this.aff("expected "+a+".",0,this.c)}}
 A.Ms.prototype={
 V(a){var s=null,r=A.c([A.a0U(new A.aaO(),t.lY),A.a0U(new A.aaP(),t.W0),A.a0U(new A.aaQ(),t.LT),A.a0U(new A.aaR(),t.KW)],t.Ds),q=A.t5(s,A.ax1(B.ao,s,B.it,B.it),A.ay8(new A.hn(4,A.na(12),B.tQ),s,s,B.ux,!0),B.it,B.rm,!0)
-return A.aJx(new A.xG(A.am(["/",new A.aaS()],t.N,t.Ab),"/","Tyre Change Reservation",q,B.CA,B.XR,B.Vz,!1,s),r)}}
+return A.aJx(new A.xG(A.am(["/",new A.aaS()],t.N,t.Ab),"/","Bosni\u0107 - rezervacija termina",q,B.CA,B.XR,B.Vz,!1,s),r)}}
 A.aaO.prototype={
 $1(a){return new A.oL(A.c([],t.M2),new A.bl(Date.now(),0,!1),$.aj())},
 $S:501}
@@ -81812,7 +81812,7 @@ r.m(0,"name",s.c)
 r.m(0,"email",s.d)
 r.m(0,"phone",s.e)
 r.m(0,"registration",s.f)
-r.m(0,"longService",s.r)
+r.m(0,"long",s.r)
 r.m(0,"confirmed",s.x)
 r.m(0,"date_time",s.y.GH())
 return r}}

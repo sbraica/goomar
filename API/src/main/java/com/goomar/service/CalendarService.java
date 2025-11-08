@@ -37,7 +37,14 @@ public class CalendarService implements ICalendarService {
     private synchronized void ensureCalendarReady() throws Exception {
         if (this.calendarClient == null || this.credential == null) {
             log.info("Initializing Google Calendar client...");
-            initCalendarClient();
+            this.credential = flow.loadCredential("user");
+            if (this.credential == null) {
+                throw new IllegalStateException("User must authorize first via OAuth flow!");
+            }
+
+            this.calendarClient = new Calendar.Builder(GoogleNetHttpTransport.newTrustedTransport(),JacksonFactory.getDefaultInstance(),credential).setApplicationName("Goomar App").build();
+
+            log.info("✅ Google Calendar client initialized successfully.");
         }
 
         if (credential.getExpiresInSeconds() != null && credential.getExpiresInSeconds() < 60) {
@@ -71,26 +78,15 @@ public class CalendarService implements ICalendarService {
         }
     }
 
-    private synchronized void initCalendarClient() throws Exception {
-        this.credential = flow.loadCredential("user");
-        if (this.credential == null) {
-            throw new IllegalStateException("User must authorize first via OAuth flow!");
-        }
-
-        this.calendarClient = new Calendar.Builder(GoogleNetHttpTransport.newTrustedTransport(),JacksonFactory.getDefaultInstance(),credential).setApplicationName("Goomar App").build();
-
-        log.info("✅ Google Calendar client initialized successfully.");
-    }
-
     @SneakyThrows
     @Override
-    public String insertReservation(ReservationRest rr) {
+    public String insertAppoitnmnet(ReservationRest rr) {
         ensureCalendarReady();
 
         log.info("insertReservation(rr={})", rr);
 
         ZonedDateTime startZoned = rr.getDateTime().atZone(zone);
-        ZonedDateTime endZoned = startZoned.plusMinutes(rr.getLongService() ? 30 : 15);
+        ZonedDateTime endZoned = startZoned.plusMinutes(rr.getLong() ? 30 : 15);
 
         Event event = new Event().setSummary(rr.getName()).setDescription(rr.getPhone()).setColorId("5").setStart(new EventDateTime().setDateTime(new DateTime(startZoned.toInstant().toEpochMilli()))
                         .setTimeZone(zone.getId())).setEnd(new EventDateTime().setDateTime(new DateTime(endZoned.toInstant().toEpochMilli())).setTimeZone(zone.getId()));
@@ -109,20 +105,14 @@ public class CalendarService implements ICalendarService {
         ZonedDateTime startOfDay = date.atTime(LocalTime.of(8, 0)).atZone(zone);
         ZonedDateTime endOfDay = date.atTime(LocalTime.of(16, 0)).atZone(zone);
 
-        DateTime timeMin = new DateTime(startOfDay.toInstant().toEpochMilli());
-        DateTime timeMax = new DateTime(endOfDay.toInstant().toEpochMilli());
+        DateTime tMin = new DateTime(startOfDay.toInstant().toEpochMilli());
+        DateTime tMax = new DateTime(endOfDay.toInstant().toEpochMilli());
 
-        List<Event> allEvents;
-        try {
-            Events events = executeWithRetry(() -> calendarClient.events().list(calendarId).setTimeMin(timeMin).setTimeMax(timeMax).setOrderBy("startTime").setShowDeleted(false).setSingleEvents(true).execute(),"events.list");
-            allEvents = events.getItems();
-        } catch (IOException e) {
-            log.error("Error getting events for day: {}", date, e);
-            throw e;
-        }
+        List<Event> events = executeWithRetry(() -> calendarClient.events().list(calendarId).setTimeMin(tMin).setTimeMax(tMax)
+                .setOrderBy("startTime").setShowDeleted(false).setSingleEvents(true).execute(),"events.list").getItems();
 
         List<TimePeriod> busyPeriods = new ArrayList<>();
-        for (Event event : allEvents) {
+        for (Event event : events) {
             if (event.getStart() == null || event.getEnd() == null) continue;
             if (event.getStart().getDate() != null || event.getEnd().getDate() != null) continue;
 
@@ -133,10 +123,9 @@ public class CalendarService implements ICalendarService {
             busyPeriods.add(new TimePeriod().setStart(event.getStart().getDateTime()).setEnd(event.getEnd().getDateTime()));
         }
 
-        ZonedDateTime lunchStart = date.atTime(LocalTime.of(12, 0)).atZone(zone);
-        ZonedDateTime lunchEnd = date.atTime(LocalTime.of(13, 0)).atZone(zone);
-        busyPeriods.add(new TimePeriod().setStart(new DateTime(lunchStart.toInstant().toEpochMilli())).setEnd(new DateTime(lunchEnd.toInstant().toEpochMilli())));
-
+        ZonedDateTime lStart = date.atTime(LocalTime.of(12, 0)).atZone(zone);
+        ZonedDateTime lEnd = date.atTime(LocalTime.of(13, 0)).atZone(zone);
+        busyPeriods.add(new TimePeriod().setStart(new DateTime(lStart.toInstant().toEpochMilli())).setEnd(new DateTime(lEnd.toInstant().toEpochMilli())));
         busyPeriods.sort(Comparator.comparingLong(tp -> tp.getStart().getValue()));
 
         List<FreeSlotRest> freeSlots = new ArrayList<>();
@@ -160,16 +149,6 @@ public class CalendarService implements ICalendarService {
         }
 
         return freeSlots;
-    }
-
-    @SneakyThrows
-    @Override
-    public void confirmAppointment(String eventId) {
-        ensureCalendarReady();
-        log.info("confirmAppointment(eventId={})", eventId);
-        Event event = executeWithRetry(() -> calendarClient.events().get(calendarId, eventId).execute(), "events.get");
-        event.setStatus("confirmed").setColorId("1");
-        executeWithRetry(() -> calendarClient.events().update(calendarId, event.getId(), event).execute(), "events.update");
     }
 
     @SneakyThrows

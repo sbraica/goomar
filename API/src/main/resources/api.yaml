@@ -104,7 +104,7 @@ paths:
       tags:
         - Reservations
       summary: Delete user by Id
-      operationId: confirmReservation
+      operationId: makeAppointment
       parameters:
         - in: header
           name: Authorization
@@ -123,7 +123,7 @@ paths:
       tags:
         - Reservations
       summary: Delete user by Id
-      operationId: deleteReservation
+      operationId: deleteAppointment
       parameters:
         - in: header
           name: Authorization
@@ -174,7 +174,7 @@ paths:
                 type: array
                 default: [ ]
                 items:
-                  $ref: "#/components/schemas/FreeSlotRest"
+                  $ref: "#/components/schemas/ReservationRest"
 components:
   securitySchemes:
     BearerAuth:
@@ -206,7 +206,7 @@ components:
         - phone
         - date_time
         - registration
-        - longService
+        - long
         - confirmed
       properties:
         id:
@@ -235,7 +235,7 @@ components:
           type: string
           minLength: 5
           maxLength: 80
-        longService:
+        long:
           type: boolean
         confirmed:
           type: boolean

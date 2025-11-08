@@ -38,7 +38,7 @@ class MyApp extends StatelessWidget {
           ChangeNotifierProvider(create: (_) => LoginUiProvider()),
         ],
         child: MaterialApp(
-          title: 'Tyre Change Reservation',
+          title: 'Bosnić - rezervacija termina',
           debugShowCheckedModeBanner: false,
           locale: const Locale('hr'),
           supportedLocales: const [Locale('hr')],

@@ -32,9 +32,9 @@ class ReservationCard extends StatelessWidget {
                 Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration:
-                        BoxDecoration(color: reservation.longService ? Colors.blue.withOpacity(0.1) : Colors.purple.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
-                    child: Text(reservation.longService ? "Dugi" : "Kratki",
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: reservation.longService ? Colors.blue : Colors.purple)))
+                        BoxDecoration(color: reservation.long ? Colors.blue.withOpacity(0.1) : Colors.purple.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+                    child: Text(reservation.long ? "Dugi" : "Kratki",
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: reservation.long ? Colors.blue : Colors.purple)))
               ]),
               const Divider(height: 24),
               _buildInfoRow(Icons.email, 'Email', reservation.email),
