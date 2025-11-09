@@ -9,6 +9,48 @@ security:
 servers:
   - url: http://localhost:9999
 paths:
+  /google/auth:
+    get:
+      summary: Initiate Google OAuth2 authorization
+      tags:
+        - Google
+      operationId: googleAuth
+      description: |
+        Redirects the user to the Google authorization page to grant access.
+        Returns an HTML link for the user to authorize Google access.
+      responses:
+        '200':
+          description: HTML page containing authorization link
+          content:
+            text/html:
+              schema:
+                type: string
+                example: '<a href="https://accounts.google.com/o/oauth2/auth?...">Authorize Google Access</a>'
+
+  /oauth2/callback:
+    get:
+      summary: OAuth2 callback endpoint
+      tags:
+        - Google
+      operationId: googleCallback
+      description: |
+        Handles the callback from Google OAuth2 after user authorization.
+        Exchanges the authorization code for an access token and stores credentials.
+      parameters:
+        - name: code
+          in: query
+          required: true
+          description: Authorization code returned by Google after user consent.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Authorization success message
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Authorization successful! You can now use Calendar and Gmail APIs.
   /V1/token:
     post:
       tags:
