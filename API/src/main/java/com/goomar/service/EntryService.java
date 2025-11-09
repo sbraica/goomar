@@ -48,6 +48,7 @@ public class EntryService implements IEntryService {
     }
 
     @Override
+    @Transactional
     public ReservationRest makeAppointment(String id) {
         log.info(">>makeAppointment(id={})", id);
         return ctx.update(ENTRIES).set(ENTRIES.CONFIRMED, true).where(ENTRIES.ID.eq(UUID.fromString(id))).returning().fetchOneInto(ReservationRest.class);
@@ -61,6 +62,7 @@ public class EntryService implements IEntryService {
     }
 
     @Override
+    @Transactional
     public void setEventId(String id, String eventId) {
         log.info(">>setEventId(id={}, eventId={})", id, eventId);
         ctx.update(ENTRIES).set(ENTRIES.EVENT_ID, eventId).where(ENTRIES.ID.eq(UUID.fromString(id))).execute();

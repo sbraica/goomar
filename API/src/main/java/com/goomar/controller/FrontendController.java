@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class FrontendController {
 
-    @GetMapping("/login")
+    @GetMapping({"/login", "/login/"})
     public String forwardLogin() {
         // Forward to the Flutter Web index.html inside /login folder
         return "forward:/login/index.html";
