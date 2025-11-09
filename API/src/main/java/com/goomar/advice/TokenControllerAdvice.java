@@ -11,6 +11,12 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -27,26 +33,8 @@ public class TokenControllerAdvice {
     public static final int APP_ERR_CODE_MAIL_ERROR = 1004;
 
     public static final int APP_ERR_CODE_INVALID_CREDENTIALS = 2001;
+    private static final String APP_PACKAGE = "com.goomar";
 
-
-/*
-    @ExceptionHandler(value = TokenRefreshException.class)
-    @ResponseStatus(HttpStatus.FORBIDDEN)
-    public ErrorMessage handleTokenRefreshException(TokenRefreshException ex, WebRequest request) {
-        return new ErrorMessage(HttpStatus.FORBIDDEN.value(), new Date(), ex.getMessage(), request.getDescription(false), "path");
-    }
-
-    @ExceptionHandler(value = MethodArgumentNotValidException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorMessage handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
-        final Matcher matcher = Pattern.compile("\\[Field.*?\\;").matcher(ex.getMessage());
-        String parsedMessage = "";
-        if (matcher.find()) {
-            parsedMessage = matcher.group(0);
-        }
-        return new ErrorMessage(HttpStatus.BAD_REQUEST.value(), new Date(), parsedMessage, ex.getMessage(), "path");
-    }
-*/
 
     @ExceptionHandler(value = BadCredentialsException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
@@ -56,7 +44,7 @@ public class TokenControllerAdvice {
         if (matcher.find()) {
             parsedMessage = matcher.group(0);
         }
-        return new ErrorMessage(HttpStatus.UNAUTHORIZED.value(), new Date(), parsedMessage, ex.getMessage(), "path");
+        return new ErrorMessage(HttpStatus.UNAUTHORIZED.value(), new Date(), parsedMessage, ex.getMessage());
     }
 
     @ExceptionHandler(RuntimeException.class)
@@ -76,32 +64,38 @@ public class TokenControllerAdvice {
                     appErrCode = APP_ERR_CODE_SQL_HAS_RELATED;
                 }
             }
-            List<StackTraceElement> ste = Arrays.stream(e.getStackTrace()).filter((e1) -> e1.getClassName().contains("hr.flexi")).toList();
-            String message;
-            String param;
-            if (!ste.isEmpty()) {
-                StackTraceElement appEx = ste.get(0);
-                message = parsedMessage + ">>" + e.getCause().getMessage();
-                param = appEx.getFileName() + ":" + appEx.getLineNumber();
-            } else {
-                message = "Unknown runtime exception: " + e.getClass().getSimpleName();
-                param = e.getMessage();
-            }
-            log.error("{}@{}::{}", e.getClass().getSimpleName(), param, e.getCause().getMessage());
-            return new ErrorMessage(appErrCode, new Date(), message, e.getMessage(), "path");
+            return new ErrorMessage(appErrCode, new Date(), "message", e.getMessage());
         } else {
-            StackTraceElement origin = e.getCause().getStackTrace()[0];
-            String className = origin.getClassName();
-            String methodName = origin.getMethodName();
-            String fileName = origin.getFileName();
-            int lineNumber = origin.getLineNumber();
-
-            log.error("Exception caught:", e.getCause());
-
-            log.error("Exception thrown at {}.{}({}: {})", className, methodName, fileName, lineNumber);
-
-            return new ErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), new Date(), e.getMessage(), e.getClass().getSimpleName(), "");
+            log.error("Exception: " + saveExceptionToFile(e));
+            return new ErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), new Date(), e.getMessage(), e.getClass().getSimpleName());
         }
+    }
+
+    private String saveExceptionToFile(Exception ex) {
+        try {
+            Path logDir = Path.of("/app/logs");
+            Files.createDirectories(logDir);
+
+            Path logFile = logDir.resolve("exception-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss")) + ".log");
+
+            try (FileWriter fw = new FileWriter(logFile.toFile(), true);
+                 PrintWriter pw = new PrintWriter(fw)) {
+                pw.println("==== Exception at " + LocalDateTime.now() + " ====");
+                ex.printStackTrace(pw);
+                pw.println();
+            }
+
+            for (StackTraceElement element : ex.getStackTrace()) {
+                if (element.getClassName().startsWith(APP_PACKAGE)) {
+                    return element + " >> "+ logFile.getFileName();
+                }
+            }
+            return "? >> "+ logFile.getFileName();
+        } catch (Exception e) {
+            log.error("Failed to write exception stacktrace: {}", e.getMessage());
+        }
+        return "? >> ?";
+
     }
 }
 

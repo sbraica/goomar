@@ -34,7 +34,8 @@ public class CalendarService implements ICalendarService {
     private Calendar calendarClient;
     private Credential credential;
 
-    private synchronized void ensureCalendarReady() throws Exception {
+    @SneakyThrows
+    private synchronized void ensureCalendarReady() {
         if (this.calendarClient == null || this.credential == null) {
             log.info("Initializing Google Calendar client...");
             this.credential = flow.loadCredential("user");

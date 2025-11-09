@@ -12,5 +12,4 @@ public class ErrorMessage {
   private Date timestamp;
   private String message;
   private String error;
-  private String path; // TOOD implement this
 }
