@@ -2,7 +2,6 @@ class Reservation {
   /// Reservation identifier is a UUID string provided by the backend.
   /// When creating a new reservation, this should be null (omit from payload).
   final String? id;
-  final String? event_id; // backend event identifier for PATCH operations
   final String name;
   final String email;
   final String phone;
@@ -14,7 +13,6 @@ class Reservation {
 
   Reservation({
     this.id,
-    this.event_id,
     required this.name,
     required this.email,
     required this.phone,
@@ -43,8 +41,7 @@ class Reservation {
     }
 
     return Reservation(
-      id: parseId(json['id']) ?? parseId(json['event_id']),
-      event_id: parseId(json['event_id']),
+      id: parseId(json['id']) ?? parseId(json['id']),
       name: (json['name'] ?? json['name'] ?? '') as String,
       email: (json['email'] ?? '') as String,
       phone: (json['phone'] ?? '') as String,
@@ -59,7 +56,6 @@ class Reservation {
   Map<String, dynamic> toJson() {
     return {
       if (id != null) 'id': id,
-      if (event_id != null) 'event_id': event_id,
       'name': name,
       'email': email,
       'phone': phone,

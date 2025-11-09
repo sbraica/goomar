@@ -80,7 +80,7 @@ class ReservationProvider with ChangeNotifier {
     setApproved(id, value);
 
     try {
-      final eventId = (_reservations[index].event_id ?? _reservations[index].id);
+      final eventId = (_reservations[index].id ?? _reservations[index].id);
       if (eventId == null || eventId.isEmpty) throw Exception('Missing event id for appointment update');
       await ApiClient.instance.setAppointmentApproved(eventId, value);
     } catch (e) {
@@ -106,7 +106,7 @@ class ReservationProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final eventId = (removed.event_id ?? removed.id);
+      final eventId = (removed.id ?? removed.id);
       if (eventId == null || eventId.isEmpty) throw Exception('Missing event id for appointment deletion');
       await ApiClient.instance.deleteAppointment(eventId);
     } catch (e) {
