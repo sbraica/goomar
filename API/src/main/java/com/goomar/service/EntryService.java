@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jooq.DSLContext;
 import org.openapitools.model.ReservationRest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -53,6 +54,7 @@ public class EntryService implements IEntryService {
     }
 
     @Override
+    @Transactional
     public ReservationRest deleteAppoitnment(String id) {
         log.info(">>deleteAppoitnment(id={})", id);
         return ctx.deleteFrom(ENTRIES).where(ENTRIES.ID.eq(UUID.fromString(id))).returning().fetchOneInto(ReservationRest.class);
