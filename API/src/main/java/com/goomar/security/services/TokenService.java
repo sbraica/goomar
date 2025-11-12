@@ -5,6 +5,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.openapitools.model.GetTokenReq;
 import org.openapitools.model.TokenRsp;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -28,15 +31,23 @@ public class TokenService implements ITokenService {
     public TokenRsp getToken(GetTokenReq getTokenRequest) {
         log.info("User {} tried log in.", getTokenRequest.getUsername());
 
-        RestTemplate rest = new RestTemplate();
-        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
-        form.add("grant_type", "password");
-        form.add("client_id", "goomar");
-        form.add("username", getTokenRequest.getUsername());
-        form.add("password", getTokenRequest.getPassword());
+        RestTemplate restTemplate = new RestTemplate();
+        String url = "http://localhost:8008/realms/bosnic/protocol/openid-connect/token";
 
-        ResponseEntity<Map> response = rest.postForEntity("http://localhost:8008/realms/bosnic/protocol/openid-connect/token",form,Map.class);
-log.info("Response: {}", response.getBody().get("access_token"));
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+        formData.add("grant_type", "password");
+        formData.add("client_id", "goomar");
+        formData.add("username", getTokenRequest.getUsername());
+        formData.add("password", getTokenRequest.getPassword());
+        formData.add("scope", "openid");
+
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(formData, headers);
+        ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
+
+        log.info("Response: {}", response.getBody().get("access_token"));
         return response.getBody() != null ? new TokenRsp().token((String) response.getBody().get("access_token")): null;
     }
 }
