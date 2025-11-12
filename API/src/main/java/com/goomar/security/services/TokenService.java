@@ -22,7 +22,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class TokenService implements ITokenService {
     final AuthenticationManager authenticationManager;
-    final JwtUtils jwtUtils;
+    final JwtUtils jwtUtils; //TODO remove jwt dependency
 
     @Override
     public TokenRsp getToken(GetTokenReq getTokenRequest) {
@@ -35,8 +35,8 @@ public class TokenService implements ITokenService {
         form.add("username", getTokenRequest.getUsername());
         form.add("password", getTokenRequest.getPassword());
 
-        ResponseEntity<Map> response = rest.postForEntity("http://web.bosnic:8008/realms/bosnic/protocol/openid-connect/token",form,Map.class);
-
+        ResponseEntity<Map> response = rest.postForEntity("http://localhost:8008/realms/bosnic/protocol/openid-connect/token",form,Map.class);
+log.info("Response: {}", response.getBody().get("access_token"));
         return response.getBody() != null ? new TokenRsp().token((String) response.getBody().get("access_token")): null;
     }
 }
