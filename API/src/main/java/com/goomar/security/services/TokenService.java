@@ -1,6 +1,5 @@
 package com.goomar.security.services;
 
-import com.goomar.security.jwt.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.openapitools.model.GetTokenReq;
@@ -9,10 +8,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -24,8 +19,6 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class TokenService implements ITokenService {
-    final AuthenticationManager authenticationManager;
-    final JwtUtils jwtUtils; //TODO remove jwt dependency
 
     @Override
     public TokenRsp getToken(GetTokenReq getTokenRequest) {
