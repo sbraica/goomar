@@ -1,0 +1,39 @@
+networks:
+  bosnic-be:
+    external: true
+    
+services:
+
+  goomardb:
+    image: postgres:12-alpine
+    container_name: goomar_db
+    restart: unless-stopped
+    networks:
+      - bosnic-be
+    ports:
+      - "5436:5432"
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    # Bind mount host folder for persistence
+    volumes:
+      - /appdata/goomar/pgdata:/var/lib/postgresql/data
+
+  goomar:
+    networks:
+      - bosnic-be
+    container_name: goomar
+    image: goomar:latest
+    restart: unless-stopped
+    ports:
+      - 8012:8080
+    environment:
+      DB_URL: jdbc:postgresql://goomardb:5432/goomar
+      DB_USER: goomar
+      DB_PASS: goomar
+      APP_URL: https://termin.bosnic.hr
+      EMAIL_ENABLED: true
+    volumes:
+      - /appdata/goomar/tokens:/app/tokens
+      - /appdata/goomar/logs:/app/logs

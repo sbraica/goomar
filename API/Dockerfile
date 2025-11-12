@@ -1,4 +1,4 @@
-FROM openjdk:21-ea-21-slim-buster
+FROM eclipse-temurin:21-jdk-jammy
 
 WORKDIR /app
 

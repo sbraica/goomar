@@ -32,7 +32,8 @@ public class TokenService implements ITokenService {
         log.info("User {} tried log in.", getTokenRequest.getUsername());
 
         RestTemplate restTemplate = new RestTemplate();
-        String url = "http://localhost:8008/realms/bosnic/protocol/openid-connect/token";
+        //TODO: use env variable
+        String url = "http://keycloak:8080/realms/bosnic/protocol/openid-connect/token";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
