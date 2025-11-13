@@ -63,7 +63,8 @@ public class EntryService implements IEntryService {
             filterCondition = c;
         }
 
-        return ctx.select(ENTRIES.ID, ENTRIES.NAME, ENTRIES.DATE_TIME, ENTRIES.EMAIL, ENTRIES.PHONE, ENTRIES.REGISTRATION, ENTRIES.LONG, ENTRIES.EMAIL, ENTRIES.CONFIRMED, ENTRIES.EVENT_ID, ENTRIES.CONFIRMED)
+        return ctx.select(ENTRIES.ID, ENTRIES.NAME, ENTRIES.DATE_TIME, ENTRIES.EMAIL, ENTRIES.PHONE, ENTRIES.REGISTRATION,
+                        ENTRIES.LONG, ENTRIES.EMAIL, ENTRIES.CONFIRMED, ENTRIES.EVENT_ID, ENTRIES.CONFIRMED, ENTRIES.EMAIL_OK)
                   .from(ENTRIES)
                   .where(filterCondition.and(dateRange))
                   .orderBy(ENTRIES.DATE_TIME.asc())

@@ -301,6 +301,8 @@ components:
           type: boolean
         confirmed:
           type: boolean
+        email_ok:
+          type: boolean
     FreeSlotRest:
       required:
         - start
