@@ -29,7 +29,16 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
         // also set focusedDay in provider
         Provider.of<ReservationProvider>(context, listen: false).setFocusedDay(monday);
       } catch (e) {
-        if (mounted) {
+        if (!mounted) return;
+        final msg = e.toString().toLowerCase();
+        final isAuthError = msg.contains('unauthorized') || msg.contains('expired');
+        if (isAuthError) {
+          // If token is invalid/expired, force logout and navigate back to login
+          Provider.of<AuthProvider>(context, listen: false).logout();
+          if (!mounted) return;
+          // Navigate to root (LoginScreen) and clear the stack
+          Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+        } else {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to load reservations from server'), backgroundColor: Colors.red));
         }
       }

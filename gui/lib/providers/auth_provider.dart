@@ -9,7 +9,10 @@ class AuthProvider with ChangeNotifier {
   User? get currentUser => _currentUser;
   String? get token => _token;
 
-  bool get isAuthenticated => _currentUser != null && _token != null && _token!.isNotEmpty;
+  bool get isAuthenticated {
+    // Consider token validity (including expiry) in addition to presence of a user
+    return _currentUser != null && ApiClient.instance.hasValidToken;
+  }
 
   Future<bool> login(String username, String password) async {
     try {

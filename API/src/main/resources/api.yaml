@@ -239,7 +239,23 @@ components:
           maxLength: 80
     TokenRsp:
       properties:
-        token:
+        access_token:
+          type: string
+        expires_in:
+          type: integer
+        refresh_expires_in:
+          type: integer
+        refresh_token:
+          type: string
+        token_type:
+          type: string
+        id_token:
+          type: string
+        not-before-policy:
+          type: integer
+        session_state:
+          type: string
+        scope:
           type: string
     ReservationRest:
       required:

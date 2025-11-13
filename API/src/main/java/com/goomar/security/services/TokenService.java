@@ -40,8 +40,13 @@ public class TokenService implements ITokenService {
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(formData, headers);
         ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
-
-        log.info("Response: {}", response.getBody().get("access_token"));
-        return response.getBody() != null ? new TokenRsp().token((String) response.getBody().get("access_token")): null;
+        if (response.getBody() != null) {
+            Map<String, String> sr = response.getBody();
+            return new TokenRsp().accessToken(sr.get("access_token")).idToken(sr.get("id_token")).refreshToken(sr.get("refresh_token"))
+                    .refreshExpiresIn(Integer.valueOf(sr.get("refresh_expires_in"))).tokenType(sr.get("token_type"))
+                    .idToken(sr.get("id_token")).expiresIn(Integer.valueOf(sr.get("expires_in")))
+                    .refreshExpiresIn(Integer.valueOf(sr.get("refresh_expires_in")))
+                    .notBeforePolicy(Integer.valueOf(sr.get("not-before-policy"))).scope(sr.get("scope")).sessionState(sr.get("session_state"));
+        } return null;
     }
 }

@@ -31,16 +31,46 @@ class ApiClient {
   /// Bearer token for authenticated requests (set after login).
   String? _authToken;
 
+  /// Absolute time when the current access token expires. If null, the token
+  /// is considered non-expiring (or expiry unknown).
+  DateTime? _tokenExpiry;
+
   /// Set or clear the auth token. When set, all subsequent requests include
   /// `Authorization: Bearer <token>` automatically.
   void setAuthToken(String? token) {
     _authToken = token;
+    // When token is cleared, also clear expiry.
+    if (token == null || token.isEmpty) {
+      _tokenExpiry = null;
+    }
+  }
+
+  /// Optionally set/clear token expiry timestamp.
+  void setTokenExpiry(DateTime? expiry) {
+    _tokenExpiry = expiry;
+  }
+
+  /// Whether the client currently holds a non-empty token that is not expired.
+  bool get hasValidToken {
+    if (_authToken == null || _authToken!.isEmpty) return false;
+    if (_tokenExpiry == null) return true;
+    return DateTime.now().isBefore(_tokenExpiry!);
+  }
+
+  bool get isTokenExpired {
+    if (_authToken == null || _authToken!.isEmpty) return false;
+    if (_tokenExpiry == null) return false;
+    return !hasValidToken;
   }
 
   Map<String, String> _headers({Map<String, String>? extra, bool json = false}) {
     final headers = <String, String>{};
     if (json) headers['Content-Type'] = 'application/json';
     if (_authToken != null && _authToken!.isNotEmpty) {
+      // If we have a token but it is expired, fail fast so UI can re-auth.
+      if (isTokenExpired) {
+        throw ApiException('Authentication token expired');
+      }
       headers['Authorization'] = 'Bearer ${_authToken!}';
     }
     if (extra != null) headers.addAll(extra);
@@ -63,12 +93,20 @@ class ApiClient {
       }
       // Try to parse either a raw token string or a JSON object with common keys
       String token;
+      int? expiresInSeconds;
       try {
         final decoded = jsonDecode(resp.body);
         if (decoded is String) {
           token = decoded;
         } else if (decoded is Map<String, dynamic>) {
-          token = (decoded['token'] ?? decoded['accessToken'] ?? decoded['jwt'] ?? '').toString();
+          // Support common field names and the provided BR format
+          token = (decoded['access_token'] ?? decoded['token'] ?? decoded['accessToken'] ?? decoded['jwt'] ?? '').toString();
+          final dynamic expVal = decoded['expires_in'] ?? decoded['expiresIn'];
+          if (expVal is int) {
+            expiresInSeconds = expVal;
+          } else if (expVal is String) {
+            expiresInSeconds = int.tryParse(expVal);
+          }
         } else {
           throw const FormatException('Unexpected login response format');
         }
@@ -80,6 +118,14 @@ class ApiClient {
         throw ApiException('Login succeeded but no token was returned');
       }
       setAuthToken(token);
+      // Compute and store expiry if available, subtract a small skew to refresh earlier.
+      if (expiresInSeconds != null && expiresInSeconds! > 0) {
+        final skew = 5; // seconds
+        final effective = expiresInSeconds! > skew ? expiresInSeconds! - skew : expiresInSeconds!;
+        setTokenExpiry(DateTime.now().add(Duration(seconds: effective)));
+      } else {
+        setTokenExpiry(null);
+      }
       return token;
     } on ApiException {
       rethrow;
@@ -100,6 +146,9 @@ class ApiClient {
     try {
       final resp = await http.get(url, headers: _headers()).timeout(const Duration(seconds: 10));
 
+      if (resp.statusCode == 401) {
+        throw ApiException('Unauthorized — token invalid or expired', resp.body);
+      }
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
         throw ApiException('Failed to fetch reservations: HTTP ${resp.statusCode}', resp.body);
       }
@@ -123,6 +172,9 @@ class ApiClient {
     final body = jsonEncode(reservation.toJson());
     try {
       final resp = await http.post(url, headers: _headers(json: true), body: body).timeout(const Duration(seconds: 10));
+      if (resp.statusCode == 401) {
+        throw ApiException('Unauthorized — token invalid or expired', resp.body);
+      }
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
         throw ApiException('Failed to create reservation: HTTP ${resp.statusCode}', resp.body);
       }
@@ -140,6 +192,9 @@ class ApiClient {
     final url = _uri('/V1/reservation?eventId=$eventId');
     try {
       final resp = await http.patch(url, headers: _headers(json: true)).timeout(const Duration(seconds: 10));
+      if (resp.statusCode == 401) {
+        throw ApiException('Unauthorized — token invalid or expired', resp.body);
+      }
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
         throw ApiException('Failed to update appointment approval: HTTP ${resp.statusCode}', resp.body);
       }
@@ -156,6 +211,9 @@ class ApiClient {
     final url = _uri('/V1/reservation?id=$id');
     try {
       final resp = await http.delete(url, headers: _headers()).timeout(const Duration(seconds: 10));
+      if (resp.statusCode == 401) {
+        throw ApiException('Unauthorized — token invalid or expired', resp.body);
+      }
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
         throw ApiException('Failed to delete appointment: HTTP ${resp.statusCode}', resp.body);
       }
