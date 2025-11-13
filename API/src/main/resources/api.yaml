@@ -185,7 +185,7 @@ paths:
       tags:
         - Reservations
       summary: Get all application users
-      operationId: getAppointments
+      operationId: getWeekAppointments
       parameters:
         - in: header
           name: Authorization
