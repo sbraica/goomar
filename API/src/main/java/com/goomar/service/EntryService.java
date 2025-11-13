@@ -26,9 +26,8 @@ public class EntryService implements IEntryService {
     public UUID insertReservation(ReservationRest rr) {
         log.info(">>insertReservation(id={})", rr.getId());
         return ctx.insertInto(ENTRIES, ENTRIES.DATE_TIME, ENTRIES.NAME, ENTRIES.PHONE, ENTRIES.EMAIL, ENTRIES.REGISTRATION, ENTRIES.LONG, ENTRIES.CONFIRMED, ENTRIES.EMAIL_OK)
-                    .values(rr.getDateTime(), rr.getName(), rr.getPhone(), rr.getEmail(), rr.getRegistration(), rr.getLong(), false, false).returningResult(ENTRIES.ID).fetchOne().value1();
+                .values(rr.getDateTime(), rr.getName(), rr.getPhone(), rr.getEmail(), rr.getRegistration(), rr.getLong(), false, false).returningResult(ENTRIES.ID).fetchOne().value1();
     }
-
 
 
     @Override
@@ -43,32 +42,27 @@ public class EntryService implements IEntryService {
 
         // Build bitmask filter condition
         Condition filterCondition;
-        if (filter == 0) {
-            // Default behaviour: only entries with EMAIL_OK = true
-            filterCondition = ENTRIES.EMAIL_OK.eq(true);
-        } else {
-            // Bit 0 -> EMAIL_OK = false
-            // Bit 1 -> CONFIRMED = false
-            // Bit 2 -> CONFIRMED = true
-            Condition c = DSL.falseCondition();
-            if ((filter & 0b001) != 0) {
-                c = c.or(ENTRIES.EMAIL_OK.eq(false));
-            }
-            if ((filter & 0b010) != 0) {
-                c = c.or(ENTRIES.CONFIRMED.eq(false));
-            }
-            if ((filter & 0b100) != 0) {
-                c = c.or(ENTRIES.CONFIRMED.eq(true));
-            }
-            filterCondition = c;
+        // Bit 0 -> EMAIL_OK = false
+        // Bit 1 -> CONFIRMED = false
+        // Bit 2 -> CONFIRMED = true
+        Condition c = DSL.falseCondition();
+        if ((filter & 0b001) != 0) {
+            c = c.or(ENTRIES.EMAIL_OK.eq(false));
         }
+        if ((filter & 0b010) != 0) {
+            c = c.or(ENTRIES.CONFIRMED.eq(false));
+        }
+        if ((filter & 0b100) != 0) {
+            c = c.or(ENTRIES.CONFIRMED.eq(true));
+        }
+        filterCondition = c;
 
         return ctx.select(ENTRIES.ID, ENTRIES.NAME, ENTRIES.DATE_TIME, ENTRIES.EMAIL, ENTRIES.PHONE, ENTRIES.REGISTRATION,
                         ENTRIES.LONG, ENTRIES.EMAIL, ENTRIES.CONFIRMED, ENTRIES.EVENT_ID, ENTRIES.CONFIRMED, ENTRIES.EMAIL_OK)
-                  .from(ENTRIES)
-                  .where(filterCondition.and(dateRange))
-                  .orderBy(ENTRIES.DATE_TIME.asc())
-                  .fetchInto(ReservationRest.class);
+                .from(ENTRIES)
+                .where(filterCondition.and(dateRange))
+                .orderBy(ENTRIES.DATE_TIME.asc())
+                .fetchInto(ReservationRest.class);
     }
 
     @Override
