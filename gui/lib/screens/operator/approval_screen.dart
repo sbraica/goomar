@@ -122,6 +122,53 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
 
     return Scaffold(
         appBar: AppBar(title: const Text('Reservation Management'), actions: [
+          // Filters: red (invalid), yellow (unconfirmed), green (confirmed)
+          Consumer<ReservationProvider>(
+            builder: (context, rp, _) => Row(children: [
+                  // Invalid (red)
+                  Tooltip(
+                      message: 'Invalid',
+                      child: Row(children: [
+                        Checkbox(
+                            value: rp.filterInvalid,
+                            onChanged: (v) {
+                              rp.setFilterInvalid(v ?? false);
+                            },
+                            side: const BorderSide(color: Colors.red),
+                            checkColor: Colors.white,
+                            activeColor: Colors.red),
+                        const SizedBox(width: 4),
+                      ])),
+                  // Unconfirmed (yellow)
+                  Tooltip(
+                      message: 'Unconfirmed',
+                      child: Row(children: [
+                        Checkbox(
+                            value: rp.filterUnconfirmed,
+                            onChanged: (v) {
+                              rp.setFilterUnconfirmed(v ?? false);
+                            },
+                            side: const BorderSide(color: Colors.amber),
+                            checkColor: Colors.black,
+                            activeColor: Colors.amber),
+                        const SizedBox(width: 4),
+                      ])),
+                  // Confirmed (green)
+                  Tooltip(
+                      message: 'Confirmed',
+                      child: Row(children: [
+                        Checkbox(
+                            value: rp.filterConfirmed,
+                            onChanged: (v) {
+                              rp.setFilterConfirmed(v ?? false);
+                            },
+                            side: const BorderSide(color: Colors.green),
+                            checkColor: Colors.white,
+                            activeColor: Colors.green),
+                        const SizedBox(width: 8),
+                      ])),
+                ]),
+          ),
           IconButton(
               onPressed: () async {
                 try {

@@ -180,7 +180,7 @@ paths:
       responses:
         '201':
           description: Single user deleted
-  /V1/reservations/{year}/{month}/{day}:
+  /V1/reservations/{year}/{month}/{day}/{filter}:
     get:
       tags:
         - Reservations
@@ -203,6 +203,11 @@ paths:
           schema:
             type: integer
         - name: day
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: filter
           in: path
           required: true
           schema:

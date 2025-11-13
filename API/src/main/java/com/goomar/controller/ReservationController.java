@@ -64,7 +64,7 @@ public class ReservationController implements ReservationsApi {
     }
 
     @Override
-    public ResponseEntity<List<ReservationRest>> getWeekAppointments(String authorization, Integer year, Integer month, Integer day) {
-        return new ResponseEntity(entryService.getAppointments(year, month, day), HttpStatus.OK);
+    public ResponseEntity<List<ReservationRest>> getWeekAppointments(String authorization, Integer year, Integer month, Integer day, Integer filter) {
+        return new ResponseEntity(entryService.getAppointments(year, month, day, filter), HttpStatus.OK);
     }
 }

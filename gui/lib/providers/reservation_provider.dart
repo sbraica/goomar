@@ -13,6 +13,47 @@ class ReservationProvider with ChangeNotifier {
   DateTime? selectedDay;
   TimeOfDay? selectedTime;
 
+  // Bitmask filter for reservations
+  // bit 0: invalid reservations (red)
+  // bit 1: unconfirmed reservations (yellow)
+  // bit 2: confirmed reservations (green)
+  int _filterMask = 0;
+
+  int get filterMask => _filterMask;
+  bool get filterInvalid => (_filterMask & 0x1) != 0;
+  bool get filterUnconfirmed => (_filterMask & 0x2) != 0;
+  bool get filterConfirmed => (_filterMask & 0x4) != 0;
+
+  void _setFilterMask(int value) {
+    if (_filterMask == value) return;
+    _filterMask = value;
+    notifyListeners();
+    // Refresh on filter change
+    final monday = _mondayOf(focusedDay);
+    loadReservations(weekStart: monday);
+  }
+
+  void setFilterInvalid(bool v) {
+    final bit = 0x1;
+    final next = v ? (_filterMask | bit) : (_filterMask & ~bit);
+    _setFilterMask(next);
+  }
+
+  void setFilterUnconfirmed(bool v) {
+    final bit = 0x2;
+    final next = v ? (_filterMask | bit) : (_filterMask & ~bit);
+    _setFilterMask(next);
+  }
+
+  void setFilterConfirmed(bool v) {
+    final bit = 0x4;
+    final next = v ? (_filterMask | bit) : (_filterMask & ~bit);
+    _setFilterMask(next);
+  }
+
+  DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+  DateTime _mondayOf(DateTime d) => _dateOnly(d).subtract(Duration(days: d.weekday - DateTime.monday));
+
   List<Reservation> get reservations => [..._reservations];
   bool get isLoading => _isLoading;
   String? get lastError => _lastError;
@@ -149,7 +190,7 @@ class ReservationProvider with ChangeNotifier {
     _setError(null);
     _setLoading(true);
     try {
-      final list = await ApiClient.instance.getReservations(weekStart);
+      final list = await ApiClient.instance.getReservations(weekStart, filter: _filterMask);
       setReservations(list);
     } catch (e) {
       _setError(e.toString());
