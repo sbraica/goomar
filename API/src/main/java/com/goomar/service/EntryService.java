@@ -49,14 +49,14 @@ public class EntryService implements IEntryService {
 
     @Override
     @Transactional
-    public ReservationRest makeAppointment(String id) {
+    public ReservationRest confirmReservation(String id) {
         log.info(">>makeAppointment(id={})", id);
         return ctx.update(ENTRIES).set(ENTRIES.CONFIRMED, true).where(ENTRIES.ID.eq(UUID.fromString(id))).returning().fetchOneInto(ReservationRest.class);
     }
 
     @Override
     @Transactional
-    public ReservationRest deleteAppoitnment(String id) {
+    public ReservationRest deleteReservation(String id) {
         log.info(">>deleteAppoitnment(id={})", id);
         return ctx.deleteFrom(ENTRIES).where(ENTRIES.ID.eq(UUID.fromString(id))).returning().fetchOneInto(ReservationRest.class);
     }
@@ -66,6 +66,13 @@ public class EntryService implements IEntryService {
     public void setEventId(String id, String eventId) {
         log.info(">>setEventId(id={}, eventId={})", id, eventId);
         ctx.update(ENTRIES).set(ENTRIES.EVENT_ID, eventId).where(ENTRIES.ID.eq(UUID.fromString(id))).execute();
+    }
+
+    @Override
+    public ReservationRest get(String uuid) {
+        return ctx.select(ENTRIES.ID, ENTRIES.NAME, ENTRIES.DATE_TIME, ENTRIES.EMAIL, ENTRIES.PHONE, ENTRIES.REGISTRATION, ENTRIES.LONG, ENTRIES.EMAIL, ENTRIES.CONFIRMED, ENTRIES.EVENT_ID, ENTRIES.CONFIRMED)
+                .from(ENTRIES).where(ENTRIES.ID.eq(UUID.fromString(uuid))).fetchSingleInto(ReservationRest.class);
+
     }
 
 }

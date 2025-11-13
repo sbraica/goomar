@@ -135,32 +135,6 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version> <!-- latest version -->
-                <configuration>
-                    <source>21</source> <!-- match your JDK -->
-                    <target>21</target>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                            <version>1.18.34</version>
-                        </path>
-                        <path>
-                            <groupId>org.jooq</groupId>
-                            <artifactId>jooq-codegen</artifactId>
-                            <version>3.17.6</version>
-                        </path>
-                        <path>
-                            <groupId>org.openapitools</groupId>
-                            <artifactId>openapi-generator</artifactId>
-                            <version>6.2.1</version>
-                        </path>
-                    </annotationProcessorPaths>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>properties-maven-plugin</artifactId>
                 <version>1.1.0</version>

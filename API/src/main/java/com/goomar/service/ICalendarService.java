@@ -13,5 +13,8 @@ public interface ICalendarService {
     @SneakyThrows
     List<FreeSlotRest> getFreeSlots(LocalDate date, boolean longService);
 
+    @SneakyThrows
+    void confirmAppointment(String eventId);
+
     void deleteAppointment(String eventId);
 }

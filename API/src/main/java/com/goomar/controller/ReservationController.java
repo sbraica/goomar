@@ -40,30 +40,31 @@ public class ReservationController implements ReservationsApi {
     @Override
     public ResponseEntity<String> confirmEmailOK(String uuid) {
         log.info("confirmEmailOK(uuid={})", uuid);
+        String event_id = calendarService.insertAppoitnment(entryService.get(uuid));
+        entryService.setEventId(uuid, event_id);
         return new ResponseEntity(entryService.confirmEmailOK(uuid), HttpStatus.OK);
     }
 
     @Override
     public ResponseEntity<Void> makeAppointment(String authorization, String id) {
         log.info("makeAppointment(id={})", id);
-        ReservationRest rr = entryService.makeAppointment(id);
-        String event_id = calendarService.insertAppoitnment(rr);
+        ReservationRest rr = entryService.confirmReservation(id);
+        calendarService.confirmAppointment(rr.getEventId());
         emailService.sendConfirmation(rr);
-        entryService.setEventId(id, event_id);
         return new ResponseEntity(HttpStatus.CREATED);
     }
 
     @Override
     public ResponseEntity<Void> deleteAppointment(String authorization, String id) {
         log.info("deleteAppointment(id={})", id);
-        ReservationRest rr = entryService.deleteAppoitnment(id);
+        ReservationRest rr = entryService.deleteReservation(id);
         calendarService.deleteAppointment( rr.getEventId());
         emailService.sendDelete(rr);
         return new ResponseEntity(HttpStatus.NO_CONTENT);
     }
 
     @Override
-    public ResponseEntity<List<ReservationRest>> getAppointments(String authorization, Integer year, Integer month, Integer day) {
+    public ResponseEntity<List<ReservationRest>> getWeekAppointments(String authorization, Integer year, Integer month, Integer day) {
         return new ResponseEntity(entryService.getAppointments(year, month, day), HttpStatus.OK);
     }
 }

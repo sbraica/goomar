@@ -16,7 +16,6 @@ import org.openapitools.model.ReservationRest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.time.*;
 import java.util.*;
 
@@ -150,6 +149,16 @@ public class CalendarService implements ICalendarService {
         }
 
         return freeSlots;
+    }
+
+    @SneakyThrows
+    @Override
+    public void confirmAppointment(String eventId) {
+        ensureCalendarReady();
+        log.info("confirmAppointment(eventId={})", eventId);
+        Event event = executeWithRetry(() -> calendarClient.events().get(calendarId, eventId).execute(), "events.get");
+        event.setStatus("confirmed").setColorId("1");
+        executeWithRetry(() -> calendarClient.events().update(calendarId, event.getId(), event).execute(), "events.update");
     }
 
     @SneakyThrows

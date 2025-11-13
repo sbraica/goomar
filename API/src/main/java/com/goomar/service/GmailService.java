@@ -40,8 +40,7 @@ public class GmailService implements IGmailService {
 
     private final GoogleAuthorizationCodeFlow flow;
 
-    private static final DateTimeFormatter formatter =
-            DateTimeFormatter.ofPattern("dd.MM.yyyy., HH:mm");
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy., HH:mm");
 
     @Value("${goomar.appUrl}")
     private String appUrl;
@@ -50,21 +49,18 @@ public class GmailService implements IGmailService {
     private String fromAddress;
 
     private Gmail gmail;
-    private Credential credential; // keep a reference to it
+    private Credential credential;
 
-    // Cached templates
     private String tplRegistration;
     private String tplConfirmation;
     private String tplDeletion;
 
     @PostConstruct
     void init() {
-        // Load templates immediately
         this.tplRegistration = loadClasspath("templates/registration-confirmation.html");
         this.tplConfirmation = loadClasspath("templates/appointnment-confirmation.html");
         this.tplDeletion = loadClasspath("templates/appointnment-deletion.html");
 
-        // Attempt to initialize Gmail client lazily
         try {
             initGmailClient();
         } catch (Exception e) {
@@ -112,11 +108,13 @@ public class GmailService implements IGmailService {
 
     @Override
     public void sendDelete(ReservationRest rr) {
+        log.info("sendDelete(rr={})", rr);
         Map<String, String> values = Map.of("name", rr.getName(),"registration", rr.getRegistration(),"timeslot", rr.getDateTime().format(formatter));
         sendMail(rr.getEmail(), "Poništenje termina !!!",replacePlaceholders(tplDeletion, values));
     }
 
     private String replacePlaceholders(String template, Map<String, String> values) {
+        log.info("replacePlaceholders(values={})", values);
         String result = template;
         for (var entry : values.entrySet()) {
             result = result.replace("{{" + entry.getKey() + "}}", entry.getValue());
@@ -126,7 +124,7 @@ public class GmailService implements IGmailService {
 
     @SneakyThrows
     public void sendMail(String to, String subject, String content) {
-        ensureGmailReady();  // ensures initialized & valid token
+        ensureGmailReady();
 
         MimeMessage mimeMessage = buildMime(to, subject, content);
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
@@ -145,7 +143,6 @@ public class GmailService implements IGmailService {
             initGmailClient();
         }
 
-        // Explicit token refresh if it's about to expire
         if (credential.getExpiresInSeconds() != null && credential.getExpiresInSeconds() < 60) {
             if (credential.refreshToken()) {
                 log.info("🔄 Gmail access token refreshed successfully.");
