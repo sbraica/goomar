@@ -18,33 +18,50 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class TokenService implements ITokenService {
 
+    //TODO: use env variable
+    private final String url = "http://keycloak:8080/realms/bosnic/protocol/openid-connect/token";
     @Override
     public TokenRsp getToken(GetTokenReq getTokenRequest) {
-        log.info("User {} tried log in.", getTokenRequest.getUsername());
+        log.info("getToken()");
 
-        RestTemplate restTemplate = new RestTemplate();
-        //TODO: use env variable
-        String url = "http://keycloak:8080/realms/bosnic/protocol/openid-connect/token";
+        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+        formData.add("client_id", "goomar");
+        formData.add("scope", "openid");
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+        if (getTokenRequest.getRefreshToken() != null) {
+            return getTokenRefresh(getTokenRequest, formData, headers);
+        } else {
+            return getTokenUserNamePassword(getTokenRequest, formData, headers);
+        }
+    }
+    private TokenRsp getTokenRefresh(GetTokenReq getTokenRequest, MultiValueMap<String, String> formData, HttpHeaders headers) {
+
+        RestTemplate restTemplate = new RestTemplate();
+        formData.add("grant_type", "refresh_token");
+        formData.add("refresh_token", getTokenRequest.getRefreshToken());
+
+        return getTokenRsp(formData, headers, restTemplate);
+    }
+    private TokenRsp getTokenUserNamePassword(GetTokenReq getTokenRequest, MultiValueMap<String, String> formData, HttpHeaders headers) {
+
+        RestTemplate restTemplate = new RestTemplate();
+
         formData.add("grant_type", "password");
-        formData.add("client_id", "goomar");
         formData.add("username", getTokenRequest.getUsername());
         formData.add("password", getTokenRequest.getPassword());
-        formData.add("scope", "openid");
 
+        return getTokenRsp(formData, headers, restTemplate);
+    }
+
+    private TokenRsp getTokenRsp(MultiValueMap<String, String> formData, HttpHeaders headers, RestTemplate restTemplate) {
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(formData, headers);
-        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(url, HttpMethod.POST, request, new ParameterizedTypeReference<Map<String, Object>>() {
-        });
+        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(url, HttpMethod.POST, request, new ParameterizedTypeReference<>() {});
 
         if (response.getBody() != null) {
             Map<String, Object> sr = response.getBody();
-
-            sr.forEach((key, value) -> log.info("{} => {}", key, value));
-
             return new TokenRsp()
                     .accessToken((String) sr.get("access_token"))
                     .idToken((String) sr.get("id_token"))

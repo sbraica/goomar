@@ -225,15 +225,16 @@ components:
       bearerFormat: JWT  # optional, for documentation purposes only
   schemas:
     GetTokenReq:
-      required:
-        - username
-        - password
       properties:
         username:
           type: string
           minLength: 5
           maxLength: 30
         password:
+          type: string
+          minLength: 5
+          maxLength: 80
+        refresh_token:
           type: string
           minLength: 5
           maxLength: 80
