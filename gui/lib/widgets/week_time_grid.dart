@@ -133,11 +133,21 @@ class ReservationSpan {
   final DateTime start;
   final int durationMinutes;
   final String? label;
+  // Optional phone number to render under the name/label
+  final String? phone;
   final bool approved;
   // Whether backend marked email as OK/valid. Used for coloring when filters are applied.
   final bool emailOk;
 
-  const ReservationSpan({this.id, required this.start, required this.durationMinutes, this.label, this.approved = false, this.emailOk = true});
+  const ReservationSpan({
+    this.id,
+    required this.start,
+    required this.durationMinutes,
+    this.label,
+    this.phone,
+    this.approved = false,
+    this.emailOk = true,
+  });
 }
 
 class WeekTimeGrid extends StatelessWidget {
@@ -425,22 +435,42 @@ class WeekTimeGrid extends StatelessWidget {
                           width: 1),
                     ),
                     child: Stack(children: [
-                      // Centered username label
-                      if (span.label != null && span.label!.isNotEmpty)
+                      // Centered label (name) with optional phone on second line
+                      if ((span.label != null && span.label!.isNotEmpty) || (span.phone != null && span.phone!.isNotEmpty))
                         Center(
                             child: Padding(
                                 // leave space so it doesn't collide with the top-right icon
                                 padding: const EdgeInsets.only(right: 28.0, left: 6.0),
-                                child: Text(span.label!,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    softWrap: false,
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 12,
-                                        shadows: [Shadow(offset: Offset(0, 1), blurRadius: 2, color: Colors.black26)])))),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    if (span.label != null && span.label!.isNotEmpty)
+                                      Text(span.durationMinutes == 15 ? span.label! + " " + span.phone! : span.label!,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          softWrap: false,
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 12,
+                                              shadows: [Shadow(offset: Offset(0, 1), blurRadius: 2, color: Colors.black26)])),
+                                    if (span.durationMinutes == 30 && span.phone != null && span.phone!.isNotEmpty) ...[
+                                      const SizedBox(height: 2),
+                                      Text(span.phone!,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          softWrap: false,
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.w500,
+                                              fontSize: 11,
+                                              shadows: [Shadow(offset: Offset(0, 1), blurRadius: 2, color: Colors.black26)])),
+                                    ]
+                                  ],
+                                ))),
                       // Icon-only action in the top-right corner
                       Positioned(
                           top: 0,

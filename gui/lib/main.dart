@@ -10,7 +10,7 @@ import 'providers/reservation_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/login_ui_provider.dart';
 import 'providers/booking_ui_provider.dart';
-import 'screens/operator/login_screen.dart';
+import 'screens/login_screen.dart';
 import 'navigation_service.dart';
 
 Future<void> main() async {
