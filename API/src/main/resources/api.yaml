@@ -236,8 +236,6 @@ components:
           maxLength: 80
         refresh_token:
           type: string
-          minLength: 5
-          maxLength: 80
     TokenRsp:
       properties:
         access_token:
