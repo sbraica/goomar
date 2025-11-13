@@ -4,10 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.openapitools.model.GetTokenReq;
 import org.openapitools.model.TokenRsp;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -39,14 +37,25 @@ public class TokenService implements ITokenService {
         formData.add("scope", "openid");
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(formData, headers);
-        ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
+        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(url, HttpMethod.POST, request, new ParameterizedTypeReference<Map<String, Object>>() {
+        });
+
         if (response.getBody() != null) {
-            Map<String, String> sr = response.getBody();
-            return new TokenRsp().accessToken(sr.get("access_token")).idToken(sr.get("id_token")).refreshToken(sr.get("refresh_token"))
-                    .refreshExpiresIn(Integer.valueOf(sr.get("refresh_expires_in"))).tokenType(sr.get("token_type"))
-                    .idToken(sr.get("id_token")).expiresIn(Integer.valueOf(sr.get("expires_in")))
-                    .refreshExpiresIn(Integer.valueOf(sr.get("refresh_expires_in")))
-                    .notBeforePolicy(Integer.valueOf(sr.get("not-before-policy"))).scope(sr.get("scope")).sessionState(sr.get("session_state"));
-        } return null;
+            Map<String, Object> sr = response.getBody();
+
+            sr.forEach((key, value) -> log.info("{} => {}", key, value));
+
+            return new TokenRsp()
+                    .accessToken((String) sr.get("access_token"))
+                    .idToken((String) sr.get("id_token"))
+                    .refreshToken((String) sr.get("refresh_token"))
+                    .refreshExpiresIn(Integer.parseInt(sr.get("refresh_expires_in").toString()))
+                    .tokenType((String) sr.get("token_type"))
+                    .expiresIn(Integer.parseInt(sr.get("expires_in").toString()))
+                    .notBeforePolicy(Integer.parseInt(sr.get("not-before-policy").toString()))
+                    .scope((String) sr.get("scope"))
+                    .sessionState((String) sr.get("session_state"));
+        }
+        return null;
     }
 }
