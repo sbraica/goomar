@@ -39,24 +39,25 @@ public class EntryService implements IEntryService {
 
         Condition dateRange = ENTRIES.DATE_TIME.ge(startOfWeek).and(ENTRIES.DATE_TIME.lt(endOfWeek));
 
-        Condition filterCondition = DSL.trueCondition();
+        Condition c1;
         if ((filter & 0b001) != 0) {
-            filterCondition = ENTRIES.EMAIL_OK.eq(false);
+            c1 = ENTRIES.EMAIL_OK.eq(false);
         } else {
-            Condition c = ENTRIES.EMAIL_OK.eq(true);
+            c1 = ENTRIES.EMAIL_OK.eq(true);
+            Condition c2 = DSL.falseCondition();
             if ((filter & 0b010) != 0) {
-                c = c.or(ENTRIES.CONFIRMED.eq(false));
+                c2 = c2.or(ENTRIES.CONFIRMED.eq(false));
             }
             if ((filter & 0b100) != 0) {
-                c = c.or(ENTRIES.CONFIRMED.eq(true));
+                c2 = c2.or(ENTRIES.CONFIRMED.eq(true));
             }
-            filterCondition =  filterCondition.and(c);
+            c1 = c1.and(c2);
         }
 
         return ctx.select(ENTRIES.ID, ENTRIES.NAME, ENTRIES.DATE_TIME, ENTRIES.EMAIL, ENTRIES.PHONE, ENTRIES.REGISTRATION,
                         ENTRIES.LONG, ENTRIES.EMAIL, ENTRIES.CONFIRMED, ENTRIES.EVENT_ID, ENTRIES.CONFIRMED, ENTRIES.EMAIL_OK)
                 .from(ENTRIES)
-                .where(filterCondition.and(dateRange))
+                .where(c1.and(dateRange))
                 .orderBy(ENTRIES.DATE_TIME.asc())
                 .fetchInto(ReservationRest.class);
     }
