@@ -134,8 +134,10 @@ class ReservationSpan {
   final int durationMinutes;
   final String? label;
   final bool approved;
+  // Whether backend marked email as OK/valid. Used for coloring when filters are applied.
+  final bool emailOk;
 
-  const ReservationSpan({this.id, required this.start, required this.durationMinutes, this.label, this.approved = false});
+  const ReservationSpan({this.id, required this.start, required this.durationMinutes, this.label, this.approved = false, this.emailOk = true});
 }
 
 class WeekTimeGrid extends StatelessWidget {
@@ -410,9 +412,17 @@ class WeekTimeGrid extends StatelessWidget {
                 height: height,
                 child: Container(
                     decoration: BoxDecoration(
-                      color: (span.approved ? Colors.green.shade400 : Colors.red.shade300).withAlpha((0.85 * 255).round()),
+                      // Color priority: red if email not OK; else yellow if unconfirmed; else green
+                      color: (!span.emailOk
+                              ? Colors.red.shade400
+                              : (span.approved ? Colors.green.shade400 : Colors.amber.shade400))
+                          .withAlpha((0.85 * 255).round()),
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: span.approved ? Colors.green.shade700 : Colors.red.shade600, width: 1),
+                      border: Border.all(
+                          color: !span.emailOk
+                              ? Colors.red.shade700
+                              : (span.approved ? Colors.green.shade700 : Colors.amber.shade700),
+                          width: 1),
                     ),
                     child: Stack(children: [
                       // Centered username label

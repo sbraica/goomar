@@ -99,7 +99,13 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
       if (dt.isBefore(weekStart) || !dt.isBefore(weekEnd)) continue;
 
       final int duration = r.long ? 30 : 15;
-      spans.add(ReservationSpan(id: r.id, start: DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute), durationMinutes: duration, label: r.name, approved: r.confirmed));
+      spans.add(ReservationSpan(
+          id: r.id,
+          start: DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute),
+          durationMinutes: duration,
+          label: r.name,
+          approved: r.confirmed,
+          emailOk: r.emailOk));
 
       final DateTime resStart = DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute);
       final DateTime resEnd = resStart.add(Duration(minutes: duration));
@@ -143,28 +149,36 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                   Tooltip(
                       message: 'Unconfirmed',
                       child: Row(children: [
-                        Checkbox(
-                            value: rp.filterUnconfirmed,
-                            onChanged: (v) {
-                              rp.setFilterUnconfirmed(v ?? false);
-                            },
-                            side: const BorderSide(color: Colors.amber),
-                            checkColor: Colors.black,
-                            activeColor: Colors.amber),
+                        Opacity(
+                            opacity: rp.filterInvalid ? 0.4 : 1.0,
+                            child: Checkbox(
+                                value: rp.filterUnconfirmed,
+                                onChanged: rp.filterInvalid
+                                    ? null
+                                    : (v) {
+                                        rp.setFilterUnconfirmed(v ?? false);
+                                      },
+                                side: BorderSide(color: rp.filterInvalid ? Colors.grey.shade400 : Colors.amber),
+                                checkColor: Colors.black,
+                                activeColor: Colors.amber)),
                         const SizedBox(width: 4),
                       ])),
                   // Confirmed (green)
                   Tooltip(
                       message: 'Confirmed',
                       child: Row(children: [
-                        Checkbox(
-                            value: rp.filterConfirmed,
-                            onChanged: (v) {
-                              rp.setFilterConfirmed(v ?? false);
-                            },
-                            side: const BorderSide(color: Colors.green),
-                            checkColor: Colors.white,
-                            activeColor: Colors.green),
+                        Opacity(
+                            opacity: rp.filterInvalid ? 0.4 : 1.0,
+                            child: Checkbox(
+                                value: rp.filterConfirmed,
+                                onChanged: rp.filterInvalid
+                                    ? null
+                                    : (v) {
+                                        rp.setFilterConfirmed(v ?? false);
+                                      },
+                                side: BorderSide(color: rp.filterInvalid ? Colors.grey.shade400 : Colors.green),
+                                checkColor: Colors.white,
+                                activeColor: Colors.green)),
                         const SizedBox(width: 8),
                       ])),
                 ]),

@@ -34,8 +34,16 @@ class ReservationProvider with ChangeNotifier {
   }
 
   void setFilterInvalid(bool v) {
-    final bit = 0x1;
-    final next = v ? (_filterMask | bit) : (_filterMask & ~bit);
+    // When Invalid is checked, disable (and clear) the other two filters to avoid conflicting states.
+    const bitInvalid = 0x1;
+    const bitUnconfirmed = 0x2;
+    const bitConfirmed = 0x4;
+    int next;
+    if (v) {
+      next = (_filterMask | bitInvalid) & ~(bitUnconfirmed | bitConfirmed);
+    } else {
+      next = (_filterMask & ~bitInvalid);
+    }
     _setFilterMask(next);
   }
 

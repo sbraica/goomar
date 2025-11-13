@@ -37,25 +37,21 @@ public class EntryService implements IEntryService {
         LocalDateTime startOfWeek = date.atStartOfDay();
         LocalDateTime endOfWeek = date.plusDays(5).atStartOfDay();
 
-        // Build date range condition
         Condition dateRange = ENTRIES.DATE_TIME.ge(startOfWeek).and(ENTRIES.DATE_TIME.lt(endOfWeek));
 
-        // Build bitmask filter condition
-        Condition filterCondition;
-        // Bit 0 -> EMAIL_OK = false
-        // Bit 1 -> CONFIRMED = false
-        // Bit 2 -> CONFIRMED = true
-        Condition c = DSL.falseCondition();
+        Condition filterCondition = DSL.trueCondition();
         if ((filter & 0b001) != 0) {
-            c = c.or(ENTRIES.EMAIL_OK.eq(false));
+            filterCondition = ENTRIES.EMAIL_OK.eq(false);
+        } else {
+            Condition c = ENTRIES.EMAIL_OK.eq(true);
+            if ((filter & 0b010) != 0) {
+                c = c.or(ENTRIES.CONFIRMED.eq(false));
+            }
+            if ((filter & 0b100) != 0) {
+                c = c.or(ENTRIES.CONFIRMED.eq(true));
+            }
+            filterCondition =  filterCondition.and(c);
         }
-        if ((filter & 0b010) != 0) {
-            c = c.or(ENTRIES.CONFIRMED.eq(false));
-        }
-        if ((filter & 0b100) != 0) {
-            c = c.or(ENTRIES.CONFIRMED.eq(true));
-        }
-        filterCondition = c;
 
         return ctx.select(ENTRIES.ID, ENTRIES.NAME, ENTRIES.DATE_TIME, ENTRIES.EMAIL, ENTRIES.PHONE, ENTRIES.REGISTRATION,
                         ENTRIES.LONG, ENTRIES.EMAIL, ENTRIES.CONFIRMED, ENTRIES.EVENT_ID, ENTRIES.CONFIRMED, ENTRIES.EMAIL_OK)
