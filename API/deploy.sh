@@ -1,10 +1,5 @@
 #!/bin/bash
 git pull
-echo "BUILD FLUTTER"
-cd ../gui
-flutter build web --release
-rm build/web/index.html
-cp -r build/web/*  ../API/src/main/resources/static/login/
 echo "BUILD API"
 cd ../API
 mvn clean install

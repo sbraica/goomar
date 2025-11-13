@@ -5,7 +5,7 @@ networks:
 services:
 
   goomardb:
-    image: postgres:12-alpine
+    image: postgres:17-alpine
     container_name: goomar_db
     restart: unless-stopped
     networks:
