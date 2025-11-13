@@ -34,6 +34,10 @@ class ApiClient {
   /// Refresh token used to obtain a new access token when it expires.
   String? _refreshToken;
 
+  /// Hook for the app to react on fatal auth failures (e.g., refresh rejected).
+  /// AuthProvider can assign this to perform logout and navigation to login.
+  VoidCallback? onAuthFailure;
+
   /// Absolute time when the current access token expires. If null, the token
   /// is considered non-expiring (or expiry unknown).
   DateTime? _tokenExpiry;
@@ -160,6 +164,12 @@ class ApiClient {
       final resp = await http
           .post(url, headers: _headers(json: true, includeAuth: false), body: body)
           .timeout(const Duration(seconds: 10));
+      if (resp.statusCode >= 500 && resp.statusCode < 600) {
+        // Backend rejected refresh token with a server error (500 family).
+        // Treat as fatal auth error and trigger logout to login screen.
+        _handleFatalAuthFailure();
+        throw ApiException('Refresh failed: HTTP ${resp.statusCode}', resp.body);
+      }
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
         throw ApiException('Refresh failed: HTTP ${resp.statusCode}', resp.body);
       }
@@ -221,6 +231,18 @@ class ApiClient {
       throw ApiException('Authentication token expired');
     }
     await refreshToken();
+  }
+
+  void _handleFatalAuthFailure() {
+    // Clear all token-related state and notify the app to logout.
+    setAuthToken(null);
+    setRefreshToken(null);
+    setTokenExpiry(null);
+    try {
+      onAuthFailure?.call();
+    } catch (_) {
+      // Ignore any errors from hook.
+    }
   }
 
   /// Fetch reservations for a specific week.

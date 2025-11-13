@@ -11,6 +11,7 @@ import 'providers/auth_provider.dart';
 import 'providers/login_ui_provider.dart';
 import 'providers/booking_ui_provider.dart';
 import 'screens/operator/login_screen.dart';
+import 'navigation_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +44,7 @@ class MyApp extends StatelessWidget {
           locale: const Locale('hr'),
           supportedLocales: const [Locale('hr')],
           localizationsDelegates: const [GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate],
+          navigatorKey: rootNavigatorKey,
           theme: ThemeData(
               primarySwatch: Colors.blue,
               primaryColor: const Color(0xFF2196F3),
