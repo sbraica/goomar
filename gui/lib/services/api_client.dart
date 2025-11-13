@@ -31,6 +31,9 @@ class ApiClient {
   /// Bearer token for authenticated requests (set after login).
   String? _authToken;
 
+  /// Refresh token used to obtain a new access token when it expires.
+  String? _refreshToken;
+
   /// Absolute time when the current access token expires. If null, the token
   /// is considered non-expiring (or expiry unknown).
   DateTime? _tokenExpiry;
@@ -43,6 +46,11 @@ class ApiClient {
     if (token == null || token.isEmpty) {
       _tokenExpiry = null;
     }
+  }
+
+  /// Set or clear the refresh token.
+  void setRefreshToken(String? token) {
+    _refreshToken = token;
   }
 
   /// Optionally set/clear token expiry timestamp.
@@ -63,10 +71,10 @@ class ApiClient {
     return !hasValidToken;
   }
 
-  Map<String, String> _headers({Map<String, String>? extra, bool json = false}) {
+  Map<String, String> _headers({Map<String, String>? extra, bool json = false, bool includeAuth = true}) {
     final headers = <String, String>{};
     if (json) headers['Content-Type'] = 'application/json';
-    if (_authToken != null && _authToken!.isNotEmpty) {
+    if (includeAuth && _authToken != null && _authToken!.isNotEmpty) {
       // If we have a token but it is expired, fail fast so UI can re-auth.
       if (isTokenExpired) {
         throw ApiException('Authentication token expired');
@@ -86,13 +94,14 @@ class ApiClient {
     try {
       final body = jsonEncode({'username': username, 'password': password});
       final resp = await http
-          .post(url, headers: _headers(json: true), body: body)
+          .post(url, headers: _headers(json: true, includeAuth: false), body: body)
           .timeout(const Duration(seconds: 10));
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
         throw ApiException('Login failed: HTTP ${resp.statusCode}', resp.body);
       }
       // Try to parse either a raw token string or a JSON object with common keys
       String token;
+      String? refresh;
       int? expiresInSeconds;
       try {
         final decoded = jsonDecode(resp.body);
@@ -101,6 +110,10 @@ class ApiClient {
         } else if (decoded is Map<String, dynamic>) {
           // Support common field names and the provided BR format
           token = (decoded['access_token'] ?? decoded['token'] ?? decoded['accessToken'] ?? decoded['jwt'] ?? '').toString();
+          final dynamic refVal = decoded['refresh_token'] ?? decoded['refreshToken'];
+          if (refVal != null) {
+            refresh = refVal.toString();
+          }
           final dynamic expVal = decoded['expires_in'] ?? decoded['expiresIn'];
           if (expVal is int) {
             expiresInSeconds = expVal;
@@ -118,6 +131,7 @@ class ApiClient {
         throw ApiException('Login succeeded but no token was returned');
       }
       setAuthToken(token);
+      setRefreshToken(refresh);
       // Compute and store expiry if available, subtract a small skew to refresh earlier.
       if (expiresInSeconds != null && expiresInSeconds! > 0) {
         final skew = 5; // seconds
@@ -134,20 +148,101 @@ class ApiClient {
     }
   }
 
+  /// Refresh the access token using the stored refresh token.
+  /// Same endpoint as login but sending { "refresh_token": "..." }.
+  Future<String> refreshToken() async {
+    if (_refreshToken == null || _refreshToken!.isEmpty) {
+      throw ApiException('No refresh token available');
+    }
+    final url = _uri('/V1/token');
+    try {
+      final body = jsonEncode({'refresh_token': _refreshToken});
+      final resp = await http
+          .post(url, headers: _headers(json: true, includeAuth: false), body: body)
+          .timeout(const Duration(seconds: 10));
+      if (resp.statusCode < 200 || resp.statusCode >= 300) {
+        throw ApiException('Refresh failed: HTTP ${resp.statusCode}', resp.body);
+      }
+
+      String token;
+      String? refresh;
+      int? expiresInSeconds;
+      try {
+        final decoded = jsonDecode(resp.body);
+        if (decoded is String) {
+          token = decoded;
+        } else if (decoded is Map<String, dynamic>) {
+          token = (decoded['access_token'] ?? decoded['token'] ?? decoded['accessToken'] ?? decoded['jwt'] ?? '').toString();
+          final dynamic refVal = decoded['refresh_token'] ?? decoded['refreshToken'];
+          if (refVal != null) {
+            refresh = refVal.toString();
+          }
+          final dynamic expVal = decoded['expires_in'] ?? decoded['expiresIn'];
+          if (expVal is int) {
+            expiresInSeconds = expVal;
+          } else if (expVal is String) {
+            expiresInSeconds = int.tryParse(expVal);
+          }
+        } else {
+          throw const FormatException('Unexpected refresh response format');
+        }
+      } catch (_) {
+        token = resp.body.trim();
+      }
+      if (token.isEmpty) {
+        throw ApiException('Refresh succeeded but no token was returned');
+      }
+      setAuthToken(token);
+      // If backend rotates refresh token, store it; otherwise keep the old one
+      if (refresh != null && refresh!.isNotEmpty) {
+        setRefreshToken(refresh);
+      }
+      if (expiresInSeconds != null && expiresInSeconds! > 0) {
+        final skew = 5; // seconds
+        final effective = expiresInSeconds! > skew ? expiresInSeconds! - skew : expiresInSeconds!;
+        setTokenExpiry(DateTime.now().add(Duration(seconds: effective)));
+      } else {
+        setTokenExpiry(null);
+      }
+      return token;
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      throw ApiException('Network error during refresh', e.toString());
+    }
+  }
+
+  /// Ensures the access token is valid. If expired and refresh token exists,
+  /// try to refresh it.
+  Future<void> _ensureValidToken() async {
+    if (_authToken == null || _authToken!.isEmpty) return; // nothing to do
+    if (!isTokenExpired) return;
+    if (_refreshToken == null || _refreshToken!.isEmpty) {
+      throw ApiException('Authentication token expired');
+    }
+    await refreshToken();
+  }
+
   /// Fetch reservations for a specific week.
   /// Backend expects path: /V1/appointments/{year}/{month}/{day} where the day
   /// is the Monday (start of week). All path parts are integers (no leading zeros).
   /// Throws [ApiException] on non-2xx or network errors.
   Future<List<Reservation>> getReservations(DateTime weekStart) async {
+    await _ensureValidToken();
     final y = weekStart.year;
     final m = weekStart.month; // integers in path
     final d = weekStart.day; // start-of-week (Monday)
     final url = _uri('/V1/reservations/$y/$m/$d');
     try {
-      final resp = await http.get(url, headers: _headers()).timeout(const Duration(seconds: 10));
+      var resp = await http.get(url, headers: _headers()).timeout(const Duration(seconds: 10));
 
       if (resp.statusCode == 401) {
-        throw ApiException('Unauthorized — token invalid or expired', resp.body);
+        // Try to refresh once and retry
+        await _ensureValidToken();
+        resp = await http.get(url, headers: _headers()).timeout(const Duration(seconds: 10));
+        if (resp.statusCode == 401) {
+          throw ApiException('Unauthorized — token invalid or expired', resp.body);
+        }
       }
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
         throw ApiException('Failed to fetch reservations: HTTP ${resp.statusCode}', resp.body);
@@ -168,12 +263,17 @@ class ApiClient {
   /// Posts a reservation to the backend as JSON body.
   /// Throws [ApiException] on non-2xx or network errors.
   Future<void> postReservation(Reservation reservation) async {
+    await _ensureValidToken();
     final url = _uri('/V1/reservation');
     final body = jsonEncode(reservation.toJson());
     try {
-      final resp = await http.post(url, headers: _headers(json: true), body: body).timeout(const Duration(seconds: 10));
+      var resp = await http.post(url, headers: _headers(json: true), body: body).timeout(const Duration(seconds: 10));
       if (resp.statusCode == 401) {
-        throw ApiException('Unauthorized — token invalid or expired', resp.body);
+        await _ensureValidToken();
+        resp = await http.post(url, headers: _headers(json: true), body: body).timeout(const Duration(seconds: 10));
+        if (resp.statusCode == 401) {
+          throw ApiException('Unauthorized — token invalid or expired', resp.body);
+        }
       }
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
         throw ApiException('Failed to create reservation: HTTP ${resp.statusCode}', resp.body);
@@ -189,11 +289,16 @@ class ApiClient {
   /// Endpoint: /V1/appointment?eventId=<id>
   /// Sends JSON body { "approved": true|false } for clarity, although backend may ignore it.
   Future<void> setAppointmentApproved(String eventId, bool approved) async {
+    await _ensureValidToken();
     final url = _uri('/V1/reservation?eventId=$eventId');
     try {
-      final resp = await http.patch(url, headers: _headers(json: true)).timeout(const Duration(seconds: 10));
+      var resp = await http.patch(url, headers: _headers(json: true)).timeout(const Duration(seconds: 10));
       if (resp.statusCode == 401) {
-        throw ApiException('Unauthorized — token invalid or expired', resp.body);
+        await _ensureValidToken();
+        resp = await http.patch(url, headers: _headers(json: true)).timeout(const Duration(seconds: 10));
+        if (resp.statusCode == 401) {
+          throw ApiException('Unauthorized — token invalid or expired', resp.body);
+        }
       }
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
         throw ApiException('Failed to update appointment approval: HTTP ${resp.statusCode}', resp.body);
@@ -208,11 +313,16 @@ class ApiClient {
   /// Delete an appointment by eventId via DELETE.
   /// Endpoint: /V1/appointment?eventId=<id>
   Future<void> deleteAppointment(String id) async {
+    await _ensureValidToken();
     final url = _uri('/V1/reservation?id=$id');
     try {
-      final resp = await http.delete(url, headers: _headers()).timeout(const Duration(seconds: 10));
+      var resp = await http.delete(url, headers: _headers()).timeout(const Duration(seconds: 10));
       if (resp.statusCode == 401) {
-        throw ApiException('Unauthorized — token invalid or expired', resp.body);
+        await _ensureValidToken();
+        resp = await http.delete(url, headers: _headers()).timeout(const Duration(seconds: 10));
+        if (resp.statusCode == 401) {
+          throw ApiException('Unauthorized — token invalid or expired', resp.body);
+        }
       }
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
         throw ApiException('Failed to delete appointment: HTTP ${resp.statusCode}', resp.body);
