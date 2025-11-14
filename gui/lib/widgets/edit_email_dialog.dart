@@ -34,9 +34,7 @@ class EditEmailModel extends ChangeNotifier {
       saving = false;
       notifyListeners();
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update email: $e'), backgroundColor: Colors.red),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update email: $e'), backgroundColor: Colors.red));
       }
       return false;
     }
@@ -61,16 +59,32 @@ class EditEmailDialog extends StatelessWidget {
         create: (_) => EditEmailModel(initialEmail, onSave),
         child: Consumer<EditEmailModel>(
             builder: (context, model, _) => AlertDialog(
-                    title: const Text('Edit email'),
+                    constraints: BoxConstraints(minWidth: 600),
+                    title: const Text('Ručna rezervacija'),
                     content: Column(mainAxisSize: MainAxisSize.min, children: [
-                      TextField(
-                          controller: model.controller,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: InputDecoration(labelText: 'Email', errorText: model.errorText),
-                          onChanged: (_) => model.clearError())
+                      Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+                        Expanded(
+                            child: TextField(
+                                controller: model.controller,
+                                keyboardType: TextInputType.emailAddress,
+                                decoration: InputDecoration(
+                                    labelText: 'Email',
+                                    errorText: model.errorText,
+                                    errorBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.red)),
+                                    focusedErrorBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.red, width: 2))),
+                                onChanged: (_) => model.clearError())),
+                        const SizedBox(width: 12),
+                        ElevatedButton(
+                            onPressed: model.saving
+                                ? null
+                                : () async {
+                                    final ok = await model.save(context);
+                                    if (ok && context.mounted) Navigator.of(context).pop();
+                                  },
+                            child: const Text('Ispravi i pošalji e-mail potvrde'))
+                      ])
                     ]),
                     actions: [
-                      TextButton(onPressed: model.saving ? null : () => Navigator.of(context).pop(), child: const Text('Cancel')),
                       ElevatedButton(
                           onPressed: model.saving
                               ? null
@@ -78,7 +92,8 @@ class EditEmailDialog extends StatelessWidget {
                                   final ok = await model.save(context);
                                   if (ok && context.mounted) Navigator.of(context).pop();
                                 },
-                          child: const Text('Save'))
+                          child: const Text('Potvrdi rezervaciju bez e-maila')),
+                      TextButton(onPressed: model.saving ? null : () => Navigator.of(context).pop(), child: const Text('Izlaz'))
                     ])));
   }
 }

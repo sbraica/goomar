@@ -91,17 +91,10 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
       print(dt);
       if (dt.isBefore(weekStart) || !dt.isBefore(weekEnd)) continue;
 
-      final int duration = r.long ? 30 : 15;
       spans.add(ReservationSpan(
-          id: r.id!,
-          start: DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute),
-          durationMinutes: duration,
-          label: r.name,
-          phone: r.phone,
-          approved: r.confirmed,
-          emailOk: r.emailOk));
+          id: r.id!, start: DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute), long: r.long, label: r.name, phone: r.phone, approved: r.confirmed, emailOk: r.emailOk));
       final DateTime resStart = DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute);
-      final DateTime resEnd = resStart.add(Duration(minutes: duration));
+      final DateTime resEnd = resStart.add(Duration(minutes: r.long ? 30 : 15));
       for (final tod in daySlots) {
         final slotStart = DateTime(dt.year, dt.month, dt.day, tod.hour, tod.minute);
         final slotEnd = slotStart.add(Duration(minutes: slotMinutes));
@@ -218,7 +211,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                             selectedDay: selectedDay,
                             selectedTime: selectedTime,
                             onSelectSlot: onSelectSlot,
-/*                            onEditEmailPressed: (span) async {
+                            onEditEmailPressed: (span) async {
                               if (span.id == null) return;
                               final rp = Provider.of<ReservationProvider>(context, listen: false);
                               final existing =
@@ -227,7 +220,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
 
                               await showDialog(
                                   context: context, builder: (ctx) => EditEmailDialog(initialEmail: initialEmail, onSave: (value) => rp.updateEmailRemote(span.id!, value)));
-                            },*/
+                            },
                             onSpanIconPressed: (span) async {
                               if (span.id == null) return;
                               final makeApproved = !span.approved;

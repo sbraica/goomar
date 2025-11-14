@@ -129,24 +129,23 @@ class _WeekGridPainter extends CustomPainter {
 }
 
 class ReservationSpan {
-  final String? id; // optional reservation id (UUID) to map actions
+  final String id; // optional reservation id (UUID) to map actions
   final DateTime start;
-  final int durationMinutes;
-  final String? label;
+  final bool long;
+  final String label;
 
-  // Optional phone number to render under the name/label
-  final String? phone;
+  final String phone;
   final bool approved;
 
   // Whether backend marked email as OK/valid. Used for coloring when filters are applied.
   final bool emailOk;
 
   const ReservationSpan({
-    this.id,
+    required this.id,
     required this.start,
-    required this.durationMinutes,
-    this.label,
-    this.phone,
+    required this.long,
+    required this.label,
+    required this.phone,
     this.approved = false,
     this.emailOk = true,
   });
@@ -164,6 +163,7 @@ class WeekTimeGrid extends StatelessWidget {
   // New: simple icon action on each reservation span (no popup/menu).
   final void Function(ReservationSpan span)? onSpanIconPressed;
   final void Function(ReservationSpan span)? onDeleteIconPressed;
+  final void Function(ReservationSpan span)? onEditEmailPressed;
 
   // Working hours
   final TimeOfDay dayStart;
@@ -191,6 +191,7 @@ class WeekTimeGrid extends StatelessWidget {
       required this.selectedDay,
       required this.selectedTime,
       required this.onSelectSlot,
+      required this.onEditEmailPressed,
       this.onSpanIconPressed,
       this.onDeleteIconPressed,
       required this.dayStart,
@@ -409,7 +410,7 @@ class WeekTimeGrid extends StatelessWidget {
             final idx = fractionalRowIndex(span.start);
             if (idx == null) continue; // outside visible working hours (or fully in lunch at end)
 
-            final rows = spanRows(span.start, span.durationMinutes);
+            final rows = spanRows(span.start, span.long ? 30 : 15);
             if (rows <= 0) continue;
 
             final top = idx * rowHeight + 2.0;
@@ -417,6 +418,8 @@ class WeekTimeGrid extends StatelessWidget {
             final height = rows * rowHeight - 4.0;
             final width = dayWidth - 4.0;
 
+            const spanTextStyle =
+                const TextStyle(color: Colors.black, fontWeight: FontWeight.normal, fontSize: 12, shadows: [Shadow(offset: Offset(0, 1), blurRadius: 2, color: Colors.black26)]);
             blocks.add(Positioned(
                 top: top,
                 left: left,
@@ -435,28 +438,10 @@ class WeekTimeGrid extends StatelessWidget {
                                 padding: const EdgeInsets.only(right: 28.0, left: 6.0),
                                 child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.center, children: [
                                   if (span.label != null && span.label!.isNotEmpty)
-                                    Text(span.durationMinutes == 15 ? span.label! + " " + span.phone! : span.label!,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        softWrap: false,
-                                        textAlign: TextAlign.center,
-                                        style: const TextStyle(
-                                            color: Colors.black,
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 12,
-                                            shadows: [Shadow(offset: Offset(0, 1), blurRadius: 2, color: Colors.black26)])),
-                                  if (span.durationMinutes == 30 && span.phone != null && span.phone!.isNotEmpty) ...[
-                                    const SizedBox(height: 2),
-                                    Text(span.phone!,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        softWrap: false,
-                                        textAlign: TextAlign.center,
-                                        style: const TextStyle(
-                                            color: Colors.black,
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 11,
-                                            shadows: [Shadow(offset: Offset(0, 1), blurRadius: 2, color: Colors.black26)]))
+                                    Text(span.long ? span.label! : "${span.label!} ${span.phone!}",
+                                        maxLines: 1, overflow: TextOverflow.ellipsis, softWrap: false, textAlign: TextAlign.center, style: spanTextStyle),
+                                  if (span.long && span.phone != null && span.phone!.isNotEmpty) ...[
+                                    Text(span.phone!, maxLines: 1, overflow: TextOverflow.ellipsis, softWrap: false, textAlign: TextAlign.center, style: spanTextStyle)
                                   ]
                                 ]))),
                       // Icon-only action in the top-right corner
@@ -465,6 +450,13 @@ class WeekTimeGrid extends StatelessWidget {
                           right: 0,
                           child: Row(
                             children: [
+                              if (!span.emailOk)
+                                IconButton(
+                                    padding: const EdgeInsets.all(2),
+                                    constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                                    iconSize: 18,
+                                    onPressed: onSpanIconPressed == null || span.id == null ? null : () => onEditEmailPressed!(span),
+                                    icon: Icon(span.approved ? Icons.email : Icons.check, color: Colors.white)),
                               if (!span.approved)
                                 IconButton(
                                     padding: const EdgeInsets.all(2),
