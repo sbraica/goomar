@@ -146,7 +146,7 @@ paths:
       tags:
         - Reservations
       summary: Delete user by Id
-      operationId: updateAppointment
+      operationId: updateReservation
       parameters:
         - in: header
           name: Authorization

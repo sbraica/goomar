@@ -47,7 +47,7 @@ public class ReservationController implements ReservationsApi {
     }
 
     @Override
-    public ResponseEntity<Void> updateAppointment(String authorization, UpdateReservationRest urr) {
+    public ResponseEntity<Void> updateReservation(String authorization, UpdateReservationRest urr) {
         log.info("updateAppointment(urr={})", urr);
         if (urr.getEventId() != null) {
             ReservationRest rr = entryService.confirmReservation(urr.getId());

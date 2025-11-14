@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:tyre_reservation_app/models/update_reservation.dart';
 import '../models/reservation.dart';
 import '../services/api_client.dart';
 
@@ -164,12 +165,12 @@ class ReservationProvider with ChangeNotifier {
   }
 
   /// Update reservation email both remotely and locally.
-  Future<void> updateEmailRemote(String id, String email) async {
+  Future<void> updateEmailRemote(UpdateReservation ur) async {
     _setError(null);
-    final index = _reservations.indexWhere((r) => r.id != null && r.id == id);
+    final index = _reservations.indexWhere((r) => r.id != null && r.id == ur.id);
     if (index == -1) throw Exception('Reservation not found');
     try {
-      await ApiClient.instance.updateAppointmentEmail(id, email);
+      await ApiClient.instance.updateReservation(ur);
       final r = _reservations[index];
       // Replace with a new instance containing updated email
       _reservations[index] = Reservation(

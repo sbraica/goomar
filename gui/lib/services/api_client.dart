@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart' as dotenv;
+import 'package:tyre_reservation_app/models/update_reservation.dart';
 import '../models/reservation.dart';
 
 /// Simple API client wrapping HTTP calls to the backend.
@@ -359,10 +360,10 @@ class ApiClient {
   /// Update appointment email via PATCH.
   /// Endpoint (aligned with delete): /V1/reservation?id=<id>
   /// Sends JSON body { "email": "new@example.com" }
-  Future<void> updateAppointmentEmail(String id, String email) async {
+  Future<void> updateReservation(UpdateReservation ur) async {
     await _ensureValidToken();
-    final url = _uri('/V1/reservation?id=$id');
-    final body = jsonEncode({'email': email});
+    final url = _uri('/V1/reservation');
+    final body = jsonEncode(ur.toJson());
     try {
       var resp = await http.patch(url, headers: _headers(json: true), body: body).timeout(const Duration(seconds: 10));
       if (resp.statusCode == 401) {
