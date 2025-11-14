@@ -48,14 +48,19 @@ public class ReservationController implements ReservationsApi {
 
     @Override
     public ResponseEntity<Void> updateAppointment(String authorization, UpdateReservationRest urr) {
-        log.info("updateAppointment(id={})", urr.getId());
+        log.info("updateAppointment(urr={})", urr);
         if (urr.getEventId() != null) {
             ReservationRest rr = entryService.confirmReservation(urr.getId());
             calendarService.confirmAppointment(rr.getEventId());
             emailService.sendConfirmation(rr);
         } else {
             ReservationRest rr = entryService.setEmail(urr);
-            emailService.sendReservation(rr, rr.getId());
+            if (urr.getSendMail()) {
+                emailService.sendReservation(rr, rr.getId());
+            } else {
+                String event_id = calendarService.insertAppoitnment(entryService.get(urr.getId()));
+                entryService.setEventId(urr.getId(), event_id);
+            }
         }
         return new ResponseEntity(HttpStatus.CREATED);
     }
@@ -64,7 +69,7 @@ public class ReservationController implements ReservationsApi {
     public ResponseEntity<Void> deleteAppointment(String authorization, String id) {
         log.info("deleteAppointment(id={})", id);
         ReservationRest rr = entryService.deleteReservation(id);
-        calendarService.deleteAppointment( rr.getEventId());
+        calendarService.deleteAppointment(rr.getEventId());
         emailService.sendDelete(rr);
         return new ResponseEntity(HttpStatus.NO_CONTENT);
     }

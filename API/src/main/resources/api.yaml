@@ -317,13 +317,14 @@ components:
           type: string
           format: time
     UpdateReservationRest:
+      required:
+        - sendMail
       properties:
+        sendMail:
+          type: boolean
         id:
           type: string
-          format: time
         eventId:
           type: string
-          format: time
         email:
           type: string
-          format: time
