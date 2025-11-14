@@ -176,7 +176,7 @@ class ReservationProvider with ChangeNotifier {
       _reservations[index] = Reservation(
         id: r.id,
         name: r.name,
-        email: email,
+        email: ur.email!,
         phone: r.phone,
         registration: r.registration,
         long: r.long,

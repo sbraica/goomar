@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:tyre_reservation_app/models/update_reservation.dart';
 import '../providers/reservation_provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/week_time_grid.dart';
@@ -219,7 +220,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                               final initialEmail = (existing is dynamic && existing?.email is String) ? existing.email as String : '';
 
                               await showDialog(
-                                  context: context, builder: (ctx) => EditEmailDialog(initialEmail: initialEmail, onSave: (value) => rp.updateEmailRemote(span.id!, value)));
+                                  context: context, builder: (ctx) => EditEmailDialog(initialEmail: initialEmail, onSave: (value) => rp.updateEmailRemote(UpdateReservation(id: span.id!, sendMail: true, email: value))));
                             },
                             onSpanIconPressed: (span) async {
                               if (span.id == null) return;
