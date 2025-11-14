@@ -146,18 +146,20 @@ paths:
       tags:
         - Reservations
       summary: Delete user by Id
-      operationId: makeAppointment
+      operationId: updateAppointment
       parameters:
         - in: header
           name: Authorization
           schema:
             type: string
           required: true
-        - name: eventId
-          in: query
-          required: true
-          schema:
-            type: string
+      requestBody:
+        required: true
+        content:
+          application/json; charset=utf-8:
+            schema:
+              type: object
+              $ref: '#/components/schemas/UpdateReservationRest'
       responses:
         '201':
           description: Single user deleted
@@ -312,5 +314,16 @@ components:
           type: string
           format: time
         end:
+          type: string
+          format: time
+    UpdateReservationRest:
+      properties:
+        id:
+          type: string
+          format: time
+        eventId:
+          type: string
+          format: time
+        email:
           type: string
           format: time

@@ -355,6 +355,32 @@ class ApiClient {
       throw ApiException('Network error while deleting appointment', e.toString());
     }
   }
+
+  /// Update appointment email via PATCH.
+  /// Endpoint (aligned with delete): /V1/reservation?id=<id>
+  /// Sends JSON body { "email": "new@example.com" }
+  Future<void> updateAppointmentEmail(String id, String email) async {
+    await _ensureValidToken();
+    final url = _uri('/V1/reservation?id=$id');
+    final body = jsonEncode({'email': email});
+    try {
+      var resp = await http.patch(url, headers: _headers(json: true), body: body).timeout(const Duration(seconds: 10));
+      if (resp.statusCode == 401) {
+        await _ensureValidToken();
+        resp = await http.patch(url, headers: _headers(json: true), body: body).timeout(const Duration(seconds: 10));
+        if (resp.statusCode == 401) {
+          throw ApiException('Unauthorized — token invalid or expired', resp.body);
+        }
+      }
+      if (resp.statusCode < 200 || resp.statusCode >= 300) {
+        throw ApiException('Failed to update email: HTTP ${resp.statusCode}', resp.body);
+      }
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      throw ApiException('Network error while updating email', e.toString());
+    }
+  }
 }
 
 class ApiException implements Exception {

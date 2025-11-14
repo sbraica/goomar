@@ -6,6 +6,7 @@ import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.openapitools.model.ReservationRest;
+import org.openapitools.model.UpdateReservationRest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -83,18 +84,26 @@ public class EntryService implements IEntryService {
         return ctx.deleteFrom(ENTRIES).where(ENTRIES.ID.eq(UUID.fromString(id))).returning().fetchOneInto(ReservationRest.class);
     }
 
-    @Override
-    @Transactional
-    public void setEventId(String id, String eventId) {
-        log.info(">>setEventId(id={}, eventId={})", id, eventId);
-        ctx.update(ENTRIES).set(ENTRIES.EVENT_ID, eventId).where(ENTRIES.ID.eq(UUID.fromString(id))).execute();
-    }
 
     @Override
     public ReservationRest get(String uuid) {
         return ctx.select(ENTRIES.ID, ENTRIES.NAME, ENTRIES.DATE_TIME, ENTRIES.EMAIL, ENTRIES.PHONE, ENTRIES.REGISTRATION, ENTRIES.LONG, ENTRIES.EMAIL, ENTRIES.CONFIRMED, ENTRIES.EVENT_ID, ENTRIES.CONFIRMED)
                 .from(ENTRIES).where(ENTRIES.ID.eq(UUID.fromString(uuid))).fetchSingleInto(ReservationRest.class);
 
+    }
+
+    @Override
+    @Transactional
+    public ReservationRest setEmail(UpdateReservationRest urr) {
+        log.info(">>setEmail(id={}, email={})", urr.getId(), urr.getEmail());
+        return ctx.update(ENTRIES).set(ENTRIES.EMAIL, urr.getEmail()).where(ENTRIES.ID.eq(UUID.fromString(urr.getId()))).returning().fetchOneInto(ReservationRest.class);
+    }
+
+    @Override
+    @Transactional
+    public void setEventId(String id, String eventId) {
+        log.info(">>setEventId(id={}, eventId={})", id, eventId);
+        ctx.update(ENTRIES).set(ENTRIES.EVENT_ID, eventId).where(ENTRIES.ID.eq(UUID.fromString(id))).execute();
     }
 
 }

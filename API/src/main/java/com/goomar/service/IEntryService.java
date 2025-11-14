@@ -1,6 +1,7 @@
 package com.goomar.service;
 
 import org.openapitools.model.ReservationRest;
+import org.openapitools.model.UpdateReservationRest;
 
 import java.util.List;
 import java.util.UUID;
@@ -13,4 +14,5 @@ public interface IEntryService {
     ReservationRest deleteReservation(String eventId);
     void setEventId(String id, String eventId);
     ReservationRest get(String uuid);
+    ReservationRest setEmail(UpdateReservationRest urr);
 }

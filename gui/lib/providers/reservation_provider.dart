@@ -13,10 +13,6 @@ class ReservationProvider with ChangeNotifier {
   DateTime? selectedDay;
   TimeOfDay? selectedTime;
 
-  // Bitmask filter for reservations
-  // bit 0: invalid reservations (red)
-  // bit 1: unconfirmed reservations (yellow)
-  // bit 2: confirmed reservations (green)
   int _filterMask = 0;
 
   int get filterMask => _filterMask;
@@ -163,6 +159,34 @@ class ReservationProvider with ChangeNotifier {
       _reservations.insert(index, removed);
       _setError(e.toString());
       notifyListeners();
+      rethrow;
+    }
+  }
+
+  /// Update reservation email both remotely and locally.
+  Future<void> updateEmailRemote(String id, String email) async {
+    _setError(null);
+    final index = _reservations.indexWhere((r) => r.id != null && r.id == id);
+    if (index == -1) throw Exception('Reservation not found');
+    try {
+      await ApiClient.instance.updateAppointmentEmail(id, email);
+      final r = _reservations[index];
+      // Replace with a new instance containing updated email
+      _reservations[index] = Reservation(
+        id: r.id,
+        name: r.name,
+        email: email,
+        phone: r.phone,
+        registration: r.registration,
+        long: r.long,
+        pending: r.pending,
+        confirmed: r.confirmed,
+        emailOk: r.emailOk,
+        date_time: r.date_time,
+      );
+      notifyListeners();
+    } catch (e) {
+      _setError(e.toString());
       rethrow;
     }
   }

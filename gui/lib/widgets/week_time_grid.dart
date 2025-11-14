@@ -133,9 +133,11 @@ class ReservationSpan {
   final DateTime start;
   final int durationMinutes;
   final String? label;
+
   // Optional phone number to render under the name/label
   final String? phone;
   final bool approved;
+
   // Whether backend marked email as OK/valid. Used for coloring when filters are applied.
   final bool emailOk;
 
@@ -422,55 +424,41 @@ class WeekTimeGrid extends StatelessWidget {
                 height: height,
                 child: Container(
                     decoration: BoxDecoration(
-                      // Color priority: red if email not OK; else yellow if unconfirmed; else green
-                      color: (!span.emailOk
-                              ? Colors.red.shade400
-                              : (span.approved ? Colors.green.shade400 : Colors.amber.shade400))
-                          .withAlpha((0.85 * 255).round()),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
-                          color: !span.emailOk
-                              ? Colors.red.shade700
-                              : (span.approved ? Colors.green.shade700 : Colors.amber.shade700),
-                          width: 1),
-                    ),
+                        color: (!span.emailOk ? Colors.red.shade400 : (span.approved ? Colors.green.shade400 : Colors.amber.shade400)).withAlpha((0.85 * 255).round()),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: !span.emailOk ? Colors.red.shade700 : (span.approved ? Colors.green.shade700 : Colors.amber.shade700), width: 1)),
                     child: Stack(children: [
-                      // Centered label (name) with optional phone on second line
                       if ((span.label != null && span.label!.isNotEmpty) || (span.phone != null && span.phone!.isNotEmpty))
                         Center(
                             child: Padding(
                                 // leave space so it doesn't collide with the top-right icon
                                 padding: const EdgeInsets.only(right: 28.0, left: 6.0),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    if (span.label != null && span.label!.isNotEmpty)
-                                      Text(span.durationMinutes == 15 ? span.label! + " " + span.phone! : span.label!,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          softWrap: false,
-                                          textAlign: TextAlign.center,
-                                          style: const TextStyle(
-                                              color: Colors.black,
-                                              fontWeight: FontWeight.w700,
-                                              fontSize: 12,
-                                              shadows: [Shadow(offset: Offset(0, 1), blurRadius: 2, color: Colors.black26)])),
-                                    if (span.durationMinutes == 30 && span.phone != null && span.phone!.isNotEmpty) ...[
-                                      const SizedBox(height: 2),
-                                      Text(span.phone!,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          softWrap: false,
-                                          textAlign: TextAlign.center,
-                                          style: const TextStyle(
-                                              color: Colors.black,
-                                              fontWeight: FontWeight.w500,
-                                              fontSize: 11,
-                                              shadows: [Shadow(offset: Offset(0, 1), blurRadius: 2, color: Colors.black26)])),
-                                    ]
-                                  ],
-                                ))),
+                                child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.center, children: [
+                                  if (span.label != null && span.label!.isNotEmpty)
+                                    Text(span.durationMinutes == 15 ? span.label! + " " + span.phone! : span.label!,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        softWrap: false,
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 12,
+                                            shadows: [Shadow(offset: Offset(0, 1), blurRadius: 2, color: Colors.black26)])),
+                                  if (span.durationMinutes == 30 && span.phone != null && span.phone!.isNotEmpty) ...[
+                                    const SizedBox(height: 2),
+                                    Text(span.phone!,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        softWrap: false,
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: 11,
+                                            shadows: [Shadow(offset: Offset(0, 1), blurRadius: 2, color: Colors.black26)]))
+                                  ]
+                                ]))),
                       // Icon-only action in the top-right corner
                       Positioned(
                           top: 0,
@@ -478,12 +466,12 @@ class WeekTimeGrid extends StatelessWidget {
                           child: Row(
                             children: [
                               if (!span.approved)
-                              IconButton(
-                                  padding: const EdgeInsets.all(2),
-                                  constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                                  iconSize: 18,
-                                  onPressed: onSpanIconPressed == null || span.id == null ? null : () => onSpanIconPressed!(span),
-                                  icon: Icon(span.approved ? Icons.undo : Icons.check, color: Colors.white)),
+                                IconButton(
+                                    padding: const EdgeInsets.all(2),
+                                    constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                                    iconSize: 18,
+                                    onPressed: onSpanIconPressed == null || span.id == null ? null : () => onSpanIconPressed!(span),
+                                    icon: Icon(span.approved ? Icons.undo : Icons.check, color: Colors.white)),
                               IconButton(
                                   padding: const EdgeInsets.all(2),
                                   constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
@@ -508,9 +496,9 @@ class WeekTimeGrid extends StatelessWidget {
         final theme = Theme.of(context);
         final bool isDark = theme.brightness == Brightness.dark;
         // Use no background tinting/striping: all cells will have the same light gray fill.
-        final Color bandOdd = Colors.transparent;
-        final Color bandEven = Colors.transparent;
-        final Color todayTint = Colors.transparent;
+        const Color bandOdd = Colors.transparent;
+        const Color bandEven = Colors.transparent;
+        const Color todayTint = Colors.transparent;
         final Color hourLineColor = isDark ? Colors.white.withAlpha((0.28 * 255).round()) : Colors.black.withAlpha((0.28 * 255).round());
         final Color minorLineColor = isDark ? Colors.white.withAlpha((0.14 * 255).round()) : Colors.black.withAlpha((0.14 * 255).round());
 
@@ -550,7 +538,6 @@ class WeekTimeGrid extends StatelessWidget {
           return SingleChildScrollView(padding: EdgeInsets.zero, child: SizedBox(height: totalHeight, width: constraints.maxWidth, child: overlay));
         }
 
-        // Fits: no scroll necessary
         return SizedBox(height: totalHeight, width: constraints.maxWidth, child: overlay);
       }))
     ]);

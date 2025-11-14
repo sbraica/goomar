@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.openapitools.api.ReservationsApi;
 import org.openapitools.model.FreeSlotRest;
 import org.openapitools.model.ReservationRest;
+import org.openapitools.model.UpdateReservationRest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -46,11 +47,16 @@ public class ReservationController implements ReservationsApi {
     }
 
     @Override
-    public ResponseEntity<Void> makeAppointment(String authorization, String id) {
-        log.info("makeAppointment(id={})", id);
-        ReservationRest rr = entryService.confirmReservation(id);
-        calendarService.confirmAppointment(rr.getEventId());
-        emailService.sendConfirmation(rr);
+    public ResponseEntity<Void> updateAppointment(String authorization, UpdateReservationRest urr) {
+        log.info("updateAppointment(id={})", urr.getId());
+        if (urr.getEventId() != null) {
+            ReservationRest rr = entryService.confirmReservation(urr.getId());
+            calendarService.confirmAppointment(rr.getEventId());
+            emailService.sendConfirmation(rr);
+        } else {
+            ReservationRest rr = entryService.setEmail(urr);
+            emailService.sendReservation(rr, rr.getId());
+        }
         return new ResponseEntity(HttpStatus.CREATED);
     }
 

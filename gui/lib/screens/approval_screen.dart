@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/reservation_provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/week_time_grid.dart';
+import '../widgets/edit_email_dialog.dart';
 
 class ApprovalScreen extends StatefulWidget {
   const ApprovalScreen({Key? key}) : super(key: key);
@@ -12,7 +13,6 @@ class ApprovalScreen extends StatefulWidget {
 }
 
 class _ApprovalScreenState extends State<ApprovalScreen> {
-  // UI state moved to provider: focusedDay, selectedDay, selectedTime
   final int slotMinutes = 15;
 
   DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
@@ -26,21 +26,17 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
       try {
         final monday = _mondayOf(DateTime.now());
         await Provider.of<ReservationProvider>(context, listen: false).loadReservations(weekStart: monday);
-        // also set focusedDay in provider
         Provider.of<ReservationProvider>(context, listen: false).setFocusedDay(monday);
       } catch (e) {
         if (!mounted) return;
         final msg = e.toString().toLowerCase();
         final isAuthError = msg.contains('unauthorized') || msg.contains('expired');
         if (isAuthError) {
-          // If token is invalid/expired, force logout and navigate back to login
           Provider.of<AuthProvider>(context, listen: false).logout();
           if (!mounted) return;
-          // Navigate to root (LoginScreen) and clear the stack
           Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
         } else {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(const SnackBar(content: Text('Failed to load reservations from server'), backgroundColor: Colors.red));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to load reservations from server'), backgroundColor: Colors.red));
         }
       }
     });
@@ -88,10 +84,6 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
       return slots;
     }
 
-    bool _intervalsOverlap(DateTime aStart, DateTime aEnd, DateTime bStart, DateTime bEnd) {
-      return aStart.isBefore(bEnd) && aEnd.isAfter(bStart);
-    }
-
     final daySlots = _daySlots();
 
     for (final r in reservationProvider.reservations) {
@@ -101,29 +93,25 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
 
       final int duration = r.long ? 30 : 15;
       spans.add(ReservationSpan(
-          id: r.id,
+          id: r.id!,
           start: DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute),
           durationMinutes: duration,
           label: r.name,
           phone: r.phone,
           approved: r.confirmed,
           emailOk: r.emailOk));
-
       final DateTime resStart = DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute);
       final DateTime resEnd = resStart.add(Duration(minutes: duration));
       for (final tod in daySlots) {
         final slotStart = DateTime(dt.year, dt.month, dt.day, tod.hour, tod.minute);
         final slotEnd = slotStart.add(Duration(minutes: slotMinutes));
-        if (_intervalsOverlap(resStart, resEnd, slotStart, slotEnd)) {
+        if (resStart.isBefore(slotEnd) && resEnd.isAfter(slotStart)) {
           occupied.add(slotStart);
         }
       }
     }
 
-    void onSelectSlot(DateTime slot) {
-      // set via provider
-      Provider.of<ReservationProvider>(context, listen: false).setSelectedSlot(slot);
-    }
+    Future<void> onSelectSlot(DateTime slot) async => Provider.of<ReservationProvider>(context, listen: false).setSelectedSlot(slot);
 
     final firstDay = DateTime.now();
     final lastDay = DateTime.now().add(const Duration(days: 90));
@@ -143,7 +131,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                               side: const BorderSide(color: Colors.red),
                               checkColor: Colors.white,
                               activeColor: Colors.red),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 4)
                         ])),
                     // Unconfirmed (yellow)
                     Tooltip(
@@ -153,15 +141,11 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                               opacity: rp.filterInvalid ? 0.4 : 1.0,
                               child: Checkbox(
                                   value: rp.filterUnconfirmed,
-                                  onChanged: rp.filterInvalid
-                                      ? null
-                                      : (v) {
-                                          rp.setFilterUnconfirmed(v ?? false);
-                                        },
+                                  onChanged: rp.filterInvalid ? null : (v) => rp.setFilterUnconfirmed(v ?? false),
                                   side: BorderSide(color: rp.filterInvalid ? Colors.grey.shade400 : Colors.amber),
                                   checkColor: Colors.black,
                                   activeColor: Colors.amber)),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 4)
                         ])),
                     // Confirmed (green)
                     Tooltip(
@@ -171,15 +155,11 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                               opacity: rp.filterInvalid ? 0.4 : 1.0,
                               child: Checkbox(
                                   value: rp.filterConfirmed,
-                                  onChanged: rp.filterInvalid
-                                      ? null
-                                      : (v) {
-                                          rp.setFilterConfirmed(v ?? false);
-                                        },
+                                  onChanged: rp.filterInvalid ? null : (v) => rp.setFilterConfirmed(v ?? false),
                                   side: BorderSide(color: rp.filterInvalid ? Colors.grey.shade400 : Colors.green),
                                   checkColor: Colors.white,
                                   activeColor: Colors.green)),
-                          const SizedBox(width: 8)
+                          const SizedBox(width: 4)
                         ]))
                   ])),
           IconButton(
@@ -189,8 +169,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                   await reservationProvider.loadReservations(weekStart: currentMonday);
                 } catch (_) {
                   if (mounted) {
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(const SnackBar(content: Text('Failed to refresh reservations'), backgroundColor: Colors.red));
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to refresh reservations'), backgroundColor: Colors.red));
                   }
                 }
               },
@@ -220,8 +199,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                               reservationProvider.setFocusedDay(DateTime(prev.year, prev.month, prev.day));
                               reservationProvider.loadReservations(weekStart: prev).catchError((_) {
                                 if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                                      content: Text('Failed to load reservations for previous week'), backgroundColor: Colors.red));
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Greška učitavanja rezervacija"'), backgroundColor: Colors.red));
                                 }
                               });
                             },
@@ -232,14 +210,24 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                               reservationProvider.setFocusedDay(DateTime(next.year, next.month, next.day));
                               reservationProvider.loadReservations(weekStart: next).catchError((_) {
                                 if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                                      content: Text('Failed to load reservations for next week'), backgroundColor: Colors.red));
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(const SnackBar(content: Text(' to load reservations for previous week!'), backgroundColor: Colors.red));
                                 }
                               });
                             },
                             selectedDay: selectedDay,
                             selectedTime: selectedTime,
                             onSelectSlot: onSelectSlot,
+/*                            onEditEmailPressed: (span) async {
+                              if (span.id == null) return;
+                              final rp = Provider.of<ReservationProvider>(context, listen: false);
+                              final existing =
+                                  rp.reservations.firstWhere((r) => r.id == span.id, orElse: () => rp.reservations.isNotEmpty ? rp.reservations.first : null as dynamic);
+                              final initialEmail = (existing is dynamic && existing?.email is String) ? existing.email as String : '';
+
+                              await showDialog(
+                                  context: context, builder: (ctx) => EditEmailDialog(initialEmail: initialEmail, onSave: (value) => rp.updateEmailRemote(span.id!, value)));
+                            },*/
                             onSpanIconPressed: (span) async {
                               if (span.id == null) return;
                               final makeApproved = !span.approved;
@@ -247,21 +235,18 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                                 await Provider.of<ReservationProvider>(context, listen: false).setApprovedRemote(span.id!, makeApproved);
                               } catch (e) {
                                 if (mounted) {
-                                  ScaffoldMessenger.of(context)
-                                      .showSnackBar(SnackBar(content: Text('Failed to update approval: $e'), backgroundColor: Colors.red));
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update approval: $e'), backgroundColor: Colors.red));
                                 }
                               }
                             },
                             onDeleteIconPressed: (span) async {
                               if (span.id == null) return;
-                              _showConfirmDialog(context, 'Delete appointment', 'Are you sure you want to delete this appointment?',
-                                  () async {
+                              _showConfirmDialog(context, 'Delete appointment', 'Are you sure you want to delete this appointment?', () async {
                                 try {
                                   await Provider.of<ReservationProvider>(context, listen: false).deleteReservationRemote(span.id!);
                                 } catch (e) {
                                   if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text('Failed to delete appointment: $e'), backgroundColor: Colors.red));
+                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete appointment: $e'), backgroundColor: Colors.red));
                                   }
                                 }
                               });
