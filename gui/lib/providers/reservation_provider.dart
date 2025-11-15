@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:tyre_reservation_app/models/update_reservation.dart';
@@ -11,8 +13,8 @@ class ReservationProvider with ChangeNotifier {
 
   // UI state moved to provider
   DateTime focusedDay = DateTime.now();
-  DateTime? selectedDay;
-  TimeOfDay? selectedTime;
+  //DateTime? selectedDay;
+  //TimeOfDay? selectedTime;
 
   int _filterMask = 0;
 
@@ -69,14 +71,6 @@ class ReservationProvider with ChangeNotifier {
 
   String? get lastError => _lastError;
 
-  List<Reservation> get pendingReservations {
-    return _reservations.where((r) => r.pending).toList();
-  }
-
-  List<Reservation> get approvedReservations {
-    return _reservations.where((r) => r.confirmed).toList();
-  }
-
   void _setLoading(bool v) {
     if (_isLoading == v) return;
     _isLoading = v;
@@ -93,20 +87,6 @@ class ReservationProvider with ChangeNotifier {
       ..clear()
       ..addAll(list);
     notifyListeners();
-  }
-
-  void addReservation(Reservation reservation) {
-    _reservations.add(reservation);
-    notifyListeners();
-  }
-
-  void approveReservation(String id) {
-    final index = _reservations.indexWhere((r) => r.id != null && r.id == id);
-    if (index != -1) {
-      _reservations[index].confirmed = true;
-      _reservations[index].pending = false;
-      notifyListeners();
-    }
   }
 
   void setApproved(String id, bool value) {
@@ -181,7 +161,7 @@ class ReservationProvider with ChangeNotifier {
       _reservations[index] = Reservation(
           id: r.id,
           name: r.name,
-          email: ur.email!,
+          email: ur.email ?? r.email,
           phone: r.phone,
           registration: r.registration,
           long: r.long,
@@ -189,6 +169,7 @@ class ReservationProvider with ChangeNotifier {
           confirmed: ur.approved,
           emailOk: r.emailOk,
           date_time: r.date_time);
+      loadReservations(weekStart: focusedDay);
       notifyListeners();
     } catch (e) {
       _setError(e.toString());
@@ -196,21 +177,9 @@ class ReservationProvider with ChangeNotifier {
     }
   }
 
-  void rejectReservation(String id) {
-    _reservations.removeWhere((r) => r.id != null && r.id == id);
-
-    //TODO execute delete on BE!!!
-    notifyListeners();
-  }
 
   void setFocusedDay(DateTime d) {
     focusedDay = d;
-    notifyListeners();
-  }
-
-  void setSelectedSlot(DateTime slot) {
-    selectedDay = DateTime(slot.year, slot.month, slot.day);
-    selectedTime = TimeOfDay(hour: slot.hour, minute: slot.minute);
     notifyListeners();
   }
 

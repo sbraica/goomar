@@ -55,8 +55,8 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
 
     // Read UI state from provider
     final DateTime focusedDay = reservationProvider.focusedDay;
-    final DateTime? selectedDay = reservationProvider.selectedDay;
-    final TimeOfDay? selectedTime = reservationProvider.selectedTime;
+    //final DateTime? selectedDay = reservationProvider.selectedDay;
+    //final TimeOfDay? selectedTime = reservationProvider.selectedTime;
 
     final weekStart = _mondayOf(focusedDay);
     final weekEnd = weekStart.add(const Duration(days: 7));
@@ -105,7 +105,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
       }
     }
 
-    Future<void> onSelectSlot(DateTime slot) async => Provider.of<ReservationProvider>(context, listen: false).setSelectedSlot(slot);
+    //Future<void> onSelectSlot(DateTime slot) async => Provider.of<ReservationProvider>(context, listen: false).setSelectedSlot(slot);
 
     final firstDay = DateTime.now();
     final lastDay = DateTime.now().add(const Duration(days: 90));
@@ -209,9 +209,9 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                                 }
                               });
                             },
-                            selectedDay: selectedDay,
-                            selectedTime: selectedTime,
-                            onSelectSlot: onSelectSlot,
+                            //selectedDay: selectedDay,
+                            //selectedTime: selectedTime,
+                            //onSelectSlot: onSelectSlot,
                             onEdit: (span) async {
                               final rp = Provider.of<ReservationProvider>(context, listen: false);
                               final existing =

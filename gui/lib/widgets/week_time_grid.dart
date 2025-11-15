@@ -156,9 +156,9 @@ class WeekTimeGrid extends StatelessWidget {
   final VoidCallback? onPrevWeek;
   final VoidCallback? onNextWeek;
 
-  final DateTime? selectedDay;
-  final TimeOfDay? selectedTime;
-  final ValueChanged<DateTime> onSelectSlot; // returns exact DateTime for the slot
+  //final DateTime? selectedDay;
+  //final TimeOfDay? selectedTime;
+  //final ValueChanged<DateTime> onSelectSlot; // returns exact DateTime for the slot
 
   // New: simple icon action on each reservation span (no popup/menu).
   final void Function(ReservationSpan span)? onCheck;
@@ -188,9 +188,9 @@ class WeekTimeGrid extends StatelessWidget {
       required this.weekStart,
       required this.onPrevWeek,
       required this.onNextWeek,
-      required this.selectedDay,
-      required this.selectedTime,
-      required this.onSelectSlot,
+      //required this.selectedDay,
+      //required this.selectedTime,
+      //required this.onSelectSlot,
       required this.onEdit,
       this.onCheck,
       this.onDelete,
@@ -307,14 +307,10 @@ class WeekTimeGrid extends StatelessWidget {
                     final slot = DateTime(d.year, d.month, d.day, t.hour, t.minute);
                     final disabled = !_isWithinBounds(d) || isPast(slot);
                     final occupiedKey = occKeys.contains(keyFor(slot));
-                    final selected =
-                        selectedDay != null && selectedTime != null && _sameDate(slot, selectedDay!) && selectedTime!.hour == t.hour && selectedTime!.minute == t.minute;
+                    //final selected =
+                    //    selectedDay != null && selectedTime != null && _sameDate(slot, selectedDay!) && selectedTime!.hour == t.hour && selectedTime!.minute == t.minute;
 
-                    if (selected) {
-                      bg = Theme.of(context).colorScheme.primary;
-                      fg = Colors.white;
-                      borderColor = Theme.of(context).colorScheme.primary;
-                    } else if (disabled) {
+                    if (disabled) {
                       // Unavailable cells slightly darker gray
                       bg = Colors.grey.shade200;
                       fg = Colors.grey.shade500;
@@ -331,11 +327,7 @@ class WeekTimeGrid extends StatelessWidget {
 
                     return Padding(
                         padding: const EdgeInsets.all(2.0),
-                        child: InkWell(
-                            onTap: (disabled || occupiedKey) ? null : () => onSelectSlot(slot),
-                            child: Container(
-                                decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: borderColor)),
-                                child: Center(child: Text(selected ? 'Selected' : '', style: TextStyle(color: fg, fontWeight: FontWeight.w600, fontSize: 12))))));
+                        child: Container(decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: borderColor))));
                   }))
               ]));
         }
