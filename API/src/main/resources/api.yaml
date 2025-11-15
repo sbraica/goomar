@@ -319,11 +319,11 @@ components:
     UpdateReservationRest:
       required:
         - sendMail
-        - confirmed
+        - approved
       properties:
         sendMail:
           type: boolean
-        confirmed:
+        approved:
           type: boolean
         id:
           type: string

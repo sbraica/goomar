@@ -49,7 +49,7 @@ public class ReservationController implements ReservationsApi {
     @Override
     public ResponseEntity<Void> updateReservation(String authorization, UpdateReservationRest urr) {
         log.info("updateAppointment(urr={})", urr);
-        if (urr.getConfirmed()) {
+        if (urr.getApproved()) {
             ReservationRest rr = entryService.confirmReservation(urr.getId());
             calendarService.confirmAppointment(rr.getEventId());
             emailService.sendConfirmation(rr);
