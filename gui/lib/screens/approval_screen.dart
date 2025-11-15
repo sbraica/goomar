@@ -212,29 +212,29 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                             selectedDay: selectedDay,
                             selectedTime: selectedTime,
                             onSelectSlot: onSelectSlot,
-                            onEditEmailPressed: (span) async {
-                              if (span.id == null) return;
+                            onEdit: (span) async {
                               final rp = Provider.of<ReservationProvider>(context, listen: false);
                               final existing =
                                   rp.reservations.firstWhere((r) => r.id == span.id, orElse: () => rp.reservations.isNotEmpty ? rp.reservations.first : null as dynamic);
                               final initialEmail = (existing is dynamic && existing?.email is String) ? existing.email as String : '';
 
                               await showDialog(
-                                  context: context, builder: (ctx) => EditEmailDialog(initialEmail: initialEmail, onSave: (value) => rp.updateEmailRemote(UpdateReservation(id: span.id!, sendMail: true, email: value))));
+                                  context: context,
+                                  builder: (ctx) => EditEmailDialog(
+                                      initialEmail: initialEmail,
+                                      onSave: (value) => rp.updateReservationRemote(UpdateReservation(id: span.id!, sendMail: true, email: value, approved: false)),
+                                      onConfirm: (value) => rp.updateReservationRemote(UpdateReservation(id: span.id!, sendMail: false, approved: true))));
                             },
-                            onSpanIconPressed: (span) async {
-                              if (span.id == null) return;
-                              final makeApproved = !span.approved;
+                            onCheck: (span) async {
                               try {
-                                await Provider.of<ReservationProvider>(context, listen: false).setApprovedRemote(span.id!, makeApproved);
+                                await Provider.of<ReservationProvider>(context, listen: false).updateReservationRemote(UpdateReservation(id: span.id, sendMail: true, approved: true));
                               } catch (e) {
                                 if (mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update approval: $e'), backgroundColor: Colors.red));
                                 }
                               }
                             },
-                            onDeleteIconPressed: (span) async {
-                              if (span.id == null) return;
+                            onDelete: (span) async {
                               _showConfirmDialog(context, 'Delete appointment', 'Are you sure you want to delete this appointment?', () async {
                                 try {
                                   await Provider.of<ReservationProvider>(context, listen: false).deleteReservationRemote(span.id!);

@@ -46,7 +46,7 @@ class Reservation {
     }
 
     return Reservation(
-      id: parseId(json['id']) ?? parseId(json['event_id']),
+      id: parseId(json['id']),
       name: (json['name'] ?? '') as String,
       email: (json['email'] ?? '') as String,
       phone: (json['phone'] ?? '') as String,

@@ -161,9 +161,9 @@ class WeekTimeGrid extends StatelessWidget {
   final ValueChanged<DateTime> onSelectSlot; // returns exact DateTime for the slot
 
   // New: simple icon action on each reservation span (no popup/menu).
-  final void Function(ReservationSpan span)? onSpanIconPressed;
-  final void Function(ReservationSpan span)? onDeleteIconPressed;
-  final void Function(ReservationSpan span)? onEditEmailPressed;
+  final void Function(ReservationSpan span)? onCheck;
+  final void Function(ReservationSpan span)? onDelete;
+  final void Function(ReservationSpan span)? onEdit;
 
   // Working hours
   final TimeOfDay dayStart;
@@ -191,9 +191,9 @@ class WeekTimeGrid extends StatelessWidget {
       required this.selectedDay,
       required this.selectedTime,
       required this.onSelectSlot,
-      required this.onEditEmailPressed,
-      this.onSpanIconPressed,
-      this.onDeleteIconPressed,
+      required this.onEdit,
+      this.onCheck,
+      this.onDelete,
       required this.dayStart,
       required this.dayEnd,
       required this.slotMinutes,
@@ -291,15 +291,17 @@ class WeekTimeGrid extends StatelessWidget {
 
         double rowHeight = (availableHeight / times.length).clamp(minRowHeight, maxRowHeight);
         double totalHeight = times.length * rowHeight;
-
+        Color bg;
+        Color fg = Colors.black;
+        Color borderColor = Colors.transparent;
+        const double timeColWidth = 40.0;
         Widget buildRow(TimeOfDay t) {
           return SizedBox(
               height: rowHeight,
               child: Row(children: [
                 SizedBox(
-                    width: 72,
-                    child: Align(
-                        alignment: Alignment.centerLeft, child: Text(DateFormat('HH:mm').format(DateTime(0, 1, 1, t.hour, t.minute)), style: TextStyle(color: Colors.grey[700])))),
+                    width: timeColWidth,
+                    child: Align(alignment: Alignment.topLeft, child: Text(DateFormat('HH:mm').format(DateTime(0, 1, 1, t.hour, t.minute)), style: TextStyle(fontSize: 11)))),
                 for (final d in days)
                   Expanded(child: Builder(builder: (context) {
                     final slot = DateTime(d.year, d.month, d.day, t.hour, t.minute);
@@ -308,9 +310,6 @@ class WeekTimeGrid extends StatelessWidget {
                     final selected =
                         selectedDay != null && selectedTime != null && _sameDate(slot, selectedDay!) && selectedTime!.hour == t.hour && selectedTime!.minute == t.minute;
 
-                    Color bg;
-                    Color fg = Colors.black;
-                    Color borderColor = Colors.transparent;
                     if (selected) {
                       bg = Theme.of(context).colorScheme.primary;
                       fg = Colors.white;
@@ -395,7 +394,7 @@ class WeekTimeGrid extends StatelessWidget {
         }
 
         // Layout metrics for overlay
-        const double timeColWidth = 72.0;
+
         final double gridWidth = constraints.maxWidth - timeColWidth;
         final double dayWidth = gridWidth / 5.0;
 
@@ -420,6 +419,8 @@ class WeekTimeGrid extends StatelessWidget {
 
             const spanTextStyle =
                 const TextStyle(color: Colors.black, fontWeight: FontWeight.normal, fontSize: 12, shadows: [Shadow(offset: Offset(0, 1), blurRadius: 2, color: Colors.black26)]);
+            const ei = const EdgeInsets.all(2);
+            const bc = const BoxConstraints(minWidth: 28, minHeight: 28);
             blocks.add(Positioned(
                 top: top,
                 left: left,
@@ -448,30 +449,13 @@ class WeekTimeGrid extends StatelessWidget {
                       Positioned(
                           top: 0,
                           right: 0,
-                          child: Row(
-                            children: [
-                              if (!span.emailOk)
-                                IconButton(
-                                    padding: const EdgeInsets.all(2),
-                                    constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                                    iconSize: 18,
-                                    onPressed: onSpanIconPressed == null || span.id == null ? null : () => onEditEmailPressed!(span),
-                                    icon: Icon(span.approved ? Icons.email : Icons.check, color: Colors.white)),
-                              if (!span.approved)
-                                IconButton(
-                                    padding: const EdgeInsets.all(2),
-                                    constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                                    iconSize: 18,
-                                    onPressed: onSpanIconPressed == null || span.id == null ? null : () => onSpanIconPressed!(span),
-                                    icon: Icon(span.approved ? Icons.undo : Icons.check, color: Colors.white)),
-                              IconButton(
-                                  padding: const EdgeInsets.all(2),
-                                  constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                                  iconSize: 18,
-                                  onPressed: onDeleteIconPressed == null || span.id == null ? null : () => onDeleteIconPressed!(span),
-                                  icon: Icon(Icons.delete, color: Colors.white))
-                            ],
-                          ))
+                          child: Row(children: [
+                            if (!span.emailOk)
+                              IconButton(padding: ei, constraints: bc, onPressed: () => onEdit!(span), icon: const Icon(Icons.email, size: 16, color: Colors.white)),
+                            if (span.emailOk && !span.approved)
+                              IconButton(padding: ei, constraints: bc, onPressed: () => onCheck!(span), icon: const Icon(Icons.check, size: 16, color: Colors.white)),
+                            IconButton(padding: ei, constraints: bc, onPressed: () => onDelete!(span), icon: const Icon(Icons.delete, size: 16, color: Colors.white))
+                          ]))
                     ]))));
           }
           return blocks;

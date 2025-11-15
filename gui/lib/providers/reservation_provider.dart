@@ -17,8 +17,11 @@ class ReservationProvider with ChangeNotifier {
   int _filterMask = 0;
 
   int get filterMask => _filterMask;
+
   bool get filterInvalid => (_filterMask & 0x1) != 0;
+
   bool get filterUnconfirmed => (_filterMask & 0x2) != 0;
+
   bool get filterConfirmed => (_filterMask & 0x4) != 0;
 
   void _setFilterMask(int value) {
@@ -57,10 +60,13 @@ class ReservationProvider with ChangeNotifier {
   }
 
   DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
   DateTime _mondayOf(DateTime d) => _dateOnly(d).subtract(Duration(days: d.weekday - DateTime.monday));
 
   List<Reservation> get reservations => [..._reservations];
+
   bool get isLoading => _isLoading;
+
   String? get lastError => _lastError;
 
   List<Reservation> get pendingReservations {
@@ -164,27 +170,25 @@ class ReservationProvider with ChangeNotifier {
     }
   }
 
-  /// Update reservation email both remotely and locally.
-  Future<void> updateEmailRemote(UpdateReservation ur) async {
+  /// Update reservation both remotely and locally.
+  Future<void> updateReservationRemote(UpdateReservation ur) async {
     _setError(null);
     final index = _reservations.indexWhere((r) => r.id != null && r.id == ur.id);
     if (index == -1) throw Exception('Reservation not found');
     try {
       await ApiClient.instance.updateReservation(ur);
       final r = _reservations[index];
-      // Replace with a new instance containing updated email
       _reservations[index] = Reservation(
-        id: r.id,
-        name: r.name,
-        email: ur.email!,
-        phone: r.phone,
-        registration: r.registration,
-        long: r.long,
-        pending: r.pending,
-        confirmed: r.confirmed,
-        emailOk: r.emailOk,
-        date_time: r.date_time,
-      );
+          id: r.id,
+          name: r.name,
+          email: ur.email!,
+          phone: r.phone,
+          registration: r.registration,
+          long: r.long,
+          pending: r.pending,
+          confirmed: ur.approved,
+          emailOk: r.emailOk,
+          date_time: r.date_time);
       notifyListeners();
     } catch (e) {
       _setError(e.toString());
@@ -194,14 +198,11 @@ class ReservationProvider with ChangeNotifier {
 
   void rejectReservation(String id) {
     _reservations.removeWhere((r) => r.id != null && r.id == id);
+
+    //TODO execute delete on BE!!!
     notifyListeners();
   }
 
-  List<DateTime> getBookedDates() {
-    return _reservations.map((r) => DateTime(r.date_time.year, r.date_time.month, r.date_time.day)).toList();
-  }
-
-  // UI setters for screens
   void setFocusedDay(DateTime d) {
     focusedDay = d;
     notifyListeners();
@@ -210,12 +211,6 @@ class ReservationProvider with ChangeNotifier {
   void setSelectedSlot(DateTime slot) {
     selectedDay = DateTime(slot.year, slot.month, slot.day);
     selectedTime = TimeOfDay(hour: slot.hour, minute: slot.minute);
-    notifyListeners();
-  }
-
-  void clearSelectedSlot() {
-    selectedDay = null;
-    selectedTime = null;
     notifyListeners();
   }
 

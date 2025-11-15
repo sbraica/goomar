@@ -1,16 +1,16 @@
 class UpdateReservation {
   final String id;
   final bool sendMail;
-  final String? eventId;
+  final bool approved;
   final String? email;
 
-  UpdateReservation({required this.id, required this.sendMail, this.eventId, this.email});
+  UpdateReservation({required this.id, required this.sendMail, required this.approved, this.email});
 
   factory UpdateReservation.fromJson(Map<String, dynamic> json) {
-    return UpdateReservation(id: json['id'], sendMail: (json['sendMail'] == true), email: json['email'] as String?, eventId: json['email'] as String?);
+    return UpdateReservation(id: json['id'], sendMail: (json['sendMail'] == true), approved: (json['approved'] == true), email: json['email'] as String?);
   }
 
   Map<String, dynamic> toJson() {
-    return {'id': id, 'sendMail': sendMail, 'eventId': eventId, 'email': email};
+    return {'id': id, 'sendMail': sendMail, 'email': email, 'approved': approved};
   }
 }

@@ -89,7 +89,6 @@ public class EntryService implements IEntryService {
     public ReservationRest get(String uuid) {
         return ctx.select(ENTRIES.ID, ENTRIES.NAME, ENTRIES.DATE_TIME, ENTRIES.EMAIL, ENTRIES.PHONE, ENTRIES.REGISTRATION, ENTRIES.LONG, ENTRIES.EMAIL, ENTRIES.CONFIRMED, ENTRIES.EVENT_ID, ENTRIES.CONFIRMED)
                 .from(ENTRIES).where(ENTRIES.ID.eq(UUID.fromString(uuid))).fetchSingleInto(ReservationRest.class);
-
     }
 
     @Override
@@ -105,5 +104,4 @@ public class EntryService implements IEntryService {
         log.info(">>setEventId(id={}, eventId={})", id, eventId);
         ctx.update(ENTRIES).set(ENTRIES.EVENT_ID, eventId).where(ENTRIES.ID.eq(UUID.fromString(id))).execute();
     }
-
 }

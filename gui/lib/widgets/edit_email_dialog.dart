@@ -4,16 +4,17 @@ import 'package:provider/provider.dart';
 class EditEmailDialog extends StatelessWidget {
   final String initialEmail;
   final Future<void> Function(String) onSave;
+  final Future<void> Function(String) onConfirm;
 
-  const EditEmailDialog({Key? key, required this.initialEmail, required this.onSave}) : super(key: key);
+  const EditEmailDialog({Key? key, required this.initialEmail, required this.onSave, required this.onConfirm}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<EditEmailModel>(
-        create: (_) => EditEmailModel(initialEmail, onSave),
+        create: (_) => EditEmailModel(initialEmail, onSave, onConfirm),
         child: Consumer<EditEmailModel>(
             builder: (context, model, _) => AlertDialog(
-                    constraints: BoxConstraints(minWidth: 600),
+                    constraints: const BoxConstraints(minWidth: 600),
                     title: const Text('Ručna rezervacija'),
                     content: Column(mainAxisSize: MainAxisSize.min, children: [
                       Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
@@ -40,14 +41,13 @@ class EditEmailDialog extends StatelessWidget {
                     ]),
                     actions: [
                       ElevatedButton(
-                        onPressed: model.saving
-                            ? null
-                            : () async {
-                                final ok = await model.save(context);
-                                if (ok && context.mounted) Navigator.of(context).pop();
-                              },
-                        child: const Text('Potvrdi rezervaciju bez e-maila'),
-                      ),
+                          onPressed: model.saving
+                              ? null
+                              : () async {
+                                  final ok = await model.save(context);
+                                  if (ok && context.mounted) Navigator.of(context).pop();
+                                },
+                          child: const Text('Potvrdi rezervaciju bez e-maila')),
                       TextButton(onPressed: model.saving ? null : () => Navigator.of(context).pop(), child: const Text('Izlaz'))
                     ])));
   }
@@ -55,12 +55,13 @@ class EditEmailDialog extends StatelessWidget {
 
 class EditEmailModel extends ChangeNotifier {
   final Future<void> Function(String) onSave;
+  final Future<void> Function(String) onConfirm;
   final TextEditingController controller;
   String? errorText;
   bool saving = false;
   static final RegExp _emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
-  EditEmailModel(String initialEmail, this.onSave) : controller = TextEditingController(text: initialEmail) {
+  EditEmailModel(String initialEmail, this.onSave, this.onConfirm) : controller = TextEditingController(text: initialEmail) {
     controller.addListener(_validateLive);
     _validateLive();
   }

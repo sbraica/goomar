@@ -319,12 +319,13 @@ components:
     UpdateReservationRest:
       required:
         - sendMail
+        - confirmed
       properties:
         sendMail:
           type: boolean
+        confirmed:
+          type: boolean
         id:
-          type: string
-        eventId:
           type: string
         email:
           type: string
