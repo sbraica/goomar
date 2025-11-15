@@ -6,7 +6,9 @@ import org.postgresql.util.PSQLException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -35,6 +37,26 @@ public class TokenControllerAdvice {
     public static final int APP_ERR_CODE_INVALID_CREDENTIALS = 2001;
     private static final String APP_PACKAGE = "com.goomar";
 
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleValidationException(MethodArgumentNotValidException ex) {
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("error", "Validation failed");
+
+        List<Map<String, String>> fieldErrors = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(err -> Map.of(
+                        "field", err.getField(),
+                        "message", err.getDefaultMessage(),
+                        "rejectedValue", String.valueOf(err.getRejectedValue())
+                ))
+                .toList();
+
+        body.put("details", fieldErrors);
+
+        return ResponseEntity.badRequest().body(body);
+    }
 
     @ExceptionHandler(value = BadCredentialsException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
