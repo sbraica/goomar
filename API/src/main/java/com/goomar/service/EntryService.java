@@ -80,7 +80,7 @@ public class EntryService implements IEntryService {
     @Override
     @Transactional
     public ReservationRest deleteReservation(String id) {
-        log.info(">>deleteAppoitnment(id={})", id);
+        log.info(">>deleteReservation(id={})", id);
         return ctx.deleteFrom(ENTRIES).where(ENTRIES.ID.eq(UUID.fromString(id))).returning().fetchOneInto(ReservationRest.class);
     }
 

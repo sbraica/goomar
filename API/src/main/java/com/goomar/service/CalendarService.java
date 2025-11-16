@@ -56,12 +56,12 @@ public class CalendarService implements ICalendarService {
         }
     }
 
-    private <T> T executeWithRetry(java.util.concurrent.Callable<T> call, String op) throws Exception {
+    private <T> T executeWithRetry(java.util.concurrent.Callable<T> call) throws Exception {
         try {
             return call.call();
         } catch (GoogleJsonResponseException e) {
             if (e.getStatusCode() == 401) {
-                log.warn("401 from Calendar API during {}. Attempting token refresh...", op);
+                log.warn("401 from Calendar API during {}. Attempting token refresh...");
                 if (credential != null && credential.refreshToken()) {
                     return call.call();
                 }
@@ -91,7 +91,7 @@ public class CalendarService implements ICalendarService {
         Event event = new Event().setSummary(rr.getName()).setDescription(rr.getPhone()).setColorId("5").setStart(new EventDateTime().setDateTime(new DateTime(startZoned.toInstant().toEpochMilli()))
                         .setTimeZone(zone.getId())).setEnd(new EventDateTime().setDateTime(new DateTime(endZoned.toInstant().toEpochMilli())).setTimeZone(zone.getId()));
 
-        Event created = executeWithRetry(() -> calendarClient.events().insert(calendarId, event).execute(), "events.insert");
+        Event created = executeWithRetry(() -> calendarClient.events().insert(calendarId, event).execute());
         log.info("📅 Event created: {} ({} at {})", created.getId(), created.getSummary(), created.getStart());
         return created.getId();
     }
@@ -109,7 +109,7 @@ public class CalendarService implements ICalendarService {
         DateTime tMax = new DateTime(endOfDay.toInstant().toEpochMilli());
 
         List<Event> events = executeWithRetry(() -> calendarClient.events().list(calendarId).setTimeMin(tMin).setTimeMax(tMax)
-                .setOrderBy("startTime").setShowDeleted(false).setSingleEvents(true).execute(),"events.list").getItems();
+                .setOrderBy("startTime").setShowDeleted(false).setSingleEvents(true).execute()).getItems();
 
         List<TimePeriod> busyPeriods = new ArrayList<>();
         for (Event event : events) {
@@ -156,9 +156,9 @@ public class CalendarService implements ICalendarService {
     public void confirmAppointment(String eventId) {
         ensureCalendarReady();
         log.info("confirmAppointment(eventId={})", eventId);
-        Event event = executeWithRetry(() -> calendarClient.events().get(calendarId, eventId).execute(), "events.get");
-        event.setStatus("confirmed").setColorId("1");
-        executeWithRetry(() -> calendarClient.events().update(calendarId, eventId, event).execute(), "events.update");
+        Event event = executeWithRetry(() -> calendarClient.events().get(calendarId, eventId).execute());
+        event.setStatus("confirmed").setColorId("10");
+        executeWithRetry(() -> calendarClient.events().update(calendarId, event.getId(), event).execute());
     }
 
     @SneakyThrows
@@ -166,6 +166,6 @@ public class CalendarService implements ICalendarService {
     public void deleteAppointment(String eventId) {
         ensureCalendarReady();
         log.info("deleteAppointment(eventId={})", eventId);
-        executeWithRetry(() -> calendarClient.events().delete(calendarId, eventId).execute(), "events.delete");
+        executeWithRetry(() -> calendarClient.events().delete(calendarId, eventId).execute());
     }
 }
