@@ -32,7 +32,7 @@ public class ReservationController implements ReservationsApi {
 
     @Override
     public ResponseEntity<Void> createReservation(ReservationRest rr) {
-        log.info("createReservation(id={})", rr.getId());
+        log.info("createReservation(rr={})", rr);
         UUID uuid = entryService.insertReservation(rr);
         emailService.sendReservation(rr, uuid);
         return new ResponseEntity(uuid, HttpStatus.OK);
@@ -41,7 +41,7 @@ public class ReservationController implements ReservationsApi {
     @Override
     public ResponseEntity<String> confirmEmailOK(String uuid) {
         log.info("confirmEmailOK(uuid={})", uuid);
-        String event_id = calendarService.insertAppoitnment(entryService.get(uuid));
+        String event_id = calendarService.insertAppointment(entryService.get(uuid));
         entryService.setEventId(uuid, event_id);
         return new ResponseEntity(entryService.confirmEmailOK(uuid), HttpStatus.OK);
     }
@@ -50,15 +50,18 @@ public class ReservationController implements ReservationsApi {
     public ResponseEntity<Void> updateReservation(String authorization, UpdateReservationRest urr) {
         log.info("updateAppointment(urr={})", urr);
         if (urr.getApproved()) {
+            log.info("Regular approvement, id = {}", urr.getId());
             ReservationRest rr = entryService.confirmReservation(urr.getId());
             calendarService.confirmAppointment(rr.getEventId());
             emailService.sendConfirmation(rr);
         } else {
             ReservationRest rr = entryService.setEmail(urr);
             if (urr.getSendMail()) {
+                log.info("Invalid e-mail, send new one, id = {}", urr.getId());
                 emailService.sendReservation(rr, rr.getId());
             } else {
-                String event_id = calendarService.insertAppoitnment(entryService.get(urr.getId()));
+                log.info("Invalid e-mail, ignore, approve, id = {}", urr.getId());
+                String event_id = calendarService.insertAppointment(entryService.get(urr.getId()));
                 entryService.setEventId(urr.getId(), event_id);
             }
         }

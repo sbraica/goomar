@@ -80,10 +80,10 @@ public class CalendarService implements ICalendarService {
 
     @SneakyThrows
     @Override
-    public String insertAppoitnment(ReservationRest rr) {
+    public String insertAppointment(ReservationRest rr) {
         ensureCalendarReady();
 
-        log.info("insertReservation(rr={})", rr);
+        log.info("insertAppointment(rr={})", rr);
 
         ZonedDateTime startZoned = rr.getDateTime().atZone(zone);
         ZonedDateTime endZoned = startZoned.plusMinutes(rr.getLong() ? 30 : 15);

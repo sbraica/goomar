@@ -25,7 +25,7 @@ public class EntryService implements IEntryService {
 
     @Override
     public UUID insertReservation(ReservationRest rr) {
-        log.info(">>insertReservation(id={})", rr.getId());
+        log.info(">>insertReservation(id={})", rr);
         return ctx.insertInto(ENTRIES, ENTRIES.DATE_TIME, ENTRIES.NAME, ENTRIES.PHONE, ENTRIES.EMAIL, ENTRIES.REGISTRATION, ENTRIES.LONG, ENTRIES.CONFIRMED, ENTRIES.EMAIL_OK)
                 .values(rr.getDateTime(), rr.getName(), rr.getPhone(), rr.getEmail(), rr.getRegistration(), rr.getLong(), false, false).returningResult(ENTRIES.ID).fetchOne().value1();
     }
