@@ -41,20 +41,19 @@ public class EntryService implements IEntryService {
         Condition dateRange = ENTRIES.DATE_TIME.ge(startOfWeek).and(ENTRIES.DATE_TIME.lt(endOfWeek));
 
         Condition c = DSL.falseCondition();
-        if ((filter & 0b1) == 0b1){
-            c = c.or( ENTRIES.EMAIL_OK.isFalse());
+        if ((filter & 0b1) == 0b1) {
+            c = c.or(ENTRIES.EMAIL_OK.isFalse());
+        } else {
+            c = c.or(ENTRIES.EMAIL_OK.isTrue());
         }
-        if ((filter & 0b01) != 0b01){
-            c = c.or( ENTRIES.EMAIL_OK.isTrue());
+        if ((filter & 0b10) != 0b10) {
+            c = c.or(ENTRIES.CONFIRMED.isFalse());
         }
-        if ((filter & 0b10) != 0b10){
-            c = c.or( ENTRIES.CONFIRMED.isFalse());
-        }
-        if ((filter & 0b10) == 0b100){
-            c = c.or( ENTRIES.CONFIRMED.isTrue());
+        if ((filter & 0b10) == 0b100) {
+            c = c.or(ENTRIES.CONFIRMED.isTrue());
         }
 
-        log.info("filter conditions: c={}, c2={}, c3={}, c4={}", c);
+        log.info("filter conditions: c={}", c);
         return ctx.select(ENTRIES.ID, ENTRIES.NAME, ENTRIES.DATE_TIME, ENTRIES.EMAIL, ENTRIES.PHONE, ENTRIES.REGISTRATION,
                         ENTRIES.LONG, ENTRIES.EMAIL, ENTRIES.CONFIRMED, ENTRIES.EVENT_ID, ENTRIES.CONFIRMED, ENTRIES.EMAIL_OK)
                 .from(ENTRIES)
