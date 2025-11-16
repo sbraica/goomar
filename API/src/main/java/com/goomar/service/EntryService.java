@@ -42,15 +42,15 @@ public class EntryService implements IEntryService {
 
         Condition c = DSL.falseCondition();
         if ((filter & 0b1) == 0b1){
-            c = c.or( ENTRIES.EMAIL_OK.isTrue());
+            c = c.or( ENTRIES.EMAIL_OK.isFalse());
         }
         if ((filter & 0b01) != 0b01){
-            c = c.or( ENTRIES.EMAIL_OK.isFalse());
+            c = c.or( ENTRIES.EMAIL_OK.isTrue());
         }
         if ((filter & 0b10) != 0b10){
             c = c.or( ENTRIES.CONFIRMED.isFalse());
         }
-        if ((filter & 0b10) != 0b100){
+        if ((filter & 0b10) == 0b100){
             c = c.or( ENTRIES.CONFIRMED.isTrue());
         }
 
