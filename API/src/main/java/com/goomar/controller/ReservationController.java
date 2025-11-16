@@ -69,7 +69,9 @@ public class ReservationController implements ReservationsApi {
     public ResponseEntity<Void> deleteAppointment(String authorization, String id) {
         log.info("deleteAppointment(id={})", id);
         ReservationRest rr = entryService.deleteReservation(id);
-        calendarService.deleteAppointment(rr.getEventId());
+        if (rr.getEventId()!=null){
+            calendarService.deleteAppointment(rr.getEventId());
+        }
         emailService.sendDelete(rr);
         return new ResponseEntity(HttpStatus.NO_CONTENT);
     }
