@@ -11,10 +11,7 @@ class ReservationProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _lastError;
 
-  // UI state moved to provider
   DateTime focusedDay = DateTime.now();
-  //DateTime? selectedDay;
-  //TimeOfDay? selectedTime;
 
   int _filterMask = 0;
 
@@ -50,13 +47,13 @@ class ReservationProvider with ChangeNotifier {
   }
 
   void setFilterUnconfirmed(bool v) {
-    final bit = 0x2;
+    const bit = 0x2;
     final next = v ? (_filterMask | bit) : (_filterMask & ~bit);
     _setFilterMask(next);
   }
 
   void setFilterConfirmed(bool v) {
-    final bit = 0x4;
+    const bit = 0x4;
     final next = v ? (_filterMask | bit) : (_filterMask & ~bit);
     _setFilterMask(next);
   }
@@ -157,26 +154,29 @@ class ReservationProvider with ChangeNotifier {
     if (index == -1) throw Exception('Reservation not found');
     try {
       await ApiClient.instance.updateReservation(ur);
-      final r = _reservations[index];
-      _reservations[index] = Reservation(
-          id: r.id,
-          name: r.name,
-          email: ur.email ?? r.email,
-          phone: r.phone,
-          registration: r.registration,
-          long: r.long,
-          pending: r.pending,
-          confirmed: ur.approved,
-          emailOk: r.emailOk,
-          date_time: r.date_time);
-      loadReservations(weekStart: focusedDay);
+      if (_filterMask & 0x2 != 0 && !ur.approved) {
+        _reservations.removeAt(index);
+      } else {
+        final r = _reservations[index];
+        _reservations[index] = Reservation(
+            id: r.id,
+            name: r.name,
+            email: ur.email ?? r.email,
+            phone: r.phone,
+            registration: r.registration,
+            long: r.long,
+            pending: r.pending,
+            confirmed: ur.approved,
+            emailOk: r.emailOk,
+            date_time: r.date_time);
+
+      }
       notifyListeners();
     } catch (e) {
       _setError(e.toString());
       rethrow;
     }
   }
-
 
   void setFocusedDay(DateTime d) {
     focusedDay = d;

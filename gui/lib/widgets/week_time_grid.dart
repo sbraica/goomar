@@ -71,7 +71,6 @@ class _WeekGridPainter extends CustomPainter {
       }
     }
 
-    // Vertical divider for time column
     final Paint minorLine = Paint()
       ..color = minorLineColor
       ..strokeWidth = minorLineWidth;
@@ -129,7 +128,7 @@ class _WeekGridPainter extends CustomPainter {
 }
 
 class ReservationSpan {
-  final String id; // optional reservation id (UUID) to map actions
+  final String id;
   final DateTime start;
   final bool long;
   final String label;
@@ -137,47 +136,29 @@ class ReservationSpan {
   final String phone;
   final bool approved;
 
-  // Whether backend marked email as OK/valid. Used for coloring when filters are applied.
   final bool emailOk;
 
-  const ReservationSpan({
-    required this.id,
-    required this.start,
-    required this.long,
-    required this.label,
-    required this.phone,
-    this.approved = false,
-    this.emailOk = true,
-  });
+  const ReservationSpan({required this.id, required this.start, required this.long, required this.label, required this.phone, this.approved = false, this.emailOk = true});
 }
 
 class WeekTimeGrid extends StatelessWidget {
-  final DateTime weekStart; // Monday of the shown week (date-only)
+  final DateTime weekStart;
   final VoidCallback? onPrevWeek;
   final VoidCallback? onNextWeek;
 
-  //final DateTime? selectedDay;
-  //final TimeOfDay? selectedTime;
-  //final ValueChanged<DateTime> onSelectSlot; // returns exact DateTime for the slot
-
-  // New: simple icon action on each reservation span (no popup/menu).
   final void Function(ReservationSpan span)? onCheck;
   final void Function(ReservationSpan span)? onDelete;
   final void Function(ReservationSpan span)? onEdit;
 
-  // Working hours
   final TimeOfDay dayStart;
   final TimeOfDay dayEnd;
   final int slotMinutes; // e.g., 15 or 30
 
-  // Optional lunch break to skip
   final TimeOfDay? lunchStart;
   final TimeOfDay? lunchEnd;
 
-  // Existing occupied slots (start times) to mark/disable
   final Set<DateTime> occupied;
 
-  // Limit navigation (inclusive)
   final DateTime firstDay;
   final DateTime lastDay;
 
@@ -188,9 +169,6 @@ class WeekTimeGrid extends StatelessWidget {
       required this.weekStart,
       required this.onPrevWeek,
       required this.onNextWeek,
-      //required this.selectedDay,
-      //required this.selectedTime,
-      //required this.onSelectSlot,
       required this.onEdit,
       this.onCheck,
       this.onDelete,
@@ -206,8 +184,6 @@ class WeekTimeGrid extends StatelessWidget {
       : super(key: key);
 
   DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
-
-  bool _sameDate(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 
   bool _isWithinBounds(DateTime day) {
     final d = _dateOnly(day);
@@ -238,36 +214,17 @@ class WeekTimeGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Build week days (Mon..Fri)
     final days = List<DateTime>.generate(5, (i) => weekStart.add(Duration(days: i)));
-
-    // Header title like "28 Oct – 1 Nov 2025"
-    String headerTitle() {
-      final startFmt = DateFormat('d MMM');
-      final endFmt = DateFormat('d MMM y');
-      final startStr = startFmt.format(days.first);
-      final endStr = endFmt.format(days.last);
-      return '$startStr – $endStr';
-    }
 
     final times = _buildTimes();
 
-    // Build occupied lookup normalized to minute precision
-    Set<String> occKeys = occupied.map((d) => DateTime(d.year, d.month, d.day, d.hour, d.minute)).map((d) => d.toIso8601String()).toSet();
-
-    String keyFor(DateTime d) => DateTime(d.year, d.month, d.day, d.hour, d.minute).toIso8601String();
-
-    bool isPast(DateTime slot) => slot.isBefore(DateTime.now());
-
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      // Header with navigation
       Row(children: [
         IconButton(icon: const Icon(Icons.chevron_left), onPressed: onPrevWeek, tooltip: 'Previous week'),
-        Expanded(child: Text(headerTitle(), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold))),
+        Expanded(child: Text('${DateFormat('d. MMMM').format(days.first)} – ${DateFormat('d. MMMM y.').format(days.last)}', textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold))),
         IconButton(icon: const Icon(Icons.chevron_right), onPressed: onNextWeek, tooltip: 'Next week')
       ]),
       const SizedBox(height: 8),
-      // Day headers
       Row(children: [
         const SizedBox(width: 72), // time column width
         for (final d in days)
@@ -279,67 +236,22 @@ class WeekTimeGrid extends StatelessWidget {
           ]))
       ]),
       const SizedBox(height: 8),
-      // Grid (fills remaining space; scrolls internally only if needed)
       Expanded(child: LayoutBuilder(builder: (context, constraints) {
-        // Available vertical space for the rows area
         final double availableHeight = constraints.maxHeight;
-
-        // Adaptive row height based on width and available height
         final bool isNarrow = constraints.maxWidth < 600;
         final double minRowHeight = isNarrow ? 24.0 : 30.0;
         final double maxRowHeight = isNarrow ? 32.0 : 38.0;
 
         double rowHeight = (availableHeight / times.length).clamp(minRowHeight, maxRowHeight);
         double totalHeight = times.length * rowHeight;
-        Color bg;
-        Color fg = Colors.black;
-        Color borderColor = Colors.transparent;
         const double timeColWidth = 40.0;
-        Widget buildRow(TimeOfDay t) {
-          return SizedBox(
-              height: rowHeight,
-              child: Row(children: [
-                SizedBox(
-                    width: timeColWidth,
-                    child: Align(alignment: Alignment.topLeft, child: Text(DateFormat('HH:mm').format(DateTime(0, 1, 1, t.hour, t.minute)), style: TextStyle(fontSize: 11)))),
-                for (final d in days)
-                  Expanded(child: Builder(builder: (context) {
-                    final slot = DateTime(d.year, d.month, d.day, t.hour, t.minute);
-                    final disabled = !_isWithinBounds(d) || isPast(slot);
-                    final occupiedKey = occKeys.contains(keyFor(slot));
-                    //final selected =
-                    //    selectedDay != null && selectedTime != null && _sameDate(slot, selectedDay!) && selectedTime!.hour == t.hour && selectedTime!.minute == t.minute;
 
-                    if (disabled) {
-                      // Unavailable cells slightly darker gray
-                      bg = Colors.grey.shade200;
-                      fg = Colors.grey.shade500;
-                      borderColor = Colors.transparent; // grid painter will show lines
-                    } else if (occupiedKey) {
-                      // Occupied cells use the same uniform background; overlay spans indicate reservations.
-                      bg = Colors.grey.shade100;
-                      fg = Colors.grey.shade800;
-                    } else {
-                      // Available cells also use the same uniform background (light gray)
-                      bg = Colors.grey.shade100;
-                      fg = Colors.grey.shade800;
-                    }
-
-                    return Padding(
-                        padding: const EdgeInsets.all(2.0),
-                        child: Container(decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: borderColor))));
-                  }))
-              ]));
-        }
-
-        // Compute overlay positions for reservation spans (support off-grid start times)
         int toMinutes(TimeOfDay t) => t.hour * 60 + t.minute;
         int dayStartMin = toMinutes(dayStart);
         int dayEndMin = toMinutes(dayEnd);
         final int? lunchS = lunchStart != null ? toMinutes(lunchStart!) : null;
         final int? lunchE = lunchEnd != null ? toMinutes(lunchEnd!) : null;
 
-        // Map a DateTime within the working day (excluding lunch) to a fractional row index
         double? fractionalRowIndex(DateTime dt) {
           int m = dt.hour * 60 + dt.minute;
           // Clip to working hours
@@ -393,7 +305,6 @@ class WeekTimeGrid extends StatelessWidget {
         List<Widget> buildOverlayBlocks() {
           final List<Widget> blocks = [];
           for (final span in spans) {
-            // Only render spans that fall within the visible Mon–Fri range
             final d = DateTime(span.start.year, span.start.month, span.start.day);
             final dayIndex = d.difference(weekStart).inDays;
             if (dayIndex < 0 || dayIndex > 4) continue;
@@ -409,10 +320,9 @@ class WeekTimeGrid extends StatelessWidget {
             final height = rows * rowHeight - 4.0;
             final width = dayWidth - 4.0;
 
-            const spanTextStyle =
-                const TextStyle(color: Colors.black, fontWeight: FontWeight.normal, fontSize: 12, shadows: [Shadow(offset: Offset(0, 1), blurRadius: 2, color: Colors.black26)]);
-            const ei = const EdgeInsets.all(2);
-            const bc = const BoxConstraints(minWidth: 28, minHeight: 28);
+            const spanTextStyle = TextStyle(fontSize: 12, shadows: [Shadow(offset: Offset(0, 1), blurRadius: 2, color: Colors.black26)]);
+            const ei = EdgeInsets.all(2);
+            const bc = BoxConstraints(minWidth: 28, minHeight: 28);
             blocks.add(Positioned(
                 top: top,
                 left: left,
@@ -427,7 +337,6 @@ class WeekTimeGrid extends StatelessWidget {
                       if ((span.label != null && span.label!.isNotEmpty) || (span.phone != null && span.phone!.isNotEmpty))
                         Center(
                             child: Padding(
-                                // leave space so it doesn't collide with the top-right icon
                                 padding: const EdgeInsets.only(right: 28.0, left: 6.0),
                                 child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.center, children: [
                                   if (span.label != null && span.label!.isNotEmpty)
@@ -463,7 +372,6 @@ class WeekTimeGrid extends StatelessWidget {
 
         final theme = Theme.of(context);
         final bool isDark = theme.brightness == Brightness.dark;
-        // Use no background tinting/striping: all cells will have the same light gray fill.
         const Color bandOdd = Colors.transparent;
         const Color bandEven = Colors.transparent;
         const Color todayTint = Colors.transparent;
@@ -496,11 +404,7 @@ class WeekTimeGrid extends StatelessWidget {
                     lunchLineColor: Colors.red,
                     lunchLineWidth: 2.0)));
 
-        final overlay = Stack(children: [
-          Positioned.fill(child: gridPaint),
-          Positioned.fill(child: Column(children: [for (final t in times) buildRow(t)])),
-          ...buildOverlayBlocks()
-        ]);
+        final overlay = Stack(children: [Positioned.fill(child: gridPaint), ...buildOverlayBlocks()]);
 
         if (totalHeight > availableHeight) {
           return SingleChildScrollView(padding: EdgeInsets.zero, child: SizedBox(height: totalHeight, width: constraints.maxWidth, child: overlay));

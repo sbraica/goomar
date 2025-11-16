@@ -209,9 +209,6 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                                 }
                               });
                             },
-                            //selectedDay: selectedDay,
-                            //selectedTime: selectedTime,
-                            //onSelectSlot: onSelectSlot,
                             onEdit: (span) async {
                               final rp = Provider.of<ReservationProvider>(context, listen: false);
                               final existing =
