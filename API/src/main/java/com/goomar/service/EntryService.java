@@ -51,7 +51,7 @@ public class EntryService implements IEntryService {
             c = c.or( ENTRIES.CONFIRMED.isFalse());
         }
         if ((filter & 0b10) != 0b10){
-            c = c.or( ENTRIES.EMAIL_OK.isTrue());
+            c = c.or( ENTRIES.CONFIRMED.isTrue());
         }
 
         log.info("filter conditions: c={}, c2={}, c3={}, c4={}", c);
