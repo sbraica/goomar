@@ -134,7 +134,7 @@ public class GmailService implements IGmailService {
         Message message = new Message().setRaw(encodedEmail);
 
         Message sent = executeWithRetry(() -> gmail.users().messages().send("me", message).execute(), "gmail.users.messages.send");
-        log.info("📧 Email sent to={} subject={} id={}", to, subject, sent.getId());
+        log.info("📧  Email sent to={} subject={}", to, subject);
     }
 
     private synchronized void ensureGmailReady() throws Exception {
@@ -145,9 +145,9 @@ public class GmailService implements IGmailService {
 
         if (credential.getExpiresInSeconds() != null && credential.getExpiresInSeconds() < 60) {
             if (credential.refreshToken()) {
-                log.info("🔄 Gmail access token refreshed successfully.");
+                log.info("🔄  Gmail access token refreshed successfully.");
             } else {
-                log.warn("⚠️ Gmail token refresh failed. User reauthorization may be required.");
+                log.warn("⚠️  Gmail token refresh failed. User reauthorization may be required.");
             }
         }
     }

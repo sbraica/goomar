@@ -11,10 +11,8 @@ class _WeekGridPainter extends CustomPainter {
 
   // Visual enhancements
   final int slotMinutes;
-  final int? todayIndex; // 0..dayCount-1 for Mon..Fri, or null if not in view
   final Color bandColorOdd; // subtle horizontal striping
   final Color bandColorEven;
-  final Color todayTint; // soft background tint for today's column
   final Color hourLineColor;
   final Color minorLineColor;
   final double hourLineWidth;
@@ -33,10 +31,8 @@ class _WeekGridPainter extends CustomPainter {
     required this.dayCount,
     required this.dayWidth,
     required this.slotMinutes,
-    required this.todayIndex,
     required this.bandColorOdd,
     required this.bandColorEven,
-    required this.todayTint,
     required this.hourLineColor,
     required this.minorLineColor,
     required this.hourLineWidth,
@@ -51,14 +47,6 @@ class _WeekGridPainter extends CustomPainter {
     final double left = timeColWidth;
     final double right = timeColWidth + dayCount * dayWidth;
     final double height = rows * rowHeight;
-
-    // Today column background tint (under everything in the grid area)
-    if (todayIndex != null && todayIndex! >= 0 && todayIndex! < dayCount) {
-      final double x0 = left + todayIndex! * dayWidth;
-      final Rect todayRect = Rect.fromLTWH(x0, 0, dayWidth, height);
-      final Paint todayPaint = Paint()..color = todayTint;
-      canvas.drawRect(todayRect, todayPaint);
-    }
 
     // Alternating row bands for readability (skip the time column)
     for (int r = 0; r < rows; r++) {
@@ -113,10 +101,8 @@ class _WeekGridPainter extends CustomPainter {
         dayCount != old.dayCount ||
         dayWidth != old.dayWidth ||
         slotMinutes != old.slotMinutes ||
-        todayIndex != old.todayIndex ||
         bandColorOdd != old.bandColorOdd ||
         bandColorEven != old.bandColorEven ||
-        todayTint != old.todayTint ||
         hourLineColor != old.hourLineColor ||
         minorLineColor != old.minorLineColor ||
         hourLineWidth != old.hourLineWidth ||
@@ -218,10 +204,19 @@ class WeekTimeGrid extends StatelessWidget {
 
     final times = _buildTimes();
 
+    // Build occupied lookup normalized to minute precision
+    Set<String> occKeys = occupied.map((d) => DateTime(d.year, d.month, d.day, d.hour, d.minute)).map((d) => d.toIso8601String()).toSet();
+
+    String keyFor(DateTime d) => DateTime(d.year, d.month, d.day, d.hour, d.minute).toIso8601String();
+
+    bool isPast(DateTime slot) => slot.isBefore(DateTime.now());
+
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Row(children: [
         IconButton(icon: const Icon(Icons.chevron_left), onPressed: onPrevWeek, tooltip: 'Previous week'),
-        Expanded(child: Text('${DateFormat('d. MMMM').format(days.first)} – ${DateFormat('d. MMMM y.').format(days.last)}', textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold))),
+        Expanded(
+            child: Text('${DateFormat('d. MMMM').format(days.first)} – ${DateFormat('d. MMMM y.').format(days.last)}',
+                textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold))),
         IconButton(icon: const Icon(Icons.chevron_right), onPressed: onNextWeek, tooltip: 'Next week')
       ]),
       const SizedBox(height: 8),
@@ -244,8 +239,17 @@ class WeekTimeGrid extends StatelessWidget {
 
         double rowHeight = (availableHeight / times.length).clamp(minRowHeight, maxRowHeight);
         double totalHeight = times.length * rowHeight;
-        const double timeColWidth = 40.0;
+        const double tcw = 40.0;
+        Widget buildRow(TimeOfDay t) {
+          var dtf = DateFormat('HH:mm');
+          return SizedBox(
+              height: rowHeight,
+              child: Row(children: [
+                SizedBox(width: tcw, child: Align(alignment: Alignment.topLeft, child: Text(dtf.format(DateTime(0, 1, 1, t.hour, t.minute)), style: TextStyle(fontSize: 11))))
+              ]));
+        }
 
+        // Compute overlay positions for reservation spans (support off-grid start times)
         int toMinutes(TimeOfDay t) => t.hour * 60 + t.minute;
         int dayStartMin = toMinutes(dayStart);
         int dayEndMin = toMinutes(dayEnd);
@@ -299,7 +303,7 @@ class WeekTimeGrid extends StatelessWidget {
 
         // Layout metrics for overlay
 
-        final double gridWidth = constraints.maxWidth - timeColWidth;
+        final double gridWidth = constraints.maxWidth - tcw;
         final double dayWidth = gridWidth / 5.0;
 
         List<Widget> buildOverlayBlocks() {
@@ -316,7 +320,7 @@ class WeekTimeGrid extends StatelessWidget {
             if (rows <= 0) continue;
 
             final top = idx * rowHeight + 2.0;
-            final left = timeColWidth + dayIndex * dayWidth + 2.0;
+            final left = tcw + dayIndex * dayWidth + 2.0;
             final height = rows * rowHeight - 4.0;
             final width = dayWidth - 4.0;
 
@@ -362,19 +366,10 @@ class WeekTimeGrid extends StatelessWidget {
           return blocks;
         }
 
-        // Background grid painter (draw lines under cells/spans)
-        final DateTime now = DateTime.now();
-        final DateTime todayOnly = DateTime(now.year, now.month, now.day);
-        final int? todayIndex = (() {
-          final int idx = todayOnly.difference(weekStart).inDays;
-          return (idx >= 0 && idx < 5) ? idx : null;
-        })();
-
         final theme = Theme.of(context);
         final bool isDark = theme.brightness == Brightness.dark;
         const Color bandOdd = Colors.transparent;
         const Color bandEven = Colors.transparent;
-        const Color todayTint = Colors.transparent;
         final Color hourLineColor = isDark ? Colors.white.withAlpha((0.28 * 255).round()) : Colors.black.withAlpha((0.28 * 255).round());
         final Color minorLineColor = isDark ? Colors.white.withAlpha((0.14 * 255).round()) : Colors.black.withAlpha((0.14 * 255).round());
 
@@ -387,15 +382,13 @@ class WeekTimeGrid extends StatelessWidget {
                 painter: _WeekGridPainter(
                     rows: times.length,
                     rowHeight: rowHeight,
-                    timeColWidth: timeColWidth,
+                    timeColWidth: tcw,
                     totalWidth: constraints.maxWidth,
                     dayCount: 5,
                     dayWidth: dayWidth,
                     slotMinutes: slotMinutes,
-                    todayIndex: todayIndex,
                     bandColorOdd: bandOdd,
                     bandColorEven: bandEven,
-                    todayTint: todayTint,
                     hourLineColor: hourLineColor,
                     minorLineColor: minorLineColor,
                     hourLineWidth: 1.2,
@@ -404,7 +397,11 @@ class WeekTimeGrid extends StatelessWidget {
                     lunchLineColor: Colors.red,
                     lunchLineWidth: 2.0)));
 
-        final overlay = Stack(children: [Positioned.fill(child: gridPaint), ...buildOverlayBlocks()]);
+        final overlay = Stack(children: [
+          Positioned.fill(child: gridPaint),
+          Positioned.fill(child: Column(children: [for (final t in times) buildRow(t)])),
+          ...buildOverlayBlocks()
+        ]);
 
         if (totalHeight > availableHeight) {
           return SingleChildScrollView(padding: EdgeInsets.zero, child: SizedBox(height: totalHeight, width: constraints.maxWidth, child: overlay));

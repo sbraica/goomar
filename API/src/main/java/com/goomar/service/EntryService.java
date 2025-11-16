@@ -73,7 +73,7 @@ public class EntryService implements IEntryService {
     @Override
     @Transactional
     public ReservationRest confirmReservation(String id) {
-        log.info(">>makeAppointment(id={})", id);
+        log.info(">>confirmReservation(id={})", id);
         return ctx.update(ENTRIES).set(ENTRIES.CONFIRMED, true).where(ENTRIES.ID.eq(UUID.fromString(id))).returning().fetchOneInto(ReservationRest.class);
     }
 

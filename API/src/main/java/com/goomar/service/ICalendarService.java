@@ -6,6 +6,7 @@ import org.openapitools.model.ReservationRest;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 public interface ICalendarService {
     String insertAppoitnment(ReservationRest reservationRest);
@@ -14,5 +15,5 @@ public interface ICalendarService {
 
     void confirmAppointment(String eventId);
 
-    void deleteAppointment(String eventId);
+    void deleteAppointment(String id);
 }

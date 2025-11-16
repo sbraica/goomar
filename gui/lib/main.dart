@@ -4,7 +4,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/foundation.dart';
-import 'package:url_strategy/url_strategy.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'providers/reservation_provider.dart';
 import 'providers/auth_provider.dart';
@@ -20,9 +19,6 @@ Future<void> main() async {
   await initializeDateFormatting('hr');
   Intl.defaultLocale = 'hr';
   // Enable clean path URLs on web so /login opens LoginScreen instead of defaulting to '/'
-  if (kIsWeb) {
-    setPathUrlStrategy();
-  }
   runApp(const MyApp());
 }
 
