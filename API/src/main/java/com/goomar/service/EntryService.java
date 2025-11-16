@@ -50,7 +50,7 @@ public class EntryService implements IEntryService {
         if ((filter & 0b10) != 0b10){
             c = c.or( ENTRIES.CONFIRMED.isFalse());
         }
-        if ((filter & 0b10) != 0b10){
+        if ((filter & 0b10) != 0b100){
             c = c.or( ENTRIES.CONFIRMED.isTrue());
         }
 
