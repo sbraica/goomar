@@ -161,11 +161,14 @@ public class CalendarService implements ICalendarService {
         executeWithRetry(() -> calendarClient.events().update(calendarId, event.getId(), event).execute());
     }
 
-    @SneakyThrows
     @Override
     public void deleteAppointment(String eventId) {
         ensureCalendarReady();
         log.info("deleteAppointment(eventId={})", eventId);
-        executeWithRetry(() -> calendarClient.events().delete(calendarId, eventId).execute());
+        try {
+            executeWithRetry(() -> calendarClient.events().delete(calendarId, eventId).execute());
+        } catch (Exception e) {
+            log.warn("Failed to delete event {}: {}", eventId, e.getMessage());
+        }
     }
 }
