@@ -42,16 +42,16 @@ public class EntryService implements IEntryService {
 
         Condition c = DSL.falseCondition();
         if ((filter & 0b1) == 0b1){
-            c = c.and( ENTRIES.EMAIL_OK.isTrue());
+            c = c.or( ENTRIES.EMAIL_OK.isTrue());
         }
         if ((filter & 0b01) != 0b01){
-            c = c.and( ENTRIES.EMAIL_OK.isFalse());
+            c = c.or( ENTRIES.EMAIL_OK.isFalse());
         }
         if ((filter & 0b10) != 0b10){
-            c = c.and( ENTRIES.CONFIRMED.isFalse());
+            c = c.or( ENTRIES.CONFIRMED.isFalse());
         }
         if ((filter & 0b10) != 0b10){
-            c = c.and( ENTRIES.EMAIL_OK.isTrue());
+            c = c.or( ENTRIES.EMAIL_OK.isTrue());
         }
 
         log.info("filter conditions: c={}, c2={}, c3={}, c4={}", c);
