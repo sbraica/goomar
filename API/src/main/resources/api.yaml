@@ -271,7 +271,6 @@ components:
         - date_time
         - registration
         - long
-        - confirmed
       properties:
         id:
           type: string
@@ -300,8 +299,6 @@ components:
           minLength: 5
           maxLength: 80
         long:
-          type: boolean
-        confirmed:
           type: boolean
         email_ok:
           type: boolean

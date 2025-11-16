@@ -7,6 +7,10 @@ import '../models/reservation.dart';
 import '../services/api_client.dart';
 
 class ReservationProvider with ChangeNotifier {
+  final int bitInvalid = 0x1;
+  final int bitUnconfirmed = 0x2;
+  final int bitConfirmed = 0x4;
+
   final List<Reservation> _reservations = [];
   bool _isLoading = false;
   String? _lastError;
@@ -17,11 +21,11 @@ class ReservationProvider with ChangeNotifier {
 
   int get filterMask => _filterMask;
 
-  bool get filterInvalid => (_filterMask & 0x1) != 0;
+  bool get filterInvalid => (_filterMask & bitInvalid) != 0;
 
-  bool get filterUnconfirmed => (_filterMask & 0x2) != 0;
+  bool get filterUnconfirmed => (_filterMask & bitUnconfirmed) != 0;
 
-  bool get filterConfirmed => (_filterMask & 0x4) != 0;
+  bool get filterConfirmed => (_filterMask & bitConfirmed) != 0;
 
   void _setFilterMask(int value) {
     if (_filterMask == value) return;
@@ -33,28 +37,17 @@ class ReservationProvider with ChangeNotifier {
   }
 
   void setFilterInvalid(bool v) {
-    // When Invalid is checked, disable (and clear) the other two filters to avoid conflicting states.
-    const bitInvalid = 0x1;
-    const bitUnconfirmed = 0x2;
-    const bitConfirmed = 0x4;
-    int next;
-    if (v) {
-      next = (_filterMask | bitInvalid) & ~(bitUnconfirmed | bitConfirmed);
-    } else {
-      next = (_filterMask & ~bitInvalid);
-    }
+    final next = v ? (_filterMask | bitInvalid) : (_filterMask & ~bitInvalid);
     _setFilterMask(next);
   }
 
   void setFilterUnconfirmed(bool v) {
-    const bit = 0x2;
-    final next = v ? (_filterMask | bit) : (_filterMask & ~bit);
+    final next = v ? (_filterMask | bitUnconfirmed) : (_filterMask & ~bitUnconfirmed);
     _setFilterMask(next);
   }
 
   void setFilterConfirmed(bool v) {
-    const bit = 0x4;
-    final next = v ? (_filterMask | bit) : (_filterMask & ~bit);
+    final next = v ? (_filterMask | bitConfirmed) : (_filterMask & ~bitConfirmed);
     _setFilterMask(next);
   }
 
@@ -169,7 +162,6 @@ class ReservationProvider with ChangeNotifier {
             confirmed: ur.approved,
             emailOk: r.emailOk,
             date_time: r.date_time);
-
       }
       notifyListeners();
     } catch (e) {

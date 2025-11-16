@@ -40,25 +40,16 @@ public class EntryService implements IEntryService {
 
         Condition dateRange = ENTRIES.DATE_TIME.ge(startOfWeek).and(ENTRIES.DATE_TIME.lt(endOfWeek));
 
-        Condition c1;
-        if ((filter & 0b001) != 0) {
-            c1 = ENTRIES.EMAIL_OK.eq(false);
-        } else {
-            c1 = ENTRIES.EMAIL_OK.eq(true);
-            Condition c2 = DSL.falseCondition();
-            if ((filter & 0b010) != 0) {
-                c2 = c2.or(ENTRIES.CONFIRMED.eq(false));
-            }
-            if ((filter & 0b100) != 0) {
-                c2 = c2.or(ENTRIES.CONFIRMED.eq(true));
-            }
-            c1 = c1.and(c2);
-        }
+        Condition c1 = ENTRIES.EMAIL_OK.eq((filter & 0b1) == 0b1);
+        Condition c2 = ENTRIES.EMAIL_OK.eq((filter & 0b1) != 0b1);
+        Condition c3 = ENTRIES.CONFIRMED.eq((filter & 0b10) == 0b10);
+        Condition c4 = ENTRIES.CONFIRMED.eq((filter & 0b100) != 0b100);
 
+        log.info("filter conditions: c1={}, c2={}, c3={}, c4={}", c1, c2, c3, c4);
         return ctx.select(ENTRIES.ID, ENTRIES.NAME, ENTRIES.DATE_TIME, ENTRIES.EMAIL, ENTRIES.PHONE, ENTRIES.REGISTRATION,
                         ENTRIES.LONG, ENTRIES.EMAIL, ENTRIES.CONFIRMED, ENTRIES.EVENT_ID, ENTRIES.CONFIRMED, ENTRIES.EMAIL_OK)
                 .from(ENTRIES)
-                .where(c1.and(dateRange))
+                .where((c1.or(c2).or(c3).or(c4)).and(dateRange))
                 .orderBy(ENTRIES.DATE_TIME.asc())
                 .fetchInto(ReservationRest.class);
     }

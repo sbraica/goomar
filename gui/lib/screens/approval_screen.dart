@@ -52,11 +52,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final reservationProvider = Provider.of<ReservationProvider>(context);
-
-    // Read UI state from provider
     final DateTime focusedDay = reservationProvider.focusedDay;
-    //final DateTime? selectedDay = reservationProvider.selectedDay;
-    //final TimeOfDay? selectedTime = reservationProvider.selectedTime;
 
     final weekStart = _mondayOf(focusedDay);
     final weekEnd = weekStart.add(const Duration(days: 7));
@@ -105,17 +101,13 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
       }
     }
 
-    //Future<void> onSelectSlot(DateTime slot) async => Provider.of<ReservationProvider>(context, listen: false).setSelectedSlot(slot);
-
     final firstDay = DateTime.now();
     final lastDay = DateTime.now().add(const Duration(days: 90));
 
     return Scaffold(
         appBar: AppBar(title: const Text('Bosnić - rezervacija termina servisa'), actions: [
-          // Filters: red (invalid), yellow (unconfirmed), green (confirmed)
           Consumer<ReservationProvider>(
               builder: (context, rp, _) => Row(children: [
-                    // Invalid (red)
                     Tooltip(
                         message: 'Invalid',
                         child: Row(children: [
@@ -127,32 +119,26 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                               activeColor: Colors.red),
                           const SizedBox(width: 4)
                         ])),
-                    // Unconfirmed (yellow)
                     Tooltip(
                         message: 'Unconfirmed',
                         child: Row(children: [
-                          Opacity(
-                              opacity: rp.filterInvalid ? 0.4 : 1.0,
-                              child: Checkbox(
+                           Checkbox(
                                   value: rp.filterUnconfirmed,
-                                  onChanged: rp.filterInvalid ? null : (v) => rp.setFilterUnconfirmed(v ?? false),
-                                  side: BorderSide(color: rp.filterInvalid ? Colors.grey.shade400 : Colors.amber),
-                                  checkColor: Colors.black,
-                                  activeColor: Colors.amber)),
+                                  onChanged: (v) => rp.setFilterUnconfirmed(v ?? false),
+                                  side: const BorderSide(color: Colors.amber),
+                                  checkColor: Colors.white,
+                                  activeColor: Colors.amber),
                           const SizedBox(width: 4)
                         ])),
-                    // Confirmed (green)
                     Tooltip(
                         message: 'Confirmed',
                         child: Row(children: [
-                          Opacity(
-                              opacity: rp.filterInvalid ? 0.4 : 1.0,
-                              child: Checkbox(
+                          Checkbox(
                                   value: rp.filterConfirmed,
-                                  onChanged: rp.filterInvalid ? null : (v) => rp.setFilterConfirmed(v ?? false),
-                                  side: BorderSide(color: rp.filterInvalid ? Colors.grey.shade400 : Colors.green),
+                                  onChanged: (v) => rp.setFilterConfirmed(v ?? false),
+                                  side: const BorderSide(color: Colors.green),
                                   checkColor: Colors.white,
-                                  activeColor: Colors.green)),
+                                  activeColor: Colors.green),
                           const SizedBox(width: 4)
                         ]))
                   ])),
@@ -193,7 +179,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                               reservationProvider.setFocusedDay(DateTime(prev.year, prev.month, prev.day));
                               reservationProvider.loadReservations(weekStart: prev).catchError((_) {
                                 if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Greška učitavanja rezervacija"'), backgroundColor: Colors.red));
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Greška učitavanja rezervacija!'), backgroundColor: Colors.red));
                                 }
                               });
                             },
@@ -204,8 +190,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                               reservationProvider.setFocusedDay(DateTime(next.year, next.month, next.day));
                               reservationProvider.loadReservations(weekStart: next).catchError((_) {
                                 if (mounted) {
-                                  ScaffoldMessenger.of(context)
-                                      .showSnackBar(const SnackBar(content: Text(' to load reservations for previous week!'), backgroundColor: Colors.red));
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Greška učitavanja rezervacija!'), backgroundColor: Colors.red));
                                 }
                               });
                             },
@@ -224,7 +209,8 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                             },
                             onCheck: (span) async {
                               try {
-                                await Provider.of<ReservationProvider>(context, listen: false).updateReservationRemote(UpdateReservation(id: span.id, sendMail: true, approved: true));
+                                await Provider.of<ReservationProvider>(context, listen: false)
+                                    .updateReservationRemote(UpdateReservation(id: span.id, sendMail: true, approved: true));
                               } catch (e) {
                                 if (mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update approval: $e'), backgroundColor: Colors.red));

@@ -201,15 +201,7 @@ class WeekTimeGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final days = List<DateTime>.generate(5, (i) => weekStart.add(Duration(days: i)));
-
     final times = _buildTimes();
-
-    // Build occupied lookup normalized to minute precision
-    Set<String> occKeys = occupied.map((d) => DateTime(d.year, d.month, d.day, d.hour, d.minute)).map((d) => d.toIso8601String()).toSet();
-
-    String keyFor(DateTime d) => DateTime(d.year, d.month, d.day, d.hour, d.minute).toIso8601String();
-
-    bool isPast(DateTime slot) => slot.isBefore(DateTime.now());
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Row(children: [
@@ -249,7 +241,6 @@ class WeekTimeGrid extends StatelessWidget {
               ]));
         }
 
-        // Compute overlay positions for reservation spans (support off-grid start times)
         int toMinutes(TimeOfDay t) => t.hour * 60 + t.minute;
         int dayStartMin = toMinutes(dayStart);
         int dayEndMin = toMinutes(dayEnd);
@@ -258,17 +249,13 @@ class WeekTimeGrid extends StatelessWidget {
 
         double? fractionalRowIndex(DateTime dt) {
           int m = dt.hour * 60 + dt.minute;
-          // Clip to working hours
           if (m >= dayEndMin) return null;
           if (m < dayStartMin) m = dayStartMin;
-          // If inside lunch, move to lunch end
           if (lunchS != null && lunchE != null && m >= lunchS && m < lunchE) {
             m = lunchE;
             if (m >= dayEndMin) return null;
           }
-          // Minutes from day start
           int minutesFromStart = m - dayStartMin;
-          // Subtract lunch minutes that occur before m
           int lunchBefore = 0;
           if (lunchS != null && lunchE != null) {
             final int overlapStart = lunchS.clamp(dayStartMin, m);
@@ -280,16 +267,13 @@ class WeekTimeGrid extends StatelessWidget {
           return effective / slotMinutes;
         }
 
-        // Compute how many rows a span should cover after clipping to working hours and removing lunch
         double spanRows(DateTime start, int durationMin) {
           int s = start.hour * 60 + start.minute;
           int e = s + durationMin;
-          // Clip to working hours
           if (e <= dayStartMin) return 0;
           if (s < dayStartMin) s = dayStartMin;
           if (e > dayEndMin) e = dayEndMin;
           if (s >= e) return 0;
-          // Remove lunch overlap from [s, e)
           int visible = e - s;
           if (lunchS != null && lunchE != null) {
             final int os = s.clamp(lunchS, lunchE);
@@ -300,8 +284,6 @@ class WeekTimeGrid extends StatelessWidget {
           if (visible <= 0) return 0;
           return visible / slotMinutes;
         }
-
-        // Layout metrics for overlay
 
         final double gridWidth = constraints.maxWidth - tcw;
         final double dayWidth = gridWidth / 5.0;
