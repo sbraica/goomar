@@ -149,6 +149,15 @@
       font-weight: 600;
       text-align: center;
     }
+
+    .success {
+        opacity: 1;
+        transition: opacity .6s ease;
+    }
+
+    .success.fade-out {
+        opacity: 0;
+    }
   </style>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pikaday/css/pikaday.css" />
   <script src="https://cdn.jsdelivr.net/npm/pikaday/pikaday.js"></script>
@@ -490,7 +499,17 @@
         }
 
         // Success
-        confirmation.classList.remove('hidden');
+          confirmation.classList.remove('hidden');
+          confirmation.classList.remove('fade-out'); // ensure visible
+
+          // Auto-hide after 4 seconds with fade-out
+          setTimeout(() => {
+              confirmation.classList.add('fade-out');
+              setTimeout(() => {
+                  confirmation.classList.add('hidden');
+                  confirmation.classList.remove('fade-out');
+              }, 600); // match CSS transition
+          }, 4000);
 
         // Clear the form back to the initial state (like first open)
         try {
