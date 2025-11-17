@@ -191,15 +191,6 @@
             font-weight: 600;
             text-align: center;
         }
-
-        .success {
-            opacity: 1;
-            transition: opacity .6s ease;
-        }
-
-        .success.fade-out {
-            opacity: 0;
-        }
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pikaday/css/pikaday.css"/>
     <script src="https://cdn.jsdelivr.net/npm/pikaday/pikaday.js"></script>
@@ -216,9 +207,47 @@
         .pika-single .pika-table td:nth-child(7) {
             display: none !important;
         }
+
+        .dialog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.35);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .dialog.hidden {
+            display: none;
+        }
+
+        .dialog-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            width: 280px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+        }
+
+        #dialogOkBtn {
+            margin-top: 10px;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
+<div id="successDialog" class="dialog hidden">
+    <div class="dialog-content">
+        <p>Appointment reserved successfully!</p>
+        <button id="dialogOkBtn">OK</button>
+    </div>
+</div>
 <main class="page" role="main">
     <section class="hero" aria-label="Uvod">
         <img class="logo" src="https://www.bosnic.hr/wp-content/uploads/2025/10/bosnic-logo-2025-xl.png"
@@ -558,48 +587,47 @@
                 return;
             }
 
-            confirmation.classList.remove('hidden');
-            confirmation.classList.remove('fade-out'); // ensure visible
+            // Success
+            // Success → show dialog
+            const dialog = document.getElementById("successDialog");
+            dialog.classList.remove("hidden");
 
-            setTimeout(() => {
-                confirmation.scrollIntoView({behavior: "smooth", block: "center"});
-            }, 50);
+// When user clicks OK
+            document.getElementById("dialogOkBtn").onclick = async () => {
+                dialog.classList.add("hidden");
 
-            setTimeout(() => {
-                confirmation.classList.add('fade-out');
+                // Clear the form back to the initial state
+                try {
+                    // Clear personal inputs
+                    document.getElementById('name').value = '';
+                    emailInput.value = '';
+                    phoneInput.value = '';
+                    if (registrationNumberInput) registrationNumberInput.value = '';
 
-                setTimeout(() => {
-                    confirmation.classList.add('hidden');
-                    confirmation.classList.remove('fade-out'); // reset for next time
-                }, 600); // matches CSS transition
-            }, 4000);
-            // Clear the form back to the initial state (like first open)
-            try {
-                // Clear personal inputs
-                document.getElementById('name').value = '';
-                emailInput.value = '';
-                phoneInput.value = '';
-                if (registrationNumberInput) registrationNumberInput.value = '';
+                    // Reset duration to 15 min
+                    const d15 = document.getElementById('duration15');
+                    const d30 = document.getElementById('duration30');
+                    if (d15) d15.checked = true;
+                    if (d30) d30.checked = false;
 
-                // Reset duration to 15 min
-                const d15 = document.getElementById('duration15');
-                const d30 = document.getElementById('duration30');
-                if (d15) d15.checked = true;
-                if (d30) d30.checked = false;
+                    // Reset date to the next working day and reload available timeslots
+                    const initialDate = nextWeekday(new Date());
+                    dateInput.value = formatDisplay(initialDate);
 
-                // Reset date to the next working day and reload available timeslots
-                const initialDate = nextWeekday(new Date());
-                dateInput.value = formatDisplay(initialDate);
+                    // Reset UI and reload slots
+                    container.innerHTML = '';
+                    clearSelection();
+                    hint.textContent = 'Odaberite datum kako bi se prikazali termini.';
+                    hint.classList.remove('hidden');
+                    await loadTimeslots();
+                } catch (ignore) {
+                    console.warn("Form reset failed", ignore);
+                }
 
-                // Reset UI and reload slots
-                container.innerHTML = '';
-                clearSelection();
-                hint.textContent = 'Odaberite datum kako bi se prikazali termini.';
-                hint.classList.remove('hidden');
-                await loadTimeslots();
-            } catch (ignore) {
-                // Non-fatal: even if reset fails, reservation succeeded; keep showing success message
-            }
+                // Optional: scroll to top
+                window.scrollTo({ top: 0, behavior: "smooth" });
+            };
+
 
             console.log('Rezervacija poslana:', payload);
         } catch (e) {
