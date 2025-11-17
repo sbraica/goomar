@@ -90,7 +90,7 @@ public class EntryService implements IEntryService {
 
     @Override
     public ReservationRest get(String uuid) {
-        return ctx.select(ENTRIES.ID, ENTRIES.NAME, ENTRIES.DATE_TIME, ENTRIES.EMAIL, ENTRIES.PHONE, ENTRIES.REGISTRATION, ENTRIES.LONG, ENTRIES.EMAIL, ENTRIES.CONFIRMED, ENTRIES.EVENT_ID, ENTRIES.CONFIRMED)
+        return ctx.select(ENTRIES.ID, ENTRIES.NAME, ENTRIES.DATE_TIME, ENTRIES.EMAIL, ENTRIES.PHONE, ENTRIES.REGISTRATION, ENTRIES.LONG, ENTRIES.EMAIL_OK, ENTRIES.EMAIL, ENTRIES.EVENT_ID, ENTRIES.CONFIRMED)
                 .from(ENTRIES).where(ENTRIES.ID.eq(UUID.fromString(uuid))).fetchSingleInto(ReservationRest.class);
     }
 
