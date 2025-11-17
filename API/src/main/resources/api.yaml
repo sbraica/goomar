@@ -300,6 +300,8 @@ components:
           maxLength: 80
         long:
           type: boolean
+        confirmed:
+          type: boolean
         email_ok:
           type: boolean
     FreeSlotRest:

@@ -40,6 +40,7 @@ public class EntryService implements IEntryService {
 
         Condition dateRange = ENTRIES.DATE_TIME.ge(startOfWeek).and(ENTRIES.DATE_TIME.lt(endOfWeek));
 
+        /*
         Condition c = DSL.falseCondition();
         if ((filter & 0b1) == 0b1) {
             c = c.or(ENTRIES.EMAIL_OK.isFalse());
@@ -53,11 +54,14 @@ public class EntryService implements IEntryService {
             c = c.or(ENTRIES.CONFIRMED.isTrue());
         }
 
+
+
         log.info("filter conditions: c={}", c);
+        */
         return ctx.select(ENTRIES.ID, ENTRIES.NAME, ENTRIES.DATE_TIME, ENTRIES.EMAIL, ENTRIES.PHONE, ENTRIES.REGISTRATION,
                         ENTRIES.LONG, ENTRIES.EMAIL, ENTRIES.CONFIRMED, ENTRIES.EVENT_ID, ENTRIES.CONFIRMED, ENTRIES.EMAIL_OK)
                 .from(ENTRIES)
-                .where((c).and(dateRange))
+                .where(dateRange)
                 .orderBy(ENTRIES.DATE_TIME.asc())
                 .fetchInto(ReservationRest.class);
     }
