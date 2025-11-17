@@ -88,7 +88,7 @@ public class CalendarService implements ICalendarService {
         ZonedDateTime startZoned = rr.getDateTime().atZone(zone);
         ZonedDateTime endZoned = startZoned.plusMinutes(rr.getLong() ? 30 : 15);
 
-        Event event = new Event().setSummary(rr.getName()).setDescription(rr.getPhone()).setColorId("5").setStart(new EventDateTime().setDateTime(new DateTime(startZoned.toInstant().toEpochMilli()))
+        Event event = new Event().setSummary(rr.getName() + " " + rr.getPhone()).setColorId("5").setStart(new EventDateTime().setDateTime(new DateTime(startZoned.toInstant().toEpochMilli()))
                         .setTimeZone(zone.getId())).setEnd(new EventDateTime().setDateTime(new DateTime(endZoned.toInstant().toEpochMilli())).setTimeZone(zone.getId()));
 
         Event created = executeWithRetry(() -> calendarClient.events().insert(calendarId, event).execute());
