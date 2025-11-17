@@ -17,40 +17,6 @@ class ReservationProvider with ChangeNotifier {
 
   DateTime focusedDay = DateTime.now();
 
-  int _filterMask = 0;
-
-  int get filterMask => _filterMask;
-
-  bool get filterInvalid => (_filterMask & bitInvalid) != 0;
-
-  bool get filterUnconfirmed => (_filterMask & bitUnconfirmed) != 0;
-
-  bool get filterConfirmed => (_filterMask & bitConfirmed) != 0;
-
-  void _setFilterMask(int value) {
-    if (_filterMask == value) return;
-    _filterMask = value;
-    notifyListeners();
-    // Refresh on filter change
-    final monday = _mondayOf(focusedDay);
-    loadReservations(weekStart: monday);
-  }
-
-  void setFilterInvalid(bool v) {
-    final next = v ? (_filterMask | bitInvalid) : (_filterMask & ~bitInvalid);
-    _setFilterMask(next);
-  }
-
-  void setFilterUnconfirmed(bool v) {
-    final next = v ? (_filterMask | bitUnconfirmed) : (_filterMask & ~bitUnconfirmed);
-    _setFilterMask(next);
-  }
-
-  void setFilterConfirmed(bool v) {
-    final next = v ? (_filterMask | bitConfirmed) : (_filterMask & ~bitConfirmed);
-    _setFilterMask(next);
-  }
-
   DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
   DateTime _mondayOf(DateTime d) => _dateOnly(d).subtract(Duration(days: d.weekday - DateTime.monday));
@@ -147,22 +113,18 @@ class ReservationProvider with ChangeNotifier {
     if (index == -1) throw Exception('Reservation not found');
     try {
       await ApiClient.instance.updateReservation(ur);
-      if (_filterMask & 0x2 != 0 && !ur.approved) {
-        _reservations.removeAt(index);
-      } else {
-        final r = _reservations[index];
-        _reservations[index] = Reservation(
-            id: r.id,
-            name: r.name,
-            email: ur.email ?? r.email,
-            phone: r.phone,
-            registration: r.registration,
-            long: r.long,
-            pending: r.pending,
-            confirmed: ur.approved,
-            emailOk: r.emailOk,
-            date_time: r.date_time);
-      }
+      final r = _reservations[index];
+      _reservations[index] = Reservation(
+          id: r.id,
+          name: r.name,
+          email: ur.email ?? r.email,
+          phone: r.phone,
+          registration: r.registration,
+          long: r.long,
+          pending: r.pending,
+          confirmed: ur.approved,
+          emailOk: r.emailOk,
+          date_time: r.date_time);
       notifyListeners();
     } catch (e) {
       _setError(e.toString());
@@ -179,7 +141,7 @@ class ReservationProvider with ChangeNotifier {
     _setError(null);
     _setLoading(true);
     try {
-      final list = await ApiClient.instance.getReservations(weekStart, filter: _filterMask);
+      final list = await ApiClient.instance.getReservations(weekStart);
       setReservations(list);
     } catch (e) {
       _setError(e.toString());
