@@ -39,11 +39,16 @@ public class ReservationController implements ReservationsApi {
     }
 
     @Override
-    public ResponseEntity<String> confirmEmailOK(String uuid) {
-        log.info("confirmEmailOK(uuid={})", uuid);
-        String event_id = calendarService.insertAppointment(entryService.get(uuid));
-        entryService.setEventId(uuid, event_id);
-        return new ResponseEntity(entryService.confirmEmailOK(uuid), HttpStatus.OK);
+    public ResponseEntity<String> confirmEmailOK(String id) {
+        log.info("confirmEmailOK(uuid={})", id);
+        if (!entryService.get(id).getConfirmed()) {
+            String event_id = calendarService.insertAppointment(entryService.get(id));
+            entryService.setEventId(id, event_id);
+            return new ResponseEntity(entryService.confirmEmailOK(id), HttpStatus.OK);
+        } else {
+            log.info("Appointment already confirmed, id = {}", id);
+            return new ResponseEntity("<html><body><h2>Rezervacija prethodno potvrđena!</h2></body></html>", HttpStatus.OK);
+        }
     }
 
     @Override

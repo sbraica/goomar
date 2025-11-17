@@ -157,6 +157,7 @@ public class CalendarService implements ICalendarService {
         ensureCalendarReady();
         log.info("confirmAppointment(eventId={})", eventId);
         Event event = executeWithRetry(() -> calendarClient.events().get(calendarId, eventId).execute());
+        log.info("Event: {}", event);
         event.setColorId("10");
         executeWithRetry(() -> calendarClient.events().update(calendarId, event.getId(), event).execute());
     }
