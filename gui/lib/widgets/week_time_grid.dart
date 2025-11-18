@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
+const double tcw = 40.0;
 class _WeekGridPainter extends CustomPainter {
   final int rows;
   final double rowHeight;
@@ -169,15 +169,6 @@ class WeekTimeGrid extends StatelessWidget {
       this.spans = const []})
       : super(key: key);
 
-  DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
-
-  bool _isWithinBounds(DateTime day) {
-    final d = _dateOnly(day);
-    final f = _dateOnly(firstDay);
-    final l = _dateOnly(lastDay);
-    return !d.isBefore(f) && !d.isAfter(l);
-  }
-
   List<TimeOfDay> _buildTimes() {
     int toMinutes(TimeOfDay t) => t.hour * 60 + t.minute;
     TimeOfDay fromMinutes(int m) => TimeOfDay(hour: m ~/ 60, minute: m % 60);
@@ -213,7 +204,7 @@ class WeekTimeGrid extends StatelessWidget {
       ]),
       const SizedBox(height: 8),
       Row(children: [
-        const SizedBox(width: 72), // time column width
+        const SizedBox(width: tcw), // time column width
         for (final d in days)
           Expanded(
               child: Column(children: [
@@ -231,7 +222,7 @@ class WeekTimeGrid extends StatelessWidget {
 
         double rowHeight = (availableHeight / times.length).clamp(minRowHeight, maxRowHeight);
         double totalHeight = times.length * rowHeight;
-        const double tcw = 40.0;
+
         Widget buildRow(TimeOfDay t) {
           var dtf = DateFormat('HH:mm');
           return SizedBox(
