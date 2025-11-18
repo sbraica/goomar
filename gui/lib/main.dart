@@ -35,22 +35,19 @@ class MyApp extends StatelessWidget {
           ChangeNotifierProvider(create: (_) => LoginUiProvider()),
         ],
         child: MaterialApp(
-          title: 'Bosnić - rezervacija termina',
-          debugShowCheckedModeBanner: false,
-          locale: const Locale('hr'),
-          supportedLocales: const [Locale('hr')],
-          localizationsDelegates: const [GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate],
-          navigatorKey: rootNavigatorKey,
-          theme: ThemeData(
-              primarySwatch: Colors.blue,
-              primaryColor: const Color(0xFF2196F3),
-              colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2196F3), primary: const Color(0xFF2196F3)),
-              useMaterial3: true,
-              inputDecorationTheme: InputDecorationTheme(border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), filled: true, fillColor: Colors.grey.shade100)),
-          routes: {
-            '/': (_) => const LoginScreen(),
-          },
-          initialRoute: '/',
-        ));
+            title: 'Bosnić - rezervacija termina',
+            debugShowCheckedModeBanner: false,
+            locale: const Locale('hr'),
+            supportedLocales: const [Locale('hr')],
+            localizationsDelegates: const [GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate],
+            navigatorKey: rootNavigatorKey,
+            theme: ThemeData(
+                primarySwatch: Colors.blue,
+                primaryColor: const Color(0xFF2196F3),
+                colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2196F3), primary: const Color(0xFF2196F3)),
+                useMaterial3: true,
+                inputDecorationTheme: InputDecorationTheme(border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), filled: true, fillColor: Colors.grey.shade100)),
+            routes: {'/': (_) => LoginScreen()},
+            initialRoute: '/'));
   }
 }

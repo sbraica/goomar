@@ -4,9 +4,23 @@ import 'auth_provider.dart';
 class LoginUiProvider with ChangeNotifier {
   bool isLoading = false;
   bool obscurePassword = true;
+  String username = '';
+  String password = '';
 
   void toggleObscure() {
     obscurePassword = !obscurePassword;
+    notifyListeners();
+  }
+
+  void setUsername(String v) {
+    if (v == username) return;
+    username = v;
+    notifyListeners();
+  }
+
+  void setPassword(String v) {
+    if (v == password) return;
+    password = v;
     notifyListeners();
   }
 
