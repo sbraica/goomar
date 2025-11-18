@@ -6,14 +6,9 @@ import '../providers/auth_provider.dart';
 import '../widgets/week_time_grid.dart';
 import '../widgets/edit_email_dialog.dart';
 
-class ApprovalScreen extends StatefulWidget {
+class ApprovalScreen extends StatelessWidget {
   const ApprovalScreen({Key? key}) : super(key: key);
 
-  @override
-  State<ApprovalScreen> createState() => _ApprovalScreenState();
-}
-
-class _ApprovalScreenState extends State<ApprovalScreen> {
   final int slotMinutes = 15;
 
   DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
@@ -21,40 +16,30 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
   DateTime _mondayOf(DateTime d) => _dateOnly(d).subtract(Duration(days: d.weekday - DateTime.monday));
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      try {
-        final monday = _mondayOf(DateTime.now());
-        await Provider.of<ReservationProvider>(context, listen: false).loadReservations(weekStart: monday);
-        Provider.of<ReservationProvider>(context, listen: false).setFocusedDay(monday);
-      } catch (e) {
-        if (!mounted) return;
-        final msg = e.toString().toLowerCase();
-        final isAuthError = msg.contains('unauthorized') || msg.contains('expired');
-        if (isAuthError) {
-          Provider.of<AuthProvider>(context, listen: false).logout();
-          if (!mounted) return;
-          Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to load reservations from server'), backgroundColor: Colors.red));
-        }
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
-    final reservationProvider = Provider.of<ReservationProvider>(context);
-    final DateTime focusedDay = reservationProvider.focusedDay;
+    final rp = Provider.of<ReservationProvider>(context);
 
-    final weekStart = _mondayOf(focusedDay);
+    if (!rp.initialized) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        try {
+          await Provider.of<ReservationProvider>(context, listen: false).initializeIfNeeded();
+        } catch (e) {
+          final msg = e.toString().toLowerCase();
+          final isAuthError = msg.contains('unauthorized') || msg.contains('expired');
+          if (isAuthError) {
+            Provider.of<AuthProvider>(context, listen: false).logout();
+            Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+          } else {
+            ScaffoldMessenger.of(context)
+                .showSnackBar(const SnackBar(content: Text('Failed to load reservations from server'), backgroundColor: Colors.red));
+          }
+        }
+      });
+    }
+    final DateTime day = rp.day;
+
+    final weekStart = _mondayOf(day);
     final weekEnd = weekStart.add(const Duration(days: 7));
 
     final occupied = <DateTime>{};
@@ -83,7 +68,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
 
     final daySlots = _daySlots();
 
-    for (final r in reservationProvider.reservations) {
+    for (final r in rp.reservations) {
       final dt = r.date_time;
       print(dt);
       if (dt.isBefore(weekStart) || !dt.isBefore(weekEnd)) continue;
@@ -109,12 +94,11 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
           IconButton(
               onPressed: () async {
                 try {
-                  final currentMonday = _mondayOf(focusedDay);
-                  await reservationProvider.loadReservations(weekStart: currentMonday);
+                  final currentMonday = _mondayOf(day);
+                  await rp.loadReservations(weekStart: currentMonday);
                 } catch (_) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to refresh reservations'), backgroundColor: Colors.red));
-                  }
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(const SnackBar(content: Text('Failed to refresh reservations'), backgroundColor: Colors.red));
                 }
               },
               tooltip: 'Refresh',
@@ -128,7 +112,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
               })
         ]),
         body: Column(children: [
-          if (reservationProvider.isLoading) const LinearProgressIndicator(minHeight: 2),
+          if (rp.isLoading) const LinearProgressIndicator(minHeight: 2),
           Expanded(
               child: Padding(
                   padding: const EdgeInsets.all(12.0),
@@ -137,25 +121,23 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                         child: WeekTimeGrid(
                             weekStart: weekStart,
                             onPrevWeek: () async {
-                              if (reservationProvider.isLoading) return;
-                              final base = _mondayOf(reservationProvider.focusedDay);
+                              if (rp.isLoading) return;
+                              final base = _mondayOf(rp.day);
                               final prev = DateTime(base.year, base.month, base.day - 7);
-                              reservationProvider.setFocusedDay(DateTime(prev.year, prev.month, prev.day));
-                              reservationProvider.loadReservations(weekStart: prev).catchError((_) {
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Greška učitavanja rezervacija!'), backgroundColor: Colors.red));
-                                }
+                              rp.setFocusedDay(DateTime(prev.year, prev.month, prev.day));
+                              rp.loadReservations(weekStart: prev).catchError((_) {
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(const SnackBar(content: Text('Greška učitavanja rezervacija!'), backgroundColor: Colors.red));
                               });
                             },
                             onNextWeek: () async {
-                              if (reservationProvider.isLoading) return;
-                              final base = _mondayOf(reservationProvider.focusedDay);
+                              if (rp.isLoading) return;
+                              final base = _mondayOf(rp.day);
                               final next = DateTime(base.year, base.month, base.day + 7);
-                              reservationProvider.setFocusedDay(DateTime(next.year, next.month, next.day));
-                              reservationProvider.loadReservations(weekStart: next).catchError((_) {
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Greška učitavanja rezervacija!'), backgroundColor: Colors.red));
-                                }
+                              rp.setFocusedDay(DateTime(next.year, next.month, next.day));
+                              rp.loadReservations(weekStart: next).catchError((_) {
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(const SnackBar(content: Text('Greška učitavanja rezervacija!'), backgroundColor: Colors.red));
                               });
                             },
                             onEdit: (span) async {
@@ -176,9 +158,8 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                                 await Provider.of<ReservationProvider>(context, listen: false)
                                     .updateReservationRemote(UpdateReservation(id: span.id, sendMail: true, approved: true));
                               } catch (e) {
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update approval: $e'), backgroundColor: Colors.red));
-                                }
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(SnackBar(content: Text('Failed to update approval: $e'), backgroundColor: Colors.red));
                               }
                             },
                             onDelete: (span) async {
@@ -186,9 +167,8 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                                 try {
                                   await Provider.of<ReservationProvider>(context, listen: false).deleteReservationRemote(span.id!);
                                 } catch (e) {
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete appointment: $e'), backgroundColor: Colors.red));
-                                  }
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(SnackBar(content: Text('Failed to delete appointment: $e'), backgroundColor: Colors.red));
                                 }
                               });
                             },

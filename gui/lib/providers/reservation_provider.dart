@@ -14,8 +14,9 @@ class ReservationProvider with ChangeNotifier {
   final List<Reservation> _reservations = [];
   bool _isLoading = false;
   String? _lastError;
+  bool _initialized = false;
 
-  DateTime focusedDay = DateTime.now();
+  DateTime day = DateTime.now();
 
   DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
@@ -26,6 +27,7 @@ class ReservationProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
 
   String? get lastError => _lastError;
+  bool get initialized => _initialized;
 
   void _setLoading(bool v) {
     if (_isLoading == v) return;
@@ -133,7 +135,7 @@ class ReservationProvider with ChangeNotifier {
   }
 
   void setFocusedDay(DateTime d) {
-    focusedDay = d;
+    day = d;
     notifyListeners();
   }
 
@@ -149,5 +151,14 @@ class ReservationProvider with ChangeNotifier {
     } finally {
       _setLoading(false);
     }
+  }
+
+  /// One-time initialization to load the current week's reservations and set focus to Monday.
+  Future<void> initializeIfNeeded() async {
+    if (_initialized) return;
+    final monday = _mondayOf(DateTime.now());
+    await loadReservations(weekStart: monday);
+    setFocusedDay(monday);
+    _initialized = true;
   }
 }
