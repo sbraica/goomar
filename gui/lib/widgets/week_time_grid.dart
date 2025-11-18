@@ -8,6 +8,9 @@ class _WeekGridPainter extends CustomPainter {
   final double totalWidth;
   final int dayCount;
   final double dayWidth;
+  // Number of day columns (from the start of the week) to gray out as past days
+  final int grayColumns;
+  final Color grayOverlayColor;
 
   // Visual enhancements
   final int slotMinutes;
@@ -30,6 +33,8 @@ class _WeekGridPainter extends CustomPainter {
     required this.totalWidth,
     required this.dayCount,
     required this.dayWidth,
+    required this.grayColumns,
+    required this.grayOverlayColor,
     required this.slotMinutes,
     required this.bandColorOdd,
     required this.bandColorEven,
@@ -56,6 +61,17 @@ class _WeekGridPainter extends CustomPainter {
       final Color c = isOdd ? bandColorOdd : bandColorEven;
       if (c.alpha > 0) {
         canvas.drawRect(bandRect, Paint()..color = c);
+      }
+    }
+
+    // Shade past day columns (drawn above bands but beneath grid lines and overlays)
+    if (grayColumns > 0 && grayOverlayColor.alpha > 0) {
+      final int cols = grayColumns.clamp(0, dayCount);
+      final Paint p = Paint()..color = grayOverlayColor;
+      for (int i = 0; i < cols; i++) {
+        final double x = left + i * dayWidth;
+        final Rect colRect = Rect.fromLTWH(x, 0, dayWidth, height);
+        canvas.drawRect(colRect, p);
       }
     }
 
@@ -100,6 +116,8 @@ class _WeekGridPainter extends CustomPainter {
         totalWidth != old.totalWidth ||
         dayCount != old.dayCount ||
         dayWidth != old.dayWidth ||
+        grayColumns != old.grayColumns ||
+        grayOverlayColor != old.grayOverlayColor ||
         slotMinutes != old.slotMinutes ||
         bandColorOdd != old.bandColorOdd ||
         bandColorEven != old.bandColorEven ||
@@ -195,6 +213,8 @@ class WeekTimeGrid extends StatelessWidget {
     final times = _buildTimes();
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Divider(),
+
       Row(children: [
         IconButton(
             icon: const Icon(Icons.chevron_left),
@@ -216,13 +236,13 @@ class WeekTimeGrid extends StatelessWidget {
             constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             iconSize: 22)
       ]),
-      const SizedBox(height: 4),
+      Divider(),
       Row(children: [
         const SizedBox(width: tcw), // time column width
         for (final d in days)
           Expanded(
               child: Column(children: [
-            Text(DateFormat('EEE').format(d), style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.w600)),
+            Text(DateFormat('EEEE').format(d), style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.w600)),
             const SizedBox(height: 2),
             Text(DateFormat('d.MM.').format(d), style: const TextStyle(fontSize: 12))
           ]))
@@ -293,6 +313,22 @@ class WeekTimeGrid extends StatelessWidget {
         final double gridWidth = constraints.maxWidth - tcw;
         final double dayWidth = gridWidth / 5.0;
 
+        // Determine how many past day columns to gray out relative to today
+        final DateTime today = DateTime.now();
+        final DateTime todayOnly = DateTime(today.year, today.month, today.day);
+        final DateTime weekStartOnly = DateTime(weekStart.year, weekStart.month, weekStart.day);
+        final DateTime weekEndExclusive = weekStartOnly.add(const Duration(days: 5)); // Mon..Fri grid
+        int grayCols;
+        if (!todayOnly.isBefore(weekEndExclusive) && !todayOnly.isBefore(weekStartOnly)) {
+          // Today is Fri or later within/after this grid week -> all 5 are past within this week
+          grayCols = 5;
+        } else if (todayOnly.isBefore(weekStartOnly)) {
+          grayCols = 0;
+        } else {
+          // Within the grid range Mon..Fri (before Friday end)
+          grayCols = todayOnly.difference(weekStartOnly).inDays.clamp(0, 5);
+        }
+
         List<Widget> buildOverlayBlocks() {
           final List<Widget> blocks = [];
           for (final span in spans) {
@@ -361,6 +397,7 @@ class WeekTimeGrid extends StatelessWidget {
         final Color bandEven = theme.colorScheme.surfaceVariant.withOpacity(isDark ? 0.10 : 0.06);
         final Color hourLineColor = isDark ? Colors.white.withAlpha((0.28 * 255).round()) : Colors.black.withAlpha((0.20 * 255).round());
         final Color minorLineColor = isDark ? Colors.white.withAlpha((0.12 * 255).round()) : Colors.black.withAlpha((0.10 * 255).round());
+        final Color grayOverlay = (isDark ? Colors.white : Colors.black).withOpacity(isDark ? 0.08 : 0.06);
 
         final double? lunchSplitRowIndex = (lunchS != null) ? ((lunchS - dayStartMin) / slotMinutes) : null;
 
@@ -375,6 +412,8 @@ class WeekTimeGrid extends StatelessWidget {
                     totalWidth: constraints.maxWidth,
                     dayCount: 5,
                     dayWidth: dayWidth,
+                    grayColumns: grayCols,
+                    grayOverlayColor: grayOverlay,
                     slotMinutes: slotMinutes,
                     bandColorOdd: bandOdd,
                     bandColorEven: bandEven,

@@ -101,7 +101,7 @@ class ApprovalScreen extends StatelessWidget {
                 _LegendDot(color: Colors.green, label: 'Odobreno'),
                 _LegendDot(color: Colors.amber, label: 'Čeka odobrenje'),
                 _LegendDot(color: Colors.red, label: 'Nepotvrđen email'),
-                _LegendLine(color: Colors.red, label: 'Pauza za ručak')
+                _LegendLine(color: Colors.red, label: 'Pauza')
               ])),
           IconButton(
               onPressed: () async {
