@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-final lunchS = 12 * 60;
-final lunchE = 13 * 60;
-
 class _WeekGridPainter extends CustomPainter {
   final int rows;
   final double rowHeight;
@@ -51,6 +48,7 @@ class _WeekGridPainter extends CustomPainter {
     final double right = timeColWidth + dayCount * dayWidth;
     final double height = rows * rowHeight;
 
+    // Alternating row bands for readability (skip the time column)
     for (int r = 0; r < rows; r++) {
       final double y = r * rowHeight;
       final Rect bandRect = Rect.fromLTWH(left, y, right - left, rowHeight);
@@ -70,11 +68,13 @@ class _WeekGridPainter extends CustomPainter {
 
     canvas.drawLine(Offset(left, 0), Offset(left, height), minorLine);
 
+    // Vertical day dividers
     for (int i = 0; i <= dayCount; i++) {
       final double x = left + i * dayWidth;
       canvas.drawLine(Offset(x, 0), Offset(x, height), minorLine);
     }
 
+    // Horizontal row dividers with stronger hour lines (every 60/slotMinutes rows)
     final int rowsPerHour = (60 ~/ slotMinutes);
     for (int r = 0; r <= rows; r++) {
       final double y = r * rowHeight;
@@ -140,6 +140,9 @@ class WeekTimeGrid extends StatelessWidget {
   final TimeOfDay dayEnd;
   final int slotMinutes; // e.g., 15 or 30
 
+  final TimeOfDay? lunchStart;
+  final TimeOfDay? lunchEnd;
+
   final Set<DateTime> occupied;
 
   final DateTime firstDay;
@@ -158,22 +161,35 @@ class WeekTimeGrid extends StatelessWidget {
       required this.dayStart,
       required this.dayEnd,
       required this.slotMinutes,
+      this.lunchStart,
+      this.lunchEnd,
       required this.occupied,
       required this.firstDay,
       required this.lastDay,
       this.spans = const []})
       : super(key: key);
 
+  DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  bool _isWithinBounds(DateTime day) {
+    final d = _dateOnly(day);
+    final f = _dateOnly(firstDay);
+    final l = _dateOnly(lastDay);
+    return !d.isBefore(f) && !d.isAfter(l);
+  }
+
   List<TimeOfDay> _buildTimes() {
+    int toMinutes(TimeOfDay t) => t.hour * 60 + t.minute;
     TimeOfDay fromMinutes(int m) => TimeOfDay(hour: m ~/ 60, minute: m % 60);
 
     final times = <TimeOfDay>[];
-    int cur = dayStart.hour * 60 + dayStart.minute;
-    final endM = dayEnd.hour * 60 + dayEnd.minute;
-
+    int cur = toMinutes(dayStart);
+    final endM = toMinutes(dayEnd);
+    final lunchS = lunchStart != null ? toMinutes(lunchStart!) : null;
+    final lunchE = lunchEnd != null ? toMinutes(lunchEnd!) : null;
     while (cur <= endM - slotMinutes) {
       final next = cur + slotMinutes;
-      final overlapsLunch = cur < lunchE && next > lunchS;
+      final overlapsLunch = lunchS != null && lunchE != null && cur < lunchE && next > lunchS;
       if (!overlapsLunch) {
         times.add(fromMinutes(cur));
       }
@@ -225,23 +241,28 @@ class WeekTimeGrid extends StatelessWidget {
               ]));
         }
 
-        int dayStartMin = dayStart.hour * 60 + dayStart.minute;
-        int dayEndMin = dayEnd.hour * 60 + dayEnd.minute;
+        int toMinutes(TimeOfDay t) => t.hour * 60 + t.minute;
+        int dayStartMin = toMinutes(dayStart);
+        int dayEndMin = toMinutes(dayEnd);
+        final int? lunchS = lunchStart != null ? toMinutes(lunchStart!) : null;
+        final int? lunchE = lunchEnd != null ? toMinutes(lunchEnd!) : null;
 
         double? fractionalRowIndex(DateTime dt) {
           int m = dt.hour * 60 + dt.minute;
           if (m >= dayEndMin) return null;
           if (m < dayStartMin) m = dayStartMin;
-          if (m >= lunchS && m < lunchE) {
+          if (lunchS != null && lunchE != null && m >= lunchS && m < lunchE) {
             m = lunchE;
             if (m >= dayEndMin) return null;
           }
           int minutesFromStart = m - dayStartMin;
           int lunchBefore = 0;
-          final int overlapStart = lunchS.clamp(dayStartMin, m);
-          final int overlapEnd = lunchE.clamp(dayStartMin, m);
-          final int delta = overlapEnd - overlapStart;
-          if (delta > 0) lunchBefore = delta;
+          if (lunchS != null && lunchE != null) {
+            final int overlapStart = lunchS.clamp(dayStartMin, m);
+            final int overlapEnd = lunchE.clamp(dayStartMin, m);
+            final int delta = overlapEnd - overlapStart;
+            if (delta > 0) lunchBefore = delta;
+          }
           final int effective = minutesFromStart - lunchBefore;
           return effective / slotMinutes;
         }
@@ -254,10 +275,12 @@ class WeekTimeGrid extends StatelessWidget {
           if (e > dayEndMin) e = dayEndMin;
           if (s >= e) return 0;
           int visible = e - s;
-          final int os = s.clamp(lunchS, lunchE);
-          final int oe = e.clamp(lunchS, lunchE);
-          final int lunchOverlap = (oe - os).clamp(0, visible);
-          visible -= lunchOverlap;
+          if (lunchS != null && lunchE != null) {
+            final int os = s.clamp(lunchS, lunchE);
+            final int oe = e.clamp(lunchS, lunchE);
+            final int lunchOverlap = (oe - os).clamp(0, visible);
+            visible -= lunchOverlap;
+          }
           if (visible <= 0) return 0;
           return visible / slotMinutes;
         }
@@ -309,6 +332,7 @@ class WeekTimeGrid extends StatelessWidget {
                                     Text(span.phone!, maxLines: 1, overflow: TextOverflow.ellipsis, softWrap: false, textAlign: TextAlign.center, style: spanTextStyle)
                                   ]
                                 ]))),
+                      // Icon-only action in the top-right corner
                       Positioned(
                           top: 0,
                           right: 0,
@@ -331,7 +355,7 @@ class WeekTimeGrid extends StatelessWidget {
         final Color hourLineColor = isDark ? Colors.white.withAlpha((0.28 * 255).round()) : Colors.black.withAlpha((0.28 * 255).round());
         final Color minorLineColor = isDark ? Colors.white.withAlpha((0.14 * 255).round()) : Colors.black.withAlpha((0.14 * 255).round());
 
-        final double? lunchSplitRowIndex = (lunchS - dayStartMin) / slotMinutes;
+        final double? lunchSplitRowIndex = (lunchS != null) ? ((lunchS - dayStartMin) / slotMinutes) : null;
 
         final Widget gridPaint = SizedBox(
             height: totalHeight,

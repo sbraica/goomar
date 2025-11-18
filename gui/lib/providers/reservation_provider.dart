@@ -7,12 +7,15 @@ import '../models/reservation.dart';
 import '../services/api_client.dart';
 
 class ReservationProvider with ChangeNotifier {
+  final int bitInvalid = 0x1;
+  final int bitUnconfirmed = 0x2;
+  final int bitConfirmed = 0x4;
+
   final List<Reservation> _reservations = [];
   bool _isLoading = false;
   String? _lastError;
-  bool _initDone = false;
 
-  DateTime day = DateTime.now();
+  DateTime focusedDay = DateTime.now();
 
   DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
@@ -42,25 +45,34 @@ class ReservationProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> approve(String id, bool value) async {
+  void setApproved(String id, bool value) {
+    final index = _reservations.indexWhere((r) => r.id != null && r.id == id);
+    if (index != -1) {
+      _reservations[index].confirmed = value;
+      // if approved => not pending; if unapproved => pending
+      _reservations[index].pending = !value;
+      notifyListeners();
+    }
+  }
+
+  /// Toggle approved state and call backend PATCH to persist.
+  /// Uses optimistic update; reverts on error and sets lastError.
+  Future<void> setApprovedRemote(String id, bool value) async {
     _setError(null);
     final index = _reservations.indexWhere((r) => r.id != null && r.id == id);
     if (index == -1) return;
     final prevApproved = _reservations[index].confirmed;
     final prevPending = _reservations[index].pending;
 
-    final index2 = _reservations.indexWhere((r) => r.id != null && r.id == id);
-    if (index2 != -1) {
-      _reservations[index2].confirmed = value;
-      _reservations[index2].pending = !value;
-      notifyListeners();
-    }
+    // Optimistic local update
+    setApproved(id, value);
 
     try {
       final eventId = (_reservations[index].id ?? _reservations[index].id);
       if (eventId == null || eventId.isEmpty) throw Exception('Missing event id for appointment update');
       await ApiClient.instance.setAppointmentApproved(eventId, value);
     } catch (e) {
+      // Revert on error and expose message
       _reservations[index].confirmed = prevApproved;
       _reservations[index].pending = prevPending;
       _setError(e.toString());
@@ -69,12 +81,15 @@ class ReservationProvider with ChangeNotifier {
     }
   }
 
-  Future<void> delete(String id) async {
+  /// Delete a reservation locally and remotely via DELETE endpoint.
+  /// Uses optimistic removal; reinserts on failure and sets lastError.
+  Future<void> deleteReservationRemote(String id) async {
     _setError(null);
     final index = _reservations.indexWhere((r) => r.id != null && r.id == id);
     if (index == -1) return;
     final removed = _reservations[index];
 
+    // Optimistic remove
     _reservations.removeAt(index);
     notifyListeners();
 
@@ -83,6 +98,7 @@ class ReservationProvider with ChangeNotifier {
       if (eventId == null || eventId.isEmpty) throw Exception('Missing event id for appointment deletion');
       await ApiClient.instance.deleteAppointment(eventId);
     } catch (e) {
+      // Reinsert on error
       _reservations.insert(index, removed);
       _setError(e.toString());
       notifyListeners();
@@ -90,7 +106,8 @@ class ReservationProvider with ChangeNotifier {
     }
   }
 
-  Future<void> update(UpdateReservation ur) async {
+  /// Update reservation both remotely and locally.
+  Future<void> updateReservationRemote(UpdateReservation ur) async {
     _setError(null);
     final index = _reservations.indexWhere((r) => r.id != null && r.id == ur.id);
     if (index == -1) throw Exception('Reservation not found');
@@ -115,21 +132,12 @@ class ReservationProvider with ChangeNotifier {
     }
   }
 
-  void setDay(DateTime d) {
-    day = d;
+  void setFocusedDay(DateTime d) {
+    focusedDay = d;
     notifyListeners();
   }
 
-  Future<void> ensureInitialLoad() async {
-    if (_initDone) return;
-    _initDone = true;
-    final monday = _mondayOf(DateTime.now());
-    day = monday;
-    notifyListeners();
-    await load(weekStart: monday);
-  }
-
-  Future<void> load({required DateTime weekStart}) async {
+  Future<void> loadReservations({required DateTime weekStart}) async {
     _setError(null);
     _setLoading(true);
     try {
