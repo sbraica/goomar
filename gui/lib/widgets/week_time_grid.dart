@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 const double tcw = 40.0;
+
 class _WeekGridPainter extends CustomPainter {
   final int rows;
   final double rowHeight;
@@ -8,6 +10,7 @@ class _WeekGridPainter extends CustomPainter {
   final double totalWidth;
   final int dayCount;
   final double dayWidth;
+
   // Number of day columns (from the start of the week) to gray out as past days
   final int grayColumns;
   final Color grayOverlayColor;
@@ -26,26 +29,25 @@ class _WeekGridPainter extends CustomPainter {
   final Color lunchLineColor;
   final double lunchLineWidth;
 
-  _WeekGridPainter({
-    required this.rows,
-    required this.rowHeight,
-    required this.timeColWidth,
-    required this.totalWidth,
-    required this.dayCount,
-    required this.dayWidth,
-    required this.grayColumns,
-    required this.grayOverlayColor,
-    required this.slotMinutes,
-    required this.bandColorOdd,
-    required this.bandColorEven,
-    required this.hourLineColor,
-    required this.minorLineColor,
-    required this.hourLineWidth,
-    required this.minorLineWidth,
-    this.lunchSplitRowIndex,
-    this.lunchLineColor = const Color(0xFFD32F2F),
-    this.lunchLineWidth = 2.0,
-  });
+  _WeekGridPainter(
+      {required this.rows,
+      required this.rowHeight,
+      required this.timeColWidth,
+      required this.totalWidth,
+      required this.dayCount,
+      required this.dayWidth,
+      required this.grayColumns,
+      required this.grayOverlayColor,
+      required this.slotMinutes,
+      required this.bandColorOdd,
+      required this.bandColorEven,
+      required this.hourLineColor,
+      required this.minorLineColor,
+      required this.hourLineWidth,
+      required this.minorLineWidth,
+      this.lunchSplitRowIndex,
+      this.lunchLineColor = const Color(0xFFD32F2F),
+      this.lunchLineWidth = 2.0});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -236,18 +238,31 @@ class WeekTimeGrid extends StatelessWidget {
             constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             iconSize: 22)
       ]),
-      Divider(),
-      Row(children: [
-        const SizedBox(width: tcw), // time column width
-        for (final d in days)
-          Expanded(
-              child: Column(children: [
-            Text(DateFormat('EEEE').format(d), style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.w600)),
-            const SizedBox(height: 2),
-            Text(DateFormat('d.MM.').format(d), style: const TextStyle(fontSize: 12))
-          ]))
-      ]),
-      const SizedBox(height: 8),
+      // Removed divider to eliminate extra space above the gray date header
+      // Divider(),
+      // Date header row with a simple background color
+      Builder(builder: (context) {
+        return Row(
+          children: [
+            const SizedBox(width: tcw), // time column width
+            Expanded(
+              child: Container(
+                  color: Colors.grey.shade200,
+                  child: Row(children: [
+                    for (final d in days)
+                      Expanded(
+                          child: Column(children: [
+                        Text(DateFormat('EEEE').format(d), style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 2),
+                        Text(DateFormat('d.MM.').format(d), style: const TextStyle(fontSize: 12))
+                      ]))
+                  ])),
+            ),
+          ],
+        );
+      }),
+      // Removed spacer to eliminate extra space below the gray date header
+      // const SizedBox(height: 8),
       Expanded(child: LayoutBuilder(builder: (context, constraints) {
         final double availableHeight = constraints.maxHeight;
         final bool isNarrow = constraints.maxWidth < 600;
