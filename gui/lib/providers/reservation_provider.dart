@@ -14,6 +14,7 @@ class ReservationProvider with ChangeNotifier {
   final List<Reservation> _reservations = [];
   bool _isLoading = false;
   String? _lastError;
+  bool _initDone = false;
 
   DateTime focusedDay = DateTime.now();
 
@@ -83,7 +84,7 @@ class ReservationProvider with ChangeNotifier {
 
   /// Delete a reservation locally and remotely via DELETE endpoint.
   /// Uses optimistic removal; reinserts on failure and sets lastError.
-  Future<void> deleteReservationRemote(String id) async {
+  Future<void> deleteReservation(String id) async {
     _setError(null);
     final index = _reservations.indexWhere((r) => r.id != null && r.id == id);
     if (index == -1) return;
@@ -107,7 +108,7 @@ class ReservationProvider with ChangeNotifier {
   }
 
   /// Update reservation both remotely and locally.
-  Future<void> updateReservationRemote(UpdateReservation ur) async {
+  Future<void> updateReservation(UpdateReservation ur) async {
     _setError(null);
     final index = _reservations.indexWhere((r) => r.id != null && r.id == ur.id);
     if (index == -1) throw Exception('Reservation not found');
@@ -135,6 +136,16 @@ class ReservationProvider with ChangeNotifier {
   void setFocusedDay(DateTime d) {
     focusedDay = d;
     notifyListeners();
+  }
+
+  /// Ensure initial week is selected and data loaded once per app lifetime.
+  Future<void> ensureInitialLoad() async {
+    if (_initDone) return;
+    _initDone = true;
+    final monday = _mondayOf(DateTime.now());
+    focusedDay = monday;
+    notifyListeners();
+    await loadReservations(weekStart: monday);
   }
 
   Future<void> loadReservations({required DateTime weekStart}) async {

@@ -82,6 +82,7 @@ class ApiClient {
     if (includeAuth && _authToken != null && _authToken!.isNotEmpty) {
       // If we have a token but it is expired, fail fast so UI can re-auth.
       if (isTokenExpired) {
+        _handleFatalAuthFailure();
         throw ApiException('Authentication token expired');
       }
       headers['Authorization'] = 'Bearer ${_authToken!}';
@@ -165,13 +166,9 @@ class ApiClient {
       final resp = await http
           .post(url, headers: _headers(json: true, includeAuth: false), body: body)
           .timeout(const Duration(seconds: 10));
-      if (resp.statusCode >= 500 && resp.statusCode < 600) {
-        // Backend rejected refresh token with a server error (500 family).
-        // Treat as fatal auth error and trigger logout to login screen.
-        _handleFatalAuthFailure();
-        throw ApiException('Refresh failed: HTTP ${resp.statusCode}', resp.body);
-      }
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
+        // Any non-2xx during refresh is considered fatal auth failure
+        _handleFatalAuthFailure();
         throw ApiException('Refresh failed: HTTP ${resp.statusCode}', resp.body);
       }
 
@@ -229,6 +226,7 @@ class ApiClient {
     if (_authToken == null || _authToken!.isEmpty) return; // nothing to do
     if (!isTokenExpired) return;
     if (_refreshToken == null || _refreshToken!.isEmpty) {
+      _handleFatalAuthFailure();
       throw ApiException('Authentication token expired');
     }
     await refreshToken();
@@ -264,6 +262,7 @@ class ApiClient {
         await _ensureValidToken();
         resp = await http.get(url, headers: _headers()).timeout(const Duration(seconds: 10));
         if (resp.statusCode == 401) {
+          _handleFatalAuthFailure();
           throw ApiException('Unauthorized — token invalid or expired', resp.body);
         }
       }
@@ -295,6 +294,7 @@ class ApiClient {
         await _ensureValidToken();
         resp = await http.post(url, headers: _headers(json: true), body: body).timeout(const Duration(seconds: 10));
         if (resp.statusCode == 401) {
+          _handleFatalAuthFailure();
           throw ApiException('Unauthorized — token invalid or expired', resp.body);
         }
       }
@@ -320,6 +320,7 @@ class ApiClient {
         await _ensureValidToken();
         resp = await http.patch(url, headers: _headers(json: true)).timeout(const Duration(seconds: 10));
         if (resp.statusCode == 401) {
+          _handleFatalAuthFailure();
           throw ApiException('Unauthorized — token invalid or expired', resp.body);
         }
       }
@@ -344,6 +345,7 @@ class ApiClient {
         await _ensureValidToken();
         resp = await http.delete(url, headers: _headers()).timeout(const Duration(seconds: 10));
         if (resp.statusCode == 401) {
+          _handleFatalAuthFailure();
           throw ApiException('Unauthorized — token invalid or expired', resp.body);
         }
       }
@@ -370,6 +372,7 @@ class ApiClient {
         await _ensureValidToken();
         resp = await http.patch(url, headers: _headers(json: true), body: body).timeout(const Duration(seconds: 10));
         if (resp.statusCode == 401) {
+          _handleFatalAuthFailure();
           throw ApiException('Unauthorized — token invalid or expired', resp.body);
         }
       }
