@@ -51,7 +51,6 @@ class _WeekGridPainter extends CustomPainter {
     final double right = timeColWidth + dayCount * dayWidth;
     final double height = rows * rowHeight;
 
-    // Alternating row bands for readability (skip the time column)
     for (int r = 0; r < rows; r++) {
       final double y = r * rowHeight;
       final Rect bandRect = Rect.fromLTWH(left, y, right - left, rowHeight);
@@ -71,13 +70,11 @@ class _WeekGridPainter extends CustomPainter {
 
     canvas.drawLine(Offset(left, 0), Offset(left, height), minorLine);
 
-    // Vertical day dividers
     for (int i = 0; i <= dayCount; i++) {
       final double x = left + i * dayWidth;
       canvas.drawLine(Offset(x, 0), Offset(x, height), minorLine);
     }
 
-    // Horizontal row dividers with stronger hour lines (every 60/slotMinutes rows)
     final int rowsPerHour = (60 ~/ slotMinutes);
     for (int r = 0; r <= rows; r++) {
       final double y = r * rowHeight;
