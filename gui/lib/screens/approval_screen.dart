@@ -23,7 +23,7 @@ class ApprovalScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final rp = context.watch<ReservationProvider>();
-    final DateTime focusedDay = rp.focusedDay;
+    final DateTime focusedDay = rp.day;
 
     final weekStart = _mondayOf(focusedDay);
 
@@ -91,7 +91,7 @@ class ApprovalScreen extends StatelessWidget {
           return Scaffold(
               appBar: AppBar(title: const Text('Bosnić - rezervacija termina servisa'), actions: [
                 IconButton(
-                    onPressed: () async => await rp.loadReservations(weekStart: _mondayOf(focusedDay)).catchError((e) => _snackBar(context, 'Greška dohvaćanja rezervacija: $e')),
+                    onPressed: () async => await rp.load(weekStart: _mondayOf(focusedDay)).catchError((e) => _snackBar(context, 'Greška dohvaćanja rezervacija: $e')),
                     tooltip: 'Refresh',
                     icon: const Icon(Icons.refresh)),
                 IconButton(
@@ -113,17 +113,17 @@ class ApprovalScreen extends StatelessWidget {
                                   weekStart: weekStart,
                                   onPrevWeek: () async {
                                     if (rp.isLoading) return;
-                                    final base = _mondayOf(rp.focusedDay);
+                                    final base = _mondayOf(rp.day);
                                     final prev = DateTime(base.year, base.month, base.day - 7);
-                                    rp.setFocusedDay(DateTime(prev.year, prev.month, prev.day));
-                                    rp.loadReservations(weekStart: prev).catchError((e) => _snackBar(context, 'Greška dohvaćanja rezervacija: $e'));
+                                    rp.setDay(DateTime(prev.year, prev.month, prev.day));
+                                    rp.load(weekStart: prev).catchError((e) => _snackBar(context, 'Greška dohvaćanja rezervacija: $e'));
                                   },
                                   onNextWeek: () async {
                                     if (rp.isLoading) return;
-                                    final base = _mondayOf(rp.focusedDay);
+                                    final base = _mondayOf(rp.day);
                                     final next = DateTime(base.year, base.month, base.day + 7);
-                                    rp.setFocusedDay(DateTime(next.year, next.month, next.day));
-                                    rp.loadReservations(weekStart: next).catchError((e) => _snackBar(context, 'Greška dohvaćanja rezervacija: $e'));
+                                    rp.setDay(DateTime(next.year, next.month, next.day));
+                                    rp.load(weekStart: next).catchError((e) => _snackBar(context, 'Greška dohvaćanja rezervacija: $e'));
                                   },
                                   onEdit: (span) async {
                                     final existing =
@@ -134,19 +134,18 @@ class ApprovalScreen extends StatelessWidget {
                                         context: context,
                                         builder: (ctx) => EditEmailDialog(
                                             initialEmail: initialEmail,
-                                            onSave: (value) => rp.updateReservation(UpdateReservation(id: span.id!, sendMail: true, email: value, approved: false)),
-                                            onConfirm: (value) => rp.updateReservation(UpdateReservation(id: span.id!, sendMail: false, approved: true))));
+                                            onSave: (value) => rp.update(UpdateReservation(id: span.id!, sendMail: true, email: value, approved: false)),
+                                            onConfirm: (value) => rp.update(UpdateReservation(id: span.id!, sendMail: false, approved: true))));
                                   },
                                   onCheck: (span) async => await rp
-                                      .updateReservation(UpdateReservation(id: span.id, sendMail: true, approved: true))
+                                      .update(UpdateReservation(id: span.id, sendMail: true, approved: true))
                                       .catchError((e) => _snackBar(context, 'Greška izmjene rezervacije: $e')),
                                   onDelete: (span) async => _showConfirmDialog(context, 'Delete appointment', 'Are you sure you want to delete this appointment?',
-                                      () async => await rp.deleteReservation(span.id!).catchError((e) => _snackBar(context, 'Greška brisanja rezervacije: $e'))),
+                                      () async => await rp.delete(span.id!).catchError((e) => _snackBar(context, 'Greška brisanja rezervacije: $e'))),
                                   dayStart: const TimeOfDay(hour: 8, minute: 0),
                                   dayEnd: const TimeOfDay(hour: 16, minute: 0),
                                   slotMinutes: slotMinutes,
-                                  lunchStart: const TimeOfDay(hour: 12, minute: 0),
-                                  lunchEnd: const TimeOfDay(hour: 13, minute: 0),
+
                                   occupied: occupied,
                                   firstDay: firstDay,
                                   lastDay: lastDay,
