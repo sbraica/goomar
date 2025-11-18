@@ -91,6 +91,18 @@ class ApprovalScreen extends StatelessWidget {
 
     return Scaffold(
         appBar: AppBar(title: const Text('Bosnić - rezervacija termina servisa'), actions: [
+          Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.5))),
+              child: const Wrap(spacing: 12, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                _LegendDot(color: Colors.green, label: 'Odobreno'),
+                _LegendDot(color: Colors.amber, label: 'Čeka odobrenje'),
+                _LegendDot(color: Colors.red, label: 'Nepotvrđen email'),
+                _LegendLine(color: Colors.red, label: 'Pauza za ručak')
+              ])),
           IconButton(
               onPressed: () async {
                 try {
@@ -112,10 +124,9 @@ class ApprovalScreen extends StatelessWidget {
               })
         ]),
         body: Column(children: [
-          if (rp.isLoading) const LinearProgressIndicator(minHeight: 2),
           Expanded(
               child: Padding(
-                  padding: const EdgeInsets.all(12.0),
+                  padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     Expanded(
                         child: WeekTimeGrid(
@@ -197,5 +208,35 @@ class ApprovalScreen extends StatelessWidget {
                   },
                   child: const Text('Confirm'))
             ]));
+  }
+}
+
+class _LegendDot extends StatelessWidget {
+  final Color color;
+  final String label;
+  const _LegendDot({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+      const SizedBox(width: 6),
+      Text(label, style: Theme.of(context).textTheme.bodySmall)
+    ]);
+  }
+}
+
+class _LegendLine extends StatelessWidget {
+  final Color color;
+  final String label;
+  const _LegendLine({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Container(width: 16, height: 2, color: color),
+      const SizedBox(width: 6),
+      Text(label, style: Theme.of(context).textTheme.bodySmall)
+    ]);
   }
 }

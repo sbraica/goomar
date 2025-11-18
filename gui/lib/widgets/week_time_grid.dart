@@ -196,13 +196,27 @@ class WeekTimeGrid extends StatelessWidget {
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Row(children: [
-        IconButton(icon: const Icon(Icons.chevron_left), onPressed: onPrevWeek, tooltip: 'Previous week'),
+        IconButton(
+            icon: const Icon(Icons.chevron_left),
+            onPressed: onPrevWeek,
+            tooltip: 'Previous week',
+            visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            iconSize: 22),
         Expanded(
             child: Text('${DateFormat('d. MMMM').format(days.first)} – ${DateFormat('d. MMMM y.').format(days.last)}',
-                textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold))),
-        IconButton(icon: const Icon(Icons.chevron_right), onPressed: onNextWeek, tooltip: 'Next week')
+                textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, height: 1.1))),
+        IconButton(
+            icon: const Icon(Icons.chevron_right),
+            onPressed: onNextWeek,
+            tooltip: 'Next week',
+            visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            iconSize: 22)
       ]),
-      const SizedBox(height: 8),
+      const SizedBox(height: 4),
       Row(children: [
         const SizedBox(width: tcw), // time column width
         for (final d in days)
@@ -311,10 +325,10 @@ class WeekTimeGrid extends StatelessWidget {
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(color: !span.emailOk ? Colors.red.shade700 : (span.approved ? Colors.green.shade700 : Colors.amber.shade700), width: 1)),
                     child: Stack(children: [
-                      if ((span.label != null && span.label!.isNotEmpty) || (span.phone != null && span.phone!.isNotEmpty))
+                      if (span.label!.isNotEmpty && span.phone!.isNotEmpty)
                         Center(
                             child: Padding(
-                                padding: const EdgeInsets.only(right: 28.0, left: 6.0),
+                                padding: EdgeInsets.zero,
                                 child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.center, children: [
                                   if (span.label != null && span.label!.isNotEmpty)
                                     Text(span.long ? span.label! : "${span.label!} ${span.phone!}",
@@ -341,10 +355,12 @@ class WeekTimeGrid extends StatelessWidget {
 
         final theme = Theme.of(context);
         final bool isDark = theme.brightness == Brightness.dark;
-        const Color bandOdd = Colors.transparent;
-        const Color bandEven = Colors.transparent;
-        final Color hourLineColor = isDark ? Colors.white.withAlpha((0.28 * 255).round()) : Colors.black.withAlpha((0.28 * 255).round());
-        final Color minorLineColor = isDark ? Colors.white.withAlpha((0.14 * 255).round()) : Colors.black.withAlpha((0.14 * 255).round());
+        // Subtle background banding to improve readability and professional look
+        final Color primary = theme.colorScheme.primary;
+        final Color bandOdd = primary.withOpacity(isDark ? 0.06 : 0.04);
+        final Color bandEven = theme.colorScheme.surfaceVariant.withOpacity(isDark ? 0.10 : 0.06);
+        final Color hourLineColor = isDark ? Colors.white.withAlpha((0.28 * 255).round()) : Colors.black.withAlpha((0.20 * 255).round());
+        final Color minorLineColor = isDark ? Colors.white.withAlpha((0.12 * 255).round()) : Colors.black.withAlpha((0.10 * 255).round());
 
         final double? lunchSplitRowIndex = (lunchS != null) ? ((lunchS - dayStartMin) / slotMinutes) : null;
 
