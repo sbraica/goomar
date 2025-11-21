@@ -8,16 +8,23 @@ class LoginScreen extends StatelessWidget {
   LoginScreen({Key? key}) : super(key: key);
 
   final _formKey = GlobalKey<FormState>();
+  final TextEditingController _passwordController = TextEditingController();
 
   Future<void> _login(BuildContext context) async {
     if (_formKey.currentState!.validate()) {
       final ui = Provider.of<LoginUiProvider>(context, listen: false);
       final auth = Provider.of<AuthProvider>(context, listen: false);
+
+      ui.setPassword(_passwordController.text);
+
       final success = await ui.login(ui.username, ui.password, auth);
       if (success) {
         Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const ApprovalScreen()));
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Login failed. Please check your username and password.'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Login failed. Please check your username and password.'),
+          backgroundColor: Colors.red,
+        ));
       }
     }
   }
@@ -33,7 +40,8 @@ class LoginScreen extends StatelessWidget {
                         constraints: const BoxConstraints(maxWidth: 360),
                         child: Form(
                             key: _formKey,
-                            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                            child: AutofillGroup(
+                                child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                               Consumer<LoginUiProvider>(
                                   builder: (context, ui, _) => TextFormField(
                                       initialValue: ui.username,
@@ -50,7 +58,7 @@ class LoginScreen extends StatelessWidget {
                               const SizedBox(height: 12),
                               Consumer<LoginUiProvider>(
                                   builder: (context, ui, _) => TextFormField(
-                                      initialValue: ui.password,
+                                      controller: _passwordController,
                                       onChanged: ui.setPassword,
                                       obscureText: ui.obscurePassword,
                                       decoration: InputDecoration(
@@ -71,11 +79,10 @@ class LoginScreen extends StatelessWidget {
                                   builder: (context, ui, _) => SizedBox(
                                       width: double.infinity,
                                       child: ElevatedButton(
-                                        onPressed: ui.isLoading ? null : () => _login(context),
-                                        style: ElevatedButton.styleFrom(
-                                            padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                                        child: ui.isLoading ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Login'),
-                                      )))
-                            ])))))));
+                                          onPressed: ui.isLoading ? null : () => _login(context),
+                                          style: ElevatedButton.styleFrom(
+                                              padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                                          child: ui.isLoading ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Login'))))
+                            ]))))))));
   }
 }

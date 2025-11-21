@@ -107,7 +107,7 @@ class ApprovalScreen extends StatelessWidget {
               onPressed: () async {
                 try {
                   final currentMonday = _mondayOf(day);
-                  await rp.loadReservations(weekStart: currentMonday);
+                  await rp.load(weekStart: currentMonday);
                 } catch (_) {
                   ScaffoldMessenger.of(context)
                       .showSnackBar(const SnackBar(content: Text('Failed to refresh reservations'), backgroundColor: Colors.red));
@@ -136,7 +136,7 @@ class ApprovalScreen extends StatelessWidget {
                               final base = _mondayOf(rp.day);
                               final prev = DateTime(base.year, base.month, base.day - 7);
                               rp.setFocusedDay(DateTime(prev.year, prev.month, prev.day));
-                              rp.loadReservations(weekStart: prev).catchError((_) {
+                              rp.load(weekStart: prev).catchError((_) {
                                 ScaffoldMessenger.of(context)
                                     .showSnackBar(const SnackBar(content: Text('Greška učitavanja rezervacija!'), backgroundColor: Colors.red));
                               });
@@ -146,7 +146,7 @@ class ApprovalScreen extends StatelessWidget {
                               final base = _mondayOf(rp.day);
                               final next = DateTime(base.year, base.month, base.day + 7);
                               rp.setFocusedDay(DateTime(next.year, next.month, next.day));
-                              rp.loadReservations(weekStart: next).catchError((_) {
+                              rp.load(weekStart: next).catchError((_) {
                                 ScaffoldMessenger.of(context)
                                     .showSnackBar(const SnackBar(content: Text('Greška učitavanja rezervacija!'), backgroundColor: Colors.red));
                               });
@@ -161,13 +161,13 @@ class ApprovalScreen extends StatelessWidget {
                                   context: context,
                                   builder: (ctx) => EditEmailDialog(
                                       initialEmail: initialEmail,
-                                      onSave: (value) => rp.updateReservationRemote(UpdateReservation(id: span.id!, sendMail: true, email: value, approved: false)),
-                                      onConfirm: (value) => rp.updateReservationRemote(UpdateReservation(id: span.id!, sendMail: false, approved: true))));
+                                      onSave: (value) => rp.update(UpdateReservation(id: span.id!, sendMail: true, email: value, approved: false)),
+                                      onConfirm: (value) => rp.update(UpdateReservation(id: span.id!, sendMail: false, approved: true))));
                             },
                             onCheck: (span) async {
                               try {
                                 await Provider.of<ReservationProvider>(context, listen: false)
-                                    .updateReservationRemote(UpdateReservation(id: span.id, sendMail: true, approved: true));
+                                    .update(UpdateReservation(id: span.id, sendMail: true, approved: true));
                               } catch (e) {
                                 ScaffoldMessenger.of(context)
                                     .showSnackBar(SnackBar(content: Text('Failed to update approval: $e'), backgroundColor: Colors.red));
@@ -176,7 +176,7 @@ class ApprovalScreen extends StatelessWidget {
                             onDelete: (span) async {
                               _showConfirmDialog(context, 'Delete appointment', 'Are you sure you want to delete this appointment?', () async {
                                 try {
-                                  await Provider.of<ReservationProvider>(context, listen: false).deleteReservationRemote(span.id!);
+                                  await Provider.of<ReservationProvider>(context, listen: false).delete(span.id!);
                                 } catch (e) {
                                   ScaffoldMessenger.of(context)
                                       .showSnackBar(SnackBar(content: Text('Failed to delete appointment: $e'), backgroundColor: Colors.red));

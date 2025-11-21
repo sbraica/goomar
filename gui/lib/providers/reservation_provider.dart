@@ -7,10 +7,6 @@ import '../models/reservation.dart';
 import '../services/api_client.dart';
 
 class ReservationProvider with ChangeNotifier {
-  final int bitInvalid = 0x1;
-  final int bitUnconfirmed = 0x2;
-  final int bitConfirmed = 0x4;
-
   final List<Reservation> _reservations = [];
   bool _isLoading = false;
   String? _lastError;
@@ -27,6 +23,7 @@ class ReservationProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
 
   String? get lastError => _lastError;
+
   bool get initialized => _initialized;
 
   void _setLoading(bool v) {
@@ -47,19 +44,9 @@ class ReservationProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void setApproved(String id, bool value) {
-    final index = _reservations.indexWhere((r) => r.id != null && r.id == id);
-    if (index != -1) {
-      _reservations[index].confirmed = value;
-      // if approved => not pending; if unapproved => pending
-      _reservations[index].pending = !value;
-      notifyListeners();
-    }
-  }
-
   /// Toggle approved state and call backend PATCH to persist.
   /// Uses optimistic update; reverts on error and sets lastError.
-  Future<void> setApprovedRemote(String id, bool value) async {
+  Future<void> setApproved(String id, bool value) async {
     _setError(null);
     final index = _reservations.indexWhere((r) => r.id != null && r.id == id);
     if (index == -1) return;
@@ -67,7 +54,13 @@ class ReservationProvider with ChangeNotifier {
     final prevPending = _reservations[index].pending;
 
     // Optimistic local update
-    setApproved(id, value);
+    final index2 = _reservations.indexWhere((r) => r.id != null && r.id == id);
+    if (index2 != -1) {
+      _reservations[index2].confirmed = value;
+      // if approved => not pending; if unapproved => pending
+      _reservations[index2].pending = !value;
+      notifyListeners();
+    }
 
     try {
       final eventId = (_reservations[index].id ?? _reservations[index].id);
@@ -85,7 +78,7 @@ class ReservationProvider with ChangeNotifier {
 
   /// Delete a reservation locally and remotely via DELETE endpoint.
   /// Uses optimistic removal; reinserts on failure and sets lastError.
-  Future<void> deleteReservationRemote(String id) async {
+  Future<void> delete(String id) async {
     _setError(null);
     final index = _reservations.indexWhere((r) => r.id != null && r.id == id);
     if (index == -1) return;
@@ -109,7 +102,7 @@ class ReservationProvider with ChangeNotifier {
   }
 
   /// Update reservation both remotely and locally.
-  Future<void> updateReservationRemote(UpdateReservation ur) async {
+  Future<void> update(UpdateReservation ur) async {
     _setError(null);
     final index = _reservations.indexWhere((r) => r.id != null && r.id == ur.id);
     if (index == -1) throw Exception('Reservation not found');
@@ -139,7 +132,7 @@ class ReservationProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> loadReservations({required DateTime weekStart}) async {
+  Future<void> load({required DateTime weekStart}) async {
     _setError(null);
     _setLoading(true);
     try {
@@ -157,7 +150,7 @@ class ReservationProvider with ChangeNotifier {
   Future<void> initializeIfNeeded() async {
     if (_initialized) return;
     final monday = _mondayOf(DateTime.now());
-    await loadReservations(weekStart: monday);
+    await load(weekStart: monday);
     setFocusedDay(monday);
     _initialized = true;
   }
