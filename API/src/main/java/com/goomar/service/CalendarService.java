@@ -98,57 +98,70 @@ public class CalendarService implements ICalendarService {
 
     @SneakyThrows
     @Override
+    public boolean slotFree(LocalDateTime dateTime, boolean _long) {
+        return getEvents(dateTime, dateTime.plus(Duration.ofMinutes(_long?30:15))).isEmpty();
+    }
+
+    @SneakyThrows
+    @Override
     public List<FreeSlotRest> getFreeSlots(LocalDate date, boolean longService) {
         ensureCalendarReady();
-
         log.info("getFreeSlots(date={}, longService={})", date, longService);
-        ZonedDateTime startOfDay = date.atTime(LocalTime.of(8, 0)).atZone(zone);
-        ZonedDateTime endOfDay = date.atTime(LocalTime.of(16, 0)).atZone(zone);
 
-        DateTime tMin = new DateTime(startOfDay.toInstant().toEpochMilli());
-        DateTime tMax = new DateTime(endOfDay.toInstant().toEpochMilli());
-
-        List<Event> events = executeWithRetry(() -> calendarClient.events().list(calendarId).setTimeMin(tMin).setTimeMax(tMax)
-                .setOrderBy("startTime").setShowDeleted(false).setSingleEvents(true).execute()).getItems();
+        LocalDateTime startOfDay = date.atTime(8, 0);
+        LocalDateTime endOfDay = date.atTime(16, 0);
+        List<Event> events = getEvents(startOfDay, endOfDay);
 
         List<TimePeriod> busyPeriods = new ArrayList<>();
         for (Event event : events) {
             if (event.getStart() == null || event.getEnd() == null) continue;
             if (event.getStart().getDate() != null || event.getEnd().getDate() != null) continue;
 
-            ZonedDateTime start = Instant.ofEpochMilli(event.getStart().getDateTime().getValue()).atZone(zone);
-            ZonedDateTime end = Instant.ofEpochMilli(event.getEnd().getDateTime().getValue()).atZone(zone);
+            DateTime startDt = event.getStart().getDateTime();
+            DateTime endDt = event.getEnd().getDateTime();
+            if (startDt == null || endDt == null) continue;
 
-            if (!start.toLocalDate().equals(end.toLocalDate())) continue;
-            busyPeriods.add(new TimePeriod().setStart(event.getStart().getDateTime()).setEnd(event.getEnd().getDateTime()));
+            busyPeriods.add(new TimePeriod().setStart(startDt).setEnd(endDt));
         }
 
-        ZonedDateTime lStart = date.atTime(LocalTime.of(12, 0)).atZone(zone);
-        ZonedDateTime lEnd = date.atTime(LocalTime.of(13, 0)).atZone(zone);
-        busyPeriods.add(new TimePeriod().setStart(new DateTime(lStart.toInstant().toEpochMilli())).setEnd(new DateTime(lEnd.toInstant().toEpochMilli())));
+        ZonedDateTime lunchStart = date.atTime(12, 0).atZone(zone);
+        ZonedDateTime lunchEnd = date.atTime(13, 0).atZone(zone);
+        busyPeriods.add(new TimePeriod().setStart(new DateTime(lunchStart.toInstant().toEpochMilli())).setEnd(new DateTime(lunchEnd.toInstant().toEpochMilli())));
+
         busyPeriods.sort(Comparator.comparingLong(tp -> tp.getStart().getValue()));
 
         List<FreeSlotRest> freeSlots = new ArrayList<>();
+        ZonedDateTime cursor = startOfDay.atZone(zone);
         Duration slotLength = Duration.ofMinutes(longService ? 30 : 15);
-        ZonedDateTime cursor = startOfDay;
+        ZonedDateTime zonedEndOfDay = endOfDay.atZone(zone);
+        while (!cursor.plus(slotLength).isAfter(zonedEndOfDay)) {
+            boolean result = true;
+            ZonedDateTime slotEnd = cursor.plus(slotLength);
 
-        for (TimePeriod busy : busyPeriods) {
-            ZonedDateTime busyStart = Instant.ofEpochMilli(busy.getStart().getValue()).atZone(zone);
-            ZonedDateTime busyEnd = Instant.ofEpochMilli(busy.getEnd().getValue()).atZone(zone);
+            for (TimePeriod busy : busyPeriods) {
+                ZonedDateTime busyStart = Instant.ofEpochMilli(busy.getStart().getValue()).atZone(cursor.getZone());
+                ZonedDateTime busyEnd = Instant.ofEpochMilli(busy.getEnd().getValue()).atZone(cursor.getZone());
 
-            while (cursor.plus(slotLength).isBefore(busyStart)) {
-                freeSlots.add(new FreeSlotRest().start(cursor.toLocalTime().toString()).end(cursor.plus(slotLength).toLocalTime().toString()));
-                cursor = cursor.plus(slotLength);
+                if (!slotEnd.isBefore(busyStart) && !cursor.isAfter(busyEnd)) {
+                    result = false;
+                    break;
+                }
             }
-            if (cursor.isBefore(busyEnd)) cursor = busyEnd;
-        }
-
-        while (cursor.plus(slotLength).isBefore(endOfDay)) {
-            freeSlots.add(new FreeSlotRest().start(cursor.toLocalTime().toString()).end(cursor.plus(slotLength).toLocalTime().toString()));
+            if (result) {
+                freeSlots.add(new FreeSlotRest().start(cursor.toLocalTime().toString()).end(cursor.plus(slotLength).toLocalTime().toString()));
+            }
             cursor = cursor.plus(slotLength);
         }
-
         return freeSlots;
+    }
+
+    private List<Event> getEvents(LocalDateTime startOfDay, LocalDateTime endOfDay) throws Exception {
+        DateTime tMin = new DateTime(startOfDay.atZone(zone).toInstant().toEpochMilli());
+        DateTime tMax = new DateTime(endOfDay.atZone(zone).toInstant().toEpochMilli());
+
+        List<Event> events = executeWithRetry(() ->calendarClient.events().list(calendarId).setTimeMin(tMin).setTimeMax(tMax)
+                .setOrderBy("startTime").setShowDeleted(false).setSingleEvents(true).execute()).getItems();
+        return events;
     }
 
     @SneakyThrows

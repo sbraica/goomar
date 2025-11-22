@@ -41,7 +41,11 @@ public class ReservationController implements ReservationsApi {
     @Override
     public ResponseEntity<String> confirmEmailOK(String id) {
         log.info("confirmEmailOK(uuid={})", id);
-        if (!entryService.get(id).getEmailOk()) {
+        ReservationRest rr = entryService.get(id);
+        if (!rr.getEmailOk()) {
+            if (calendarService.slotFree(rr.getDateTime(), rr.getLong())){
+                return new ResponseEntity("<html><body><h2>Rezervacija zauzeta od drugog korisnika!</h2></body></html>",  HttpStatus.INTERNAL_SERVER_ERROR);
+            }
             String event_id = calendarService.insertAppointment(entryService.get(id));
             entryService.setEventId(id, event_id);
             return new ResponseEntity(entryService.confirmEmailOK(id), HttpStatus.OK);

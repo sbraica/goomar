@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.openapitools.model.GetTokenReq;
 import org.openapitools.model.TokenRsp;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -18,8 +19,9 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class TokenService implements ITokenService {
 
-    //TODO: use env variable
-    private final String url = "http://keycloak:8080/realms/bosnic/protocol/openid-connect/token";
+    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
+    private String issuerUri;
+
     @Override
     public TokenRsp getToken(GetTokenReq getTokenRequest) {
         log.info("getToken()");
@@ -58,6 +60,7 @@ public class TokenService implements ITokenService {
 
     private TokenRsp getTokenRsp(MultiValueMap<String, String> formData, HttpHeaders headers, RestTemplate restTemplate) {
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(formData, headers);
+        final String url =  issuerUri + "/protocol/openid-connect/token";
         ResponseEntity<Map<String, Object>> response = restTemplate.exchange(url, HttpMethod.POST, request, new ParameterizedTypeReference<>() {});
 
         if (response.getBody() != null) {
